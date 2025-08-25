@@ -1,21 +1,19 @@
 # SwiftAzureOpenAI
 
-A Swift package that provides seamless integration with Azure OpenAI and OpenAI APIs for iOS, macOS, watchOS, tvOS, and other Apple ecosystem applications.
+A Swift package focused on the Azure OpenAI/OpenAI Responses API for iOS, macOS, watchOS, tvOS, and other Apple platforms.
 
 ## Overview
 
-SwiftAzureOpenAI is designed to simplify the integration of OpenAI's powerful language models into your Apple ecosystem applications. Whether you're using Azure OpenAI Service or OpenAI's direct API, this package provides a unified, Swift-native interface that feels natural to iOS and macOS developers.
+SwiftAzureOpenAI provides Swift-native models and utilities for working with the Responses API as described in Microsoft's Azure OpenAI documentation. It emphasizes strongly typed request/response models, response metadata extraction, and streaming-friendly types.
 
 ## Features
 
-- 🚀 **Unified API**: Single interface for both Azure OpenAI and OpenAI endpoints
-- 🍎 **Apple Ecosystem**: Full support for iOS, macOS, watchOS, and tvOS
-- 🔄 **Async/Await**: Modern Swift concurrency support
-- 🛡️ **Type Safety**: Strongly typed Swift models for all API interactions
-- 📱 **Swift Package Manager**: Easy integration with SPM
-- 🔐 **Secure**: Built-in secure credential handling
-- ⚡ **Lightweight**: Minimal dependencies and efficient networking
-- 🧪 **Testable**: Comprehensive test suite and mockable interfaces
+- 🚀 **Responses API-first**: Unified request/response models aligned with the Responses API
+- 🔄 **Async/Await-ready**: Modern Swift concurrency-friendly data types
+- 🛡️ **Typed errors**: Clear error modeling with `OpenAIError` and `ErrorResponse`
+- 🧩 **Structured content**: Input and output content parts (text, images)
+- 📊 **Metadata extraction-ready**: Models for response metadata and rate limits
+- 📦 **Swift Package Manager**: Easy integration with SPM
 
 ## Requirements
 
@@ -59,237 +57,184 @@ Then add it to your target dependencies:
 import SwiftAzureOpenAI
 ```
 
-### Azure OpenAI Configuration
-
-```swift
-// Configure for Azure OpenAI
-let azureConfig = AzureOpenAIConfiguration(
-    endpoint: "https://your-resource.openai.azure.com",
-    apiKey: "your-api-key",
-    deploymentName: "your-deployment-name",
-    apiVersion: "2024-02-01"
-)
-
-let client = SwiftAzureOpenAI(configuration: azureConfig)
-```
-
-### OpenAI Configuration
-
-```swift
-// Configure for OpenAI
-let openAIConfig = OpenAIConfiguration(
-    apiKey: "your-openai-api-key",
-    organization: "your-org-id" // Optional
-)
-
-let client = SwiftAzureOpenAI(configuration: openAIConfig)
-```
-
-### Basic Chat Completion
+### Build a Responses API request
 
 ```swift
 import SwiftAzureOpenAI
 
-class ChatService {
-    private let client: SwiftAzureOpenAI
-    
-    init() {
-        let config = AzureOpenAIConfiguration(
-            endpoint: "https://your-resource.openai.azure.com",
-            apiKey: "your-api-key",
-            deploymentName: "gpt-4",
-            apiVersion: "2024-02-01"
+let request = ResponsesRequest(
+    model: "gpt-4o-mini", // Azure: deployment name; OpenAI: model name
+    input: [
+        ResponseMessage(
+            role: .system,
+            content: [ .inputText(.init(text: "You are a helpful assistant.")) ]
+        ),
+        ResponseMessage(
+            role: .user,
+            content: [ .inputText(.init(text: "Write a haiku about Swift.")) ]
         )
-        self.client = SwiftAzureOpenAI(configuration: config)
-    }
-    
-    func sendMessage(_ message: String) async throws -> String {
-        let request = ChatCompletionRequest(
-            messages: [
-                .system("You are a helpful assistant."),
-                .user(message)
-            ],
-            model: "gpt-4",
-            maxTokens: 150
-        )
-        
-        let response = try await client.createChatCompletion(request: request)
-        return response.choices.first?.message.content ?? ""
-    }
+    ],
+    maxOutputTokens: 200,
+    temperature: 0.7
+)
+```
+
+### Decode a Responses API response
+
+Use your preferred HTTP stack to send requests and decode responses into the provided models:
+
+```swift
+import Foundation
+import SwiftAzureOpenAI
+
+let decoder = JSONDecoder()
+// Configure if needed, e.g. date decoding strategy depending on your metadata usage.
+
+func handleResponse(data: Data, httpResponse: HTTPURLResponse) throws -> APIResponse<ResponsesResponse> {
+    // Extract any metadata you collect from headers and timing
+    let rateLimit = RateLimitInfo(remaining: nil, resetTime: nil, limit: nil)
+    let metadata = ResponseMetadata(
+        requestId: httpResponse.allHeaderFields["x-request-id"] as? String,
+        timestamp: Date(),
+        processingTime: nil,
+        rateLimit: rateLimit
+    )
+
+    let body = try decoder.decode(ResponsesResponse.self, from: data)
+    return APIResponse(
+        data: body,
+        metadata: metadata,
+        statusCode: httpResponse.statusCode,
+        headers: httpResponse.allHeaderFields as? [String: String] ?? [:]
+    )
 }
 ```
 
-### Streaming Chat Completion
+### Reading output content
 
 ```swift
-func streamChat(_ message: String) async throws {
-    let request = ChatCompletionRequest(
-        messages: [.user(message)],
-        model: "gpt-4",
-        stream: true
-    )
-    
-    for try await chunk in client.createChatCompletionStream(request: request) {
-        if let content = chunk.choices.first?.delta.content {
-            print(content, terminator: "")
+let apiResponse: APIResponse<ResponsesResponse> = /* from your network layer */
+let outputs = apiResponse.data.output
+for output in outputs {
+    for part in output.content {
+        switch part {
+        case .outputText(let text):
+            print(text.text)
         }
     }
 }
 ```
 
-## API Reference
+### Streaming model support (types)
 
-### Core Classes
-
-#### `SwiftAzureOpenAI`
-The main client class for interacting with OpenAI APIs.
-
-#### `AzureOpenAIConfiguration`
-Configuration for Azure OpenAI Service endpoints.
-
-#### `OpenAIConfiguration`
-Configuration for direct OpenAI API endpoints.
-
-### Chat Completions
+This package provides `StreamingResponseChunk<T>` for representing streamed decoding results. You can adapt your networking layer (e.g., SSE) to yield `StreamingResponseChunk<ResponsesResponse>` items as they become available.
 
 ```swift
-// Create a chat completion
-func createChatCompletion(request: ChatCompletionRequest) async throws -> ChatCompletionResponse
-
-// Create a streaming chat completion
-func createChatCompletionStream(request: ChatCompletionRequest) -> AsyncThrowingStream<ChatCompletionChunk, Error>
-```
-
-### Embeddings
-
-```swift
-// Create embeddings
-func createEmbeddings(request: EmbeddingRequest) async throws -> EmbeddingResponse
-```
-
-### Text Completions
-
-```swift
-// Create text completion (for legacy models)
-func createCompletion(request: CompletionRequest) async throws -> CompletionResponse
-```
-
-## Configuration Examples
-
-### Environment Variables
-
-```swift
-// Using environment variables for security
-let config = AzureOpenAIConfiguration(
-    endpoint: ProcessInfo.processInfo.environment["AZURE_OPENAI_ENDPOINT"] ?? "",
-    apiKey: ProcessInfo.processInfo.environment["AZURE_OPENAI_API_KEY"] ?? "",
-    deploymentName: ProcessInfo.processInfo.environment["AZURE_OPENAI_DEPLOYMENT"] ?? "",
-    apiVersion: "2024-02-01"
-)
-```
-
-### iOS App Configuration
-
-```swift
-// In your iOS app, store credentials securely
-class OpenAIService: ObservableObject {
-    private let client: SwiftAzureOpenAI
-    
-    init() {
-        // Retrieve from Keychain or secure storage
-        let apiKey = KeychainHelper.retrieve(key: "openai_api_key")
-        let config = OpenAIConfiguration(apiKey: apiKey)
-        self.client = SwiftAzureOpenAI(configuration: config)
+func processStream(chunks: AsyncThrowingStream<Data, Error>) async throws {
+    var sequence = 0
+    for try await data in chunks {
+        let partial = try JSONDecoder().decode(ResponsesResponse.self, from: data)
+        let chunk = StreamingResponseChunk(
+            chunk: partial,
+            isComplete: false, // set true when your parser detects completion
+            sequenceNumber: sequence
+        )
+        sequence += 1
+        // handle chunk
     }
 }
+```
+
+## Data Models
+
+- `ResponsesRequest`
+  - `model: String?` — Azure deployment or OpenAI model
+  - `input: [ResponseMessage]` — messages with structured content parts
+  - `maxOutputTokens: Int?`, `temperature: Double?`, `topP: Double?`, `tools: [ToolDefinition]?`
+- `ResponseMessage`
+  - `role: MessageRole` — `.system | .user | .assistant | .tool`
+  - `content: [InputContentPart]`
+- `InputContentPart`
+  - `.inputText(InputText)` — `{ type: "input_text", text }`
+  - `.inputImage(InputImage)` — `{ type: "input_image", image_url }`
+- `ResponsesResponse`
+  - `id: String?`, `model: String?`, `created: Int?`
+  - `output: [ResponseOutput]` — array of content for the assistant's output
+  - `usage: TokenUsage?` — token accounting
+- `ResponseOutput`
+  - `content: [OutputContentPart]`, `role: String?`
+- `OutputContentPart`
+  - `.outputText(OutputText)` — `{ type: "output_text", text }`
+- `TokenUsage`
+  - `inputTokens`, `outputTokens`, `totalTokens`
+- `APIResponse<T>`
+  - `data: T`, `metadata: ResponseMetadata`, `statusCode: Int`, `headers: [String: String]`
+- `ResponseMetadata`
+  - `requestId: String?`, `timestamp: Date`, `processingTime: TimeInterval?`, `rateLimit: RateLimitInfo?`
+- `RateLimitInfo`
+  - `remaining: Int?`, `resetTime: Date?`, `limit: Int?`
+- `OpenAIError`, `ErrorResponse`
+  - Typed errors for network, decoding, and server-reported issues
+
+## Usage with Azure OpenAI and OpenAI
+
+This package provides data models only. You can use any HTTP client (e.g., `URLSession`) to call either Azure OpenAI or OpenAI endpoints.
+
+- **Azure OpenAI (Responses API)**
+  - Endpoint: `https://{resource}.openai.azure.com/openai/responses?api-version=2024-02-01`
+  - Headers: `api-key: <AZURE_API_KEY>`, `Content-Type: application/json`
+  - Body: `ResponsesRequest` encoded as JSON
+
+- **OpenAI (Responses API)**
+  - Endpoint: `https://api.openai.com/v1/responses`
+  - Headers: `Authorization: Bearer <OPENAI_API_KEY>`, `Content-Type: application/json`
+  - Body: `ResponsesRequest` encoded as JSON
+
+Example request sending with `URLSession` (sketch):
+
+```swift
+let json = try JSONEncoder().encode(request)
+var url = URL(string: "https://api.openai.com/v1/responses")!
+var urlRequest = URLRequest(url: url)
+urlRequest.httpMethod = "POST"
+urlRequest.httpBody = json
+urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+urlRequest.setValue("Bearer YOUR_OPENAI_API_KEY", forHTTPHeaderField: "Authorization")
+
+let (data, response) = try await URLSession.shared.data(for: urlRequest)
+let httpResponse = response as! HTTPURLResponse
+let apiResponse: APIResponse<ResponsesResponse> = try handleResponse(data: data, httpResponse: httpResponse)
 ```
 
 ## Error Handling
 
 ```swift
 do {
-    let response = try await client.createChatCompletion(request: request)
-    // Handle success
+    // ... perform request and decode ...
 } catch let error as OpenAIError {
-    switch error {
-    case .invalidAPIKey:
-        print("Invalid API key")
-    case .rateLimitExceeded:
-        print("Rate limit exceeded")
-    case .serverError(let statusCode):
-        print("Server error: \(statusCode)")
-    default:
-        print("Other OpenAI error: \(error)")
-    }
+    print(error.localizedDescription)
+} catch let error as DecodingError {
+    throw OpenAIError.decodingError(error)
 } catch {
-    print("Network or other error: \(error)")
+    throw OpenAIError.networkError(error)
 }
 ```
 
-## Supported Models
-
-### Azure OpenAI
-- GPT-4 and GPT-4 Turbo
-- GPT-3.5 Turbo
-- Embeddings models (text-embedding-ada-002, etc.)
-- DALL-E (where available)
-
-### OpenAI
-- All current OpenAI models including:
-  - GPT-4 and GPT-4 Turbo
-  - GPT-3.5 Turbo
-  - Embeddings models
-  - DALL-E 2 and DALL-E 3
-
-## Best Practices
-
-### Security
-- Never hardcode API keys in your source code
-- Use environment variables or secure storage (Keychain on iOS/macOS)
-- Implement proper error handling for authentication failures
-
-### Performance
-- Use streaming for long-form content generation
-- Implement proper retry logic with exponential backoff
-- Cache embeddings when appropriate
-
-### Rate Limiting
-- Implement client-side rate limiting to respect API quotas
-- Handle rate limit errors gracefully with retry mechanisms
-
-## Example Apps
-
-Check out the `Examples` directory for complete sample applications:
-
-- **iOS Chat App**: Full-featured chat interface
-- **macOS Text Editor**: AI-powered writing assistant
-- **Command Line Tool**: Simple CLI for API testing
-
-## Contributing
-
-We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+If the server returns a structured error payload, decode into `ErrorResponse` and surface it via `.apiError(ErrorResponse)`.
 
 ## Testing
-
-Run the test suite:
 
 ```bash
 swift test
 ```
 
-For testing with live APIs, set up your test configuration:
+For live testing, export environment variables for your client code (not provided by this package), then run your tests. Example:
 
 ```bash
-export AZURE_OPENAI_ENDPOINT="your-test-endpoint"
-export AZURE_OPENAI_API_KEY="your-test-key"
-export AZURE_OPENAI_DEPLOYMENT="your-test-deployment"
-swift test
+export AZURE_OPENAI_ENDPOINT="https://your-resource.openai.azure.com"
+export AZURE_OPENAI_API_KEY="your-azure-key"
+export AZURE_OPENAI_DEPLOYMENT="your-deployment"
+export OPENAI_API_KEY="your-openai-key"
 ```
 
 ## License
@@ -298,16 +243,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Support
 
-- 📖 [Documentation](https://github.com/ytthuan/SwiftAzureOpenAI/wiki)
-- 🐛 [Report Issues](https://github.com/ytthuan/SwiftAzureOpenAI/issues)
-- 💬 [Discussions](https://github.com/ytthuan/SwiftAzureOpenAI/discussions)
-
-## Acknowledgments
-
-- OpenAI for providing the API
-- Microsoft Azure for Azure OpenAI Service
-- The Swift community for excellent package management tools
+- 📖 Documentation: project README (this file)
+- 🐛 Issues: GitHub Issues
 
 ---
 
-**Note**: This package is not officially affiliated with OpenAI or Microsoft. It's a community-driven Swift package for easier integration with OpenAI services.
+Note: This package is community-maintained and not officially affiliated with OpenAI or Microsoft. It focuses on data models aligned to the Responses API specification.
