@@ -1,2 +1,1 @@
-// The Swift Programming Language
-// https://docs.swift.org/swift-book
+// Intentionally left as umbrella import for module; main client in Core/SwiftAzureOpenAI.swift
