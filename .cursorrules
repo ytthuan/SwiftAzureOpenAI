@@ -13,13 +13,15 @@ This repository contains SwiftAzureOpenAI, a Swift package providing seamless in
 - Implement proper error handling with typed errors
 - Use Swift Package Manager for dependency management
 
-### 2. Azure OpenAI API Integration
+### 2. Azure OpenAI Response API Integration
 - Follow Azure OpenAI REST API specifications from: https://github.com/MicrosoftDocs/azure-ai-docs/blob/main/articles/ai-foundry/openai/how-to/responses.md
+- **Primary Focus**: Implement comprehensive response handling and processing services
 - Support both Azure OpenAI Service and direct OpenAI API endpoints
 - Implement proper authentication headers for Azure (api-key) and OpenAI (Authorization: Bearer)
 - Use correct API versioning for Azure endpoints (e.g., api-version=2024-02-01)
-- Support streaming and non-streaming responses
+- **Core Feature**: Advanced response parsing, validation, and transformation
 - Handle Azure-specific deployment names and endpoints
+- Provide response caching and optimization services
 
 ### 3. Architecture Patterns
 
@@ -35,9 +37,10 @@ Sources/SwiftAzureOpenAI/
 │   ├── Responses/                      # Response models
 │   └── Common/                         # Shared models
 ├── Services/
-│   ├── ChatCompletionService.swift     # Chat completions
-│   ├── EmbeddingService.swift          # Embeddings
-│   └── CompletionService.swift         # Text completions
+│   ├── ResponseService.swift           # Main response handling service
+│   ├── StreamingResponseService.swift  # Streaming response service
+│   ├── ResponseParsingService.swift    # Response parsing and validation
+│   └── ResponseCacheService.swift      # Response caching (optional)
 └── Extensions/
     └── Foundation+Extensions.swift     # Utility extensions
 ```
@@ -64,7 +67,89 @@ public enum OpenAIError: Error, LocalizedError {
 }
 ```
 
-### 4. API Implementation Guidelines
+### 4. Response Service Implementation Guidelines
+
+#### Response Service Pattern:
+```swift
+public protocol ResponseServiceProtocol {
+    func processResponse<T: Codable>(_ data: Data, response: HTTPURLResponse, type: T.Type) async throws -> APIResponse<T>
+    func processStreamingResponse<T: Codable>(_ data: AsyncSequence<Data, Error>, type: T.Type) -> AsyncThrowingStream<StreamingResponseChunk<T>, Error>
+    func validateResponse(_ response: HTTPURLResponse) throws
+    func extractMetadata(from response: HTTPURLResponse) -> ResponseMetadata
+}
+
+public class ResponseService: ResponseServiceProtocol {
+    private let parser: ResponseParser
+    private let validator: ResponseValidator
+    private let cache: ResponseCache?
+    
+    public init(parser: ResponseParser = DefaultResponseParser(), 
+                validator: ResponseValidator = DefaultResponseValidator(),
+                cache: ResponseCache? = nil) {
+        self.parser = parser
+        self.validator = validator
+        self.cache = cache
+    }
+    
+    public func processResponse<T: Codable>(_ data: Data, response: HTTPURLResponse, type: T.Type) async throws -> APIResponse<T> {
+        try validateResponse(response)
+        let parsedData = try await parser.parse(data, as: type)
+        let metadata = extractMetadata(from: response)
+        
+        let apiResponse = APIResponse(
+            data: parsedData,
+            metadata: metadata,
+            statusCode: response.statusCode,
+            headers: response.allHeaderFields as? [String: String] ?? [:]
+        )
+        
+        // Cache if available
+        await cache?.store(response: apiResponse, for: data)
+        
+        return apiResponse
+    }
+}
+```
+
+#### Streaming Response Service:
+```swift
+public class StreamingResponseService {
+    private let parser: StreamingResponseParser
+    
+    public init(parser: StreamingResponseParser = DefaultStreamingResponseParser()) {
+        self.parser = parser
+    }
+    
+    public func processStream<T: Codable>(_ stream: AsyncSequence<Data, Error>, type: T.Type) -> AsyncThrowingStream<StreamingResponseChunk<T>, Error> {
+        AsyncThrowingStream { continuation in
+            Task {
+                var sequenceNumber = 0
+                do {
+                    for try await chunk in stream {
+                        let parsedChunk = try parser.parseChunk(chunk, as: type)
+                        let responseChunk = StreamingResponseChunk(
+                            chunk: parsedChunk,
+                            isComplete: parser.isComplete(chunk),
+                            sequenceNumber: sequenceNumber
+                        )
+                        continuation.yield(responseChunk)
+                        sequenceNumber += 1
+                        
+                        if responseChunk.isComplete {
+                            continuation.finish()
+                            break
+                        }
+                    }
+                } catch {
+                    continuation.finish(throwing: error)
+                }
+            }
+        }
+    }
+}
+```
+
+### 5. API Implementation Guidelines
 
 #### Configuration Pattern:
 ```swift
@@ -91,47 +176,73 @@ public struct OpenAIConfiguration: OpenAIConfiguration {
 public class SwiftAzureOpenAI {
     private let configuration: OpenAIConfiguration
     private let httpClient: HTTPClient
+    private let responseService: ResponseService
     
     public init(configuration: OpenAIConfiguration) {
         self.configuration = configuration
         self.httpClient = HTTPClient(configuration: configuration)
+        self.responseService = ResponseService(httpClient: httpClient)
     }
     
-    // Async/await methods
-    public func createChatCompletion(request: ChatCompletionRequest) async throws -> ChatCompletionResponse
+    // Response handling methods
+    public func processResponse<T: Codable>(from request: APIRequest) async throws -> APIResponse<T>
     
-    // Streaming methods
-    public func createChatCompletionStream(request: ChatCompletionRequest) -> AsyncThrowingStream<ChatCompletionChunk, Error>
+    // Streaming response methods
+    public func processStreamingResponse<T: Codable>(from request: APIRequest) -> AsyncThrowingStream<APIResponse<T>, Error>
+    
+    // Generic response processing
+    public func handleResponse(data: Data, response: URLResponse) throws -> ProcessedResponse
 }
 ```
 
-#### Model Patterns:
+#### Response Model Patterns:
 ```swift
-// Request models
-public struct ChatCompletionRequest: Codable {
-    public let messages: [ChatMessage]
-    public let model: String
-    public let maxTokens: Int?
-    public let temperature: Double?
-    public let stream: Bool?
+// Generic API Response wrapper
+public struct APIResponse<T: Codable>: Codable {
+    public let data: T
+    public let metadata: ResponseMetadata
+    public let statusCode: Int
+    public let headers: [String: String]
+}
+
+// Response metadata
+public struct ResponseMetadata: Codable {
+    public let requestId: String?
+    public let timestamp: Date
+    public let processingTime: TimeInterval?
+    public let rateLimit: RateLimitInfo?
+}
+
+// Rate limiting information
+public struct RateLimitInfo: Codable {
+    public let remaining: Int?
+    public let resetTime: Date?
+    public let limit: Int?
     
     enum CodingKeys: String, CodingKey {
-        case messages
-        case model
-        case maxTokens = "max_tokens"
-        case temperature
-        case stream
+        case remaining = "x-ratelimit-remaining"
+        case resetTime = "x-ratelimit-reset"
+        case limit = "x-ratelimit-limit"
     }
 }
 
-// Response models
-public struct ChatCompletionResponse: Codable {
-    public let id: String
-    public let object: String
-    public let created: Int
-    public let model: String
-    public let choices: [ChatChoice]
-    public let usage: Usage?
+// Streaming response chunk
+public struct StreamingResponseChunk<T: Codable>: Codable {
+    public let chunk: T
+    public let isComplete: Bool
+    public let sequenceNumber: Int?
+}
+
+// Error response model
+public struct ErrorResponse: Codable {
+    public let error: APIErrorDetail
+    
+    public struct APIErrorDetail: Codable {
+        public let message: String
+        public let type: String?
+        public let code: String?
+        public let param: String?
+    }
 }
 ```
 
@@ -144,11 +255,19 @@ public struct ChatCompletionResponse: Codable {
 - Handle HTTP status codes appropriately
 - Implement request/response logging for debugging
 
+#### Response Processing:
+- Implement generic response processing for any API endpoint
+- Parse and validate response headers for metadata extraction
+- Handle different content types (JSON, text, binary)
+- Extract rate limiting information from response headers
+- Support response caching with appropriate cache policies
+
 #### Streaming Support:
 - Use `AsyncThrowingStream` for streaming responses
 - Parse Server-Sent Events (SSE) format for streaming
 - Handle streaming connection errors gracefully
 - Support cancellation of streaming requests
+- Implement proper backpressure handling for streaming data
 
 ### 6. Testing Requirements
 
@@ -174,12 +293,19 @@ public struct ChatCompletionResponse: Codable {
 
 #### Example Usage:
 ```swift
-/// Creates a chat completion using the specified request.
+/// Processes an API response and returns a structured response object.
 /// 
-/// - Parameter request: The chat completion request containing messages and configuration
-/// - Returns: A chat completion response with the model's output
+/// - Parameter request: The API request to process
+/// - Returns: A structured API response containing data and metadata
+/// - Throws: `OpenAIError` if the request fails or response processing fails
+public func processResponse<T: Codable>(from request: APIRequest) async throws -> APIResponse<T>
+
+/// Processes a streaming API response.
+/// 
+/// - Parameter request: The API request for streaming data
+/// - Returns: An async stream of response chunks
 /// - Throws: `OpenAIError` if the request fails
-public func createChatCompletion(request: ChatCompletionRequest) async throws -> ChatCompletionResponse
+public func processStreamingResponse<T: Codable>(from request: APIRequest) -> AsyncThrowingStream<StreamingResponseChunk<T>, Error>
 ```
 
 ### 8. Security Considerations
@@ -247,11 +373,12 @@ public func createChatCompletion(request: ChatCompletionRequest) async throws ->
 - Document breaking changes clearly
 - Use deprecation warnings for outdated APIs
 
-#### Model Compatibility:
-- Support various OpenAI model types (GPT-3.5, GPT-4, embeddings)
-- Handle model-specific parameters appropriately
-- Validate model availability for different endpoints
-- Provide clear error messages for unsupported features
+#### Response Compatibility:
+- Support various Azure OpenAI API response formats
+- Handle different response content types (JSON, text, binary, streaming)
+- Parse response headers consistently across different endpoints
+- Validate response structure and provide meaningful error messages
+- Support response transformation and filtering
 
 ## Development Workflow
 
