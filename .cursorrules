@@ -1,0 +1,282 @@
+# Swift Azure OpenAI SDK Development Rules
+
+## Project Overview
+This repository contains SwiftAzureOpenAI, a Swift package providing seamless integration with Azure OpenAI and OpenAI APIs for iOS, macOS, watchOS, tvOS, and other Apple ecosystem applications.
+
+## Core Principles
+
+### 1. Swift Best Practices
+- Follow Swift API Design Guidelines strictly
+- Use proper naming conventions (camelCase for variables/functions, PascalCase for types)
+- Prefer value types (structs) over reference types (classes) when appropriate
+- Use modern Swift features: async/await, structured concurrency, property wrappers
+- Implement proper error handling with typed errors
+- Use Swift Package Manager for dependency management
+
+### 2. Azure OpenAI API Integration
+- Follow Azure OpenAI REST API specifications from: https://github.com/MicrosoftDocs/azure-ai-docs/blob/main/articles/ai-foundry/openai/how-to/responses.md
+- Support both Azure OpenAI Service and direct OpenAI API endpoints
+- Implement proper authentication headers for Azure (api-key) and OpenAI (Authorization: Bearer)
+- Use correct API versioning for Azure endpoints (e.g., api-version=2024-02-01)
+- Support streaming and non-streaming responses
+- Handle Azure-specific deployment names and endpoints
+
+### 3. Architecture Patterns
+
+#### Core Components Structure:
+```
+Sources/SwiftAzureOpenAI/
+├── Core/
+│   ├── SwiftAzureOpenAI.swift          # Main client class
+│   ├── Configuration.swift             # Configuration types
+│   └── HTTPClient.swift                # Network layer
+├── Models/
+│   ├── Requests/                       # Request models
+│   ├── Responses/                      # Response models
+│   └── Common/                         # Shared models
+├── Services/
+│   ├── ChatCompletionService.swift     # Chat completions
+│   ├── EmbeddingService.swift          # Embeddings
+│   └── CompletionService.swift         # Text completions
+└── Extensions/
+    └── Foundation+Extensions.swift     # Utility extensions
+```
+
+#### Request/Response Pattern:
+- All API requests should have corresponding Swift structs conforming to `Codable`
+- Use `CodingKeys` for proper JSON mapping between Swift and API naming conventions
+- Implement proper validation in request models
+- Support both synchronous and asynchronous API calls
+
+#### Error Handling:
+```swift
+public enum OpenAIError: Error, LocalizedError {
+    case invalidAPIKey
+    case rateLimitExceeded
+    case serverError(statusCode: Int)
+    case invalidRequest(String)
+    case networkError(Error)
+    case decodingError(Error)
+    
+    public var errorDescription: String? {
+        // Provide user-friendly error messages
+    }
+}
+```
+
+### 4. API Implementation Guidelines
+
+#### Configuration Pattern:
+```swift
+public protocol OpenAIConfiguration {
+    var baseURL: URL { get }
+    var headers: [String: String] { get }
+}
+
+public struct AzureOpenAIConfiguration: OpenAIConfiguration {
+    public let endpoint: String
+    public let apiKey: String
+    public let deploymentName: String
+    public let apiVersion: String
+}
+
+public struct OpenAIConfiguration: OpenAIConfiguration {
+    public let apiKey: String
+    public let organization: String?
+}
+```
+
+#### Client Pattern:
+```swift
+public class SwiftAzureOpenAI {
+    private let configuration: OpenAIConfiguration
+    private let httpClient: HTTPClient
+    
+    public init(configuration: OpenAIConfiguration) {
+        self.configuration = configuration
+        self.httpClient = HTTPClient(configuration: configuration)
+    }
+    
+    // Async/await methods
+    public func createChatCompletion(request: ChatCompletionRequest) async throws -> ChatCompletionResponse
+    
+    // Streaming methods
+    public func createChatCompletionStream(request: ChatCompletionRequest) -> AsyncThrowingStream<ChatCompletionChunk, Error>
+}
+```
+
+#### Model Patterns:
+```swift
+// Request models
+public struct ChatCompletionRequest: Codable {
+    public let messages: [ChatMessage]
+    public let model: String
+    public let maxTokens: Int?
+    public let temperature: Double?
+    public let stream: Bool?
+    
+    enum CodingKeys: String, CodingKey {
+        case messages
+        case model
+        case maxTokens = "max_tokens"
+        case temperature
+        case stream
+    }
+}
+
+// Response models
+public struct ChatCompletionResponse: Codable {
+    public let id: String
+    public let object: String
+    public let created: Int
+    public let model: String
+    public let choices: [ChatChoice]
+    public let usage: Usage?
+}
+```
+
+### 5. Networking Guidelines
+
+#### HTTP Client Implementation:
+- Use `URLSession` for all network requests
+- Implement proper retry logic with exponential backoff
+- Support custom timeouts and request configurations
+- Handle HTTP status codes appropriately
+- Implement request/response logging for debugging
+
+#### Streaming Support:
+- Use `AsyncThrowingStream` for streaming responses
+- Parse Server-Sent Events (SSE) format for streaming
+- Handle streaming connection errors gracefully
+- Support cancellation of streaming requests
+
+### 6. Testing Requirements
+
+#### Unit Testing:
+- Test all public APIs with comprehensive test cases
+- Mock network responses for reliable testing
+- Test error handling scenarios
+- Use dependency injection for testability
+
+#### Integration Testing:
+- Test with actual Azure OpenAI endpoints (when credentials available)
+- Test rate limiting and retry mechanisms
+- Validate streaming functionality
+- Test different model configurations
+
+### 7. Documentation Standards
+
+#### Code Documentation:
+- Use Swift DocC for API documentation
+- Document all public types, properties, and methods
+- Provide usage examples in documentation comments
+- Include parameter descriptions and return value documentation
+
+#### Example Usage:
+```swift
+/// Creates a chat completion using the specified request.
+/// 
+/// - Parameter request: The chat completion request containing messages and configuration
+/// - Returns: A chat completion response with the model's output
+/// - Throws: `OpenAIError` if the request fails
+public func createChatCompletion(request: ChatCompletionRequest) async throws -> ChatCompletionResponse
+```
+
+### 8. Security Considerations
+
+#### API Key Management:
+- Never hardcode API keys in source code
+- Support environment variable configuration
+- Provide secure storage recommendations (Keychain for iOS/macOS)
+- Implement API key validation
+
+#### Request Security:
+- Use HTTPS for all API requests
+- Validate SSL certificates
+- Implement proper timeout handling
+- Log requests/responses securely (mask sensitive data)
+
+### 9. Performance Optimization
+
+#### Memory Management:
+- Use structs for data models to leverage value semantics
+- Implement proper memory management for streaming responses
+- Avoid retain cycles in async operations
+- Use weak references where appropriate
+
+#### Network Optimization:
+- Implement request deduplication where applicable
+- Use appropriate HTTP caching strategies
+- Optimize JSON encoding/decoding performance
+- Implement connection pooling for multiple requests
+
+### 10. Platform Support
+
+#### Apple Ecosystem:
+- Support iOS 13.0+, macOS 10.15+, watchOS 6.0+, tvOS 13.0+
+- Use availability annotations for platform-specific features
+- Test on all supported platforms
+- Optimize for different device capabilities
+
+#### Swift Package Manager:
+- Maintain clean Package.swift with proper dependencies
+- Use semantic versioning
+- Support multiple Swift versions where possible
+- Minimize external dependencies
+
+### 11. Code Style and Formatting
+
+#### SwiftLint Configuration:
+- Use SwiftLint for consistent code style
+- Follow Swift API Design Guidelines
+- Use meaningful variable and function names
+- Maintain consistent indentation (4 spaces)
+- Keep line length under 120 characters
+
+#### File Organization:
+- One public type per file (with related types as nested)
+- Group related functionality together
+- Use MARK comments for code organization
+- Import only necessary modules
+
+### 12. Versioning and Compatibility
+
+#### API Versioning:
+- Support multiple Azure OpenAI API versions
+- Maintain backward compatibility when possible
+- Document breaking changes clearly
+- Use deprecation warnings for outdated APIs
+
+#### Model Compatibility:
+- Support various OpenAI model types (GPT-3.5, GPT-4, embeddings)
+- Handle model-specific parameters appropriately
+- Validate model availability for different endpoints
+- Provide clear error messages for unsupported features
+
+## Development Workflow
+
+1. **Before adding new features:**
+   - Review Azure OpenAI API documentation
+   - Design Swift-idiomatic interfaces
+   - Write comprehensive tests
+   - Update documentation
+
+2. **Code review checklist:**
+   - Swift API Design Guidelines compliance
+   - Proper error handling
+   - Comprehensive test coverage
+   - Documentation completeness
+   - Security considerations
+
+3. **Release process:**
+   - Run full test suite
+   - Update version numbers
+   - Update documentation
+   - Create release notes
+
+## References
+
+- [Azure OpenAI API Documentation](https://github.com/MicrosoftDocs/azure-ai-docs/blob/main/articles/ai-foundry/openai/how-to/responses.md)
+- [Swift API Design Guidelines](https://swift.org/documentation/api-design-guidelines/)
+- [Swift Package Manager Documentation](https://swift.org/package-manager/)
+- [OpenAI API Reference](https://platform.openai.com/docs/api-reference)
