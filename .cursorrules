@@ -1,0 +1,409 @@
+# Swift Azure OpenAI SDK Development Rules
+
+## Project Overview
+This repository contains SwiftAzureOpenAI, a Swift package providing seamless integration with Azure OpenAI and OpenAI APIs for iOS, macOS, watchOS, tvOS, and other Apple ecosystem applications.
+
+## Core Principles
+
+### 1. Swift Best Practices
+- Follow Swift API Design Guidelines strictly
+- Use proper naming conventions (camelCase for variables/functions, PascalCase for types)
+- Prefer value types (structs) over reference types (classes) when appropriate
+- Use modern Swift features: async/await, structured concurrency, property wrappers
+- Implement proper error handling with typed errors
+- Use Swift Package Manager for dependency management
+
+### 2. Azure OpenAI Response API Integration
+- Follow Azure OpenAI REST API specifications from: https://github.com/MicrosoftDocs/azure-ai-docs/blob/main/articles/ai-foundry/openai/how-to/responses.md
+- **Primary Focus**: Implement comprehensive response handling and processing services
+- Support both Azure OpenAI Service and direct OpenAI API endpoints
+- Implement proper authentication headers for Azure (api-key) and OpenAI (Authorization: Bearer)
+- Use correct API versioning for Azure endpoints (e.g., api-version=2024-02-01)
+- **Core Feature**: Advanced response parsing, validation, and transformation
+- Handle Azure-specific deployment names and endpoints
+- Provide response caching and optimization services
+
+### 3. Architecture Patterns
+
+#### Core Components Structure:
+```
+Sources/SwiftAzureOpenAI/
+├── Core/
+│   ├── SwiftAzureOpenAI.swift          # Main client class
+│   ├── Configuration.swift             # Configuration types
+│   └── HTTPClient.swift                # Network layer
+├── Models/
+│   ├── Requests/                       # Request models
+│   ├── Responses/                      # Response models
+│   └── Common/                         # Shared models
+├── Services/
+│   ├── ResponseService.swift           # Main response handling service
+│   ├── StreamingResponseService.swift  # Streaming response service
+│   ├── ResponseParsingService.swift    # Response parsing and validation
+│   └── ResponseCacheService.swift      # Response caching (optional)
+└── Extensions/
+    └── Foundation+Extensions.swift     # Utility extensions
+```
+
+#### Request/Response Pattern:
+- All API requests should have corresponding Swift structs conforming to `Codable`
+- Use `CodingKeys` for proper JSON mapping between Swift and API naming conventions
+- Implement proper validation in request models
+- Support both synchronous and asynchronous API calls
+
+#### Error Handling:
+```swift
+public enum OpenAIError: Error, LocalizedError {
+    case invalidAPIKey
+    case rateLimitExceeded
+    case serverError(statusCode: Int)
+    case invalidRequest(String)
+    case networkError(Error)
+    case decodingError(Error)
+    
+    public var errorDescription: String? {
+        // Provide user-friendly error messages
+    }
+}
+```
+
+### 4. Response Service Implementation Guidelines
+
+#### Response Service Pattern:
+```swift
+public protocol ResponseServiceProtocol {
+    func processResponse<T: Codable>(_ data: Data, response: HTTPURLResponse, type: T.Type) async throws -> APIResponse<T>
+    func processStreamingResponse<T: Codable>(_ data: AsyncSequence<Data, Error>, type: T.Type) -> AsyncThrowingStream<StreamingResponseChunk<T>, Error>
+    func validateResponse(_ response: HTTPURLResponse) throws
+    func extractMetadata(from response: HTTPURLResponse) -> ResponseMetadata
+}
+
+public class ResponseService: ResponseServiceProtocol {
+    private let parser: ResponseParser
+    private let validator: ResponseValidator
+    private let cache: ResponseCache?
+    
+    public init(parser: ResponseParser = DefaultResponseParser(), 
+                validator: ResponseValidator = DefaultResponseValidator(),
+                cache: ResponseCache? = nil) {
+        self.parser = parser
+        self.validator = validator
+        self.cache = cache
+    }
+    
+    public func processResponse<T: Codable>(_ data: Data, response: HTTPURLResponse, type: T.Type) async throws -> APIResponse<T> {
+        try validateResponse(response)
+        let parsedData = try await parser.parse(data, as: type)
+        let metadata = extractMetadata(from: response)
+        
+        let apiResponse = APIResponse(
+            data: parsedData,
+            metadata: metadata,
+            statusCode: response.statusCode,
+            headers: response.allHeaderFields as? [String: String] ?? [:]
+        )
+        
+        // Cache if available
+        await cache?.store(response: apiResponse, for: data)
+        
+        return apiResponse
+    }
+}
+```
+
+#### Streaming Response Service:
+```swift
+public class StreamingResponseService {
+    private let parser: StreamingResponseParser
+    
+    public init(parser: StreamingResponseParser = DefaultStreamingResponseParser()) {
+        self.parser = parser
+    }
+    
+    public func processStream<T: Codable>(_ stream: AsyncSequence<Data, Error>, type: T.Type) -> AsyncThrowingStream<StreamingResponseChunk<T>, Error> {
+        AsyncThrowingStream { continuation in
+            Task {
+                var sequenceNumber = 0
+                do {
+                    for try await chunk in stream {
+                        let parsedChunk = try parser.parseChunk(chunk, as: type)
+                        let responseChunk = StreamingResponseChunk(
+                            chunk: parsedChunk,
+                            isComplete: parser.isComplete(chunk),
+                            sequenceNumber: sequenceNumber
+                        )
+                        continuation.yield(responseChunk)
+                        sequenceNumber += 1
+                        
+                        if responseChunk.isComplete {
+                            continuation.finish()
+                            break
+                        }
+                    }
+                } catch {
+                    continuation.finish(throwing: error)
+                }
+            }
+        }
+    }
+}
+```
+
+### 5. API Implementation Guidelines
+
+#### Configuration Pattern:
+```swift
+public protocol OpenAIConfiguration {
+    var baseURL: URL { get }
+    var headers: [String: String] { get }
+}
+
+public struct AzureOpenAIConfiguration: OpenAIConfiguration {
+    public let endpoint: String
+    public let apiKey: String
+    public let deploymentName: String
+    public let apiVersion: String
+}
+
+public struct OpenAIConfiguration: OpenAIConfiguration {
+    public let apiKey: String
+    public let organization: String?
+}
+```
+
+#### Client Pattern:
+```swift
+public class SwiftAzureOpenAI {
+    private let configuration: OpenAIConfiguration
+    private let httpClient: HTTPClient
+    private let responseService: ResponseService
+    
+    public init(configuration: OpenAIConfiguration) {
+        self.configuration = configuration
+        self.httpClient = HTTPClient(configuration: configuration)
+        self.responseService = ResponseService(httpClient: httpClient)
+    }
+    
+    // Response handling methods
+    public func processResponse<T: Codable>(from request: APIRequest) async throws -> APIResponse<T>
+    
+    // Streaming response methods
+    public func processStreamingResponse<T: Codable>(from request: APIRequest) -> AsyncThrowingStream<APIResponse<T>, Error>
+    
+    // Generic response processing
+    public func handleResponse(data: Data, response: URLResponse) throws -> ProcessedResponse
+}
+```
+
+#### Response Model Patterns:
+```swift
+// Generic API Response wrapper
+public struct APIResponse<T: Codable>: Codable {
+    public let data: T
+    public let metadata: ResponseMetadata
+    public let statusCode: Int
+    public let headers: [String: String]
+}
+
+// Response metadata
+public struct ResponseMetadata: Codable {
+    public let requestId: String?
+    public let timestamp: Date
+    public let processingTime: TimeInterval?
+    public let rateLimit: RateLimitInfo?
+}
+
+// Rate limiting information
+public struct RateLimitInfo: Codable {
+    public let remaining: Int?
+    public let resetTime: Date?
+    public let limit: Int?
+    
+    enum CodingKeys: String, CodingKey {
+        case remaining = "x-ratelimit-remaining"
+        case resetTime = "x-ratelimit-reset"
+        case limit = "x-ratelimit-limit"
+    }
+}
+
+// Streaming response chunk
+public struct StreamingResponseChunk<T: Codable>: Codable {
+    public let chunk: T
+    public let isComplete: Bool
+    public let sequenceNumber: Int?
+}
+
+// Error response model
+public struct ErrorResponse: Codable {
+    public let error: APIErrorDetail
+    
+    public struct APIErrorDetail: Codable {
+        public let message: String
+        public let type: String?
+        public let code: String?
+        public let param: String?
+    }
+}
+```
+
+### 5. Networking Guidelines
+
+#### HTTP Client Implementation:
+- Use `URLSession` for all network requests
+- Implement proper retry logic with exponential backoff
+- Support custom timeouts and request configurations
+- Handle HTTP status codes appropriately
+- Implement request/response logging for debugging
+
+#### Response Processing:
+- Implement generic response processing for any API endpoint
+- Parse and validate response headers for metadata extraction
+- Handle different content types (JSON, text, binary)
+- Extract rate limiting information from response headers
+- Support response caching with appropriate cache policies
+
+#### Streaming Support:
+- Use `AsyncThrowingStream` for streaming responses
+- Parse Server-Sent Events (SSE) format for streaming
+- Handle streaming connection errors gracefully
+- Support cancellation of streaming requests
+- Implement proper backpressure handling for streaming data
+
+### 6. Testing Requirements
+
+#### Unit Testing:
+- Test all public APIs with comprehensive test cases
+- Mock network responses for reliable testing
+- Test error handling scenarios
+- Use dependency injection for testability
+
+#### Integration Testing:
+- Test with actual Azure OpenAI endpoints (when credentials available)
+- Test rate limiting and retry mechanisms
+- Validate streaming functionality
+- Test different model configurations
+
+### 7. Documentation Standards
+
+#### Code Documentation:
+- Use Swift DocC for API documentation
+- Document all public types, properties, and methods
+- Provide usage examples in documentation comments
+- Include parameter descriptions and return value documentation
+
+#### Example Usage:
+```swift
+/// Processes an API response and returns a structured response object.
+/// 
+/// - Parameter request: The API request to process
+/// - Returns: A structured API response containing data and metadata
+/// - Throws: `OpenAIError` if the request fails or response processing fails
+public func processResponse<T: Codable>(from request: APIRequest) async throws -> APIResponse<T>
+
+/// Processes a streaming API response.
+/// 
+/// - Parameter request: The API request for streaming data
+/// - Returns: An async stream of response chunks
+/// - Throws: `OpenAIError` if the request fails
+public func processStreamingResponse<T: Codable>(from request: APIRequest) -> AsyncThrowingStream<StreamingResponseChunk<T>, Error>
+```
+
+### 8. Security Considerations
+
+#### API Key Management:
+- Never hardcode API keys in source code
+- Support environment variable configuration
+- Provide secure storage recommendations (Keychain for iOS/macOS)
+- Implement API key validation
+
+#### Request Security:
+- Use HTTPS for all API requests
+- Validate SSL certificates
+- Implement proper timeout handling
+- Log requests/responses securely (mask sensitive data)
+
+### 9. Performance Optimization
+
+#### Memory Management:
+- Use structs for data models to leverage value semantics
+- Implement proper memory management for streaming responses
+- Avoid retain cycles in async operations
+- Use weak references where appropriate
+
+#### Network Optimization:
+- Implement request deduplication where applicable
+- Use appropriate HTTP caching strategies
+- Optimize JSON encoding/decoding performance
+- Implement connection pooling for multiple requests
+
+### 10. Platform Support
+
+#### Apple Ecosystem:
+- Support iOS 13.0+, macOS 10.15+, watchOS 6.0+, tvOS 13.0+
+- Use availability annotations for platform-specific features
+- Test on all supported platforms
+- Optimize for different device capabilities
+
+#### Swift Package Manager:
+- Maintain clean Package.swift with proper dependencies
+- Use semantic versioning
+- Support multiple Swift versions where possible
+- Minimize external dependencies
+
+### 11. Code Style and Formatting
+
+#### SwiftLint Configuration:
+- Use SwiftLint for consistent code style
+- Follow Swift API Design Guidelines
+- Use meaningful variable and function names
+- Maintain consistent indentation (4 spaces)
+- Keep line length under 120 characters
+
+#### File Organization:
+- One public type per file (with related types as nested)
+- Group related functionality together
+- Use MARK comments for code organization
+- Import only necessary modules
+
+### 12. Versioning and Compatibility
+
+#### API Versioning:
+- Support multiple Azure OpenAI API versions
+- Maintain backward compatibility when possible
+- Document breaking changes clearly
+- Use deprecation warnings for outdated APIs
+
+#### Response Compatibility:
+- Support various Azure OpenAI API response formats
+- Handle different response content types (JSON, text, binary, streaming)
+- Parse response headers consistently across different endpoints
+- Validate response structure and provide meaningful error messages
+- Support response transformation and filtering
+
+## Development Workflow
+
+1. **Before adding new features:**
+   - Review Azure OpenAI API documentation
+   - Design Swift-idiomatic interfaces
+   - Write comprehensive tests
+   - Update documentation
+
+2. **Code review checklist:**
+   - Swift API Design Guidelines compliance
+   - Proper error handling
+   - Comprehensive test coverage
+   - Documentation completeness
+   - Security considerations
+
+3. **Release process:**
+   - Run full test suite
+   - Update version numbers
+   - Update documentation
+   - Create release notes
+
+## References
+
+- [Azure OpenAI API Documentation](https://github.com/MicrosoftDocs/azure-ai-docs/blob/main/articles/ai-foundry/openai/how-to/responses.md)
+- [Swift API Design Guidelines](https://swift.org/documentation/api-design-guidelines/)
+- [Swift Package Manager Documentation](https://swift.org/package-manager/)
+- [OpenAI API Reference](https://platform.openai.com/docs/api-reference)
