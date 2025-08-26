@@ -7,20 +7,32 @@ final class ConfigurationTests: XCTestCase {
             endpoint: "https://myresource.openai.azure.com",
             apiKey: "test-key",
             deploymentName: "gpt-4o-mini",
-            apiVersion: "2024-10-21"
+            apiVersion: "preview"
         )
 
         let baseURL = config.baseURL
         XCTAssertEqual(baseURL.scheme, "https")
         XCTAssertEqual(baseURL.host, "myresource.openai.azure.com")
-        XCTAssertEqual(baseURL.path, "/openai/responses")
+        XCTAssertEqual(baseURL.path, "/openai/v1/responses")
 
         let components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)
         let apiVersion = components?.queryItems?.first(where: { $0.name == "api-version" })?.value
-        XCTAssertEqual(apiVersion, "2024-10-21")
+        XCTAssertEqual(apiVersion, "preview")
 
         XCTAssertEqual(config.headers["api-key"], "test-key")
         XCTAssertEqual(config.headers["Content-Type"], "application/json")
+    }
+
+    func testAzureOpenAIConfigurationDefaultAPIVersion() {
+        let config = AzureOpenAIConfiguration(
+            endpoint: "https://myresource.openai.azure.com",
+            apiKey: "test-key",
+            deploymentName: "gpt-4o-mini"
+        )
+
+        let components = URLComponents(url: config.baseURL, resolvingAgainstBaseURL: false)
+        let apiVersion = components?.queryItems?.first(where: { $0.name == "api-version" })?.value
+        XCTAssertEqual(apiVersion, "preview")
     }
 
     func testOpenAIServiceConfigurationHeaders() {

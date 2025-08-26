@@ -181,7 +181,7 @@ func processStream(chunks: AsyncThrowingStream<Data, Error>) async throws {
 This package provides data models only. You can use any HTTP client (e.g., `URLSession`) to call either Azure OpenAI or OpenAI endpoints.
 
 - **Azure OpenAI (Responses API)**
-  - Endpoint: `https://{resource}.openai.azure.com/openai/responses?api-version=2024-10-21`
+  - Endpoint: `https://{resource}.openai.azure.com/openai/v1/responses?api-version=preview`
   - Headers: `api-key: <AZURE_API_KEY>`, `Content-Type: application/json`
   - Body: `ResponsesRequest` encoded as JSON
 
