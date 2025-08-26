@@ -406,7 +406,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - 📖 Documentation: project README (this file)
 - 🐛 Issues: [GitHub Issues](https://github.com/ytthuan/SwiftAzureOpenAI/issues)
-- 📚 Azure OpenAI Responses API: [Official Documentation](https://docs.microsoft.com/en-us/azure/ai-services/openai/reference-preview-latest#create-response)
+- 📚 Azure OpenAI Responses API: [Official Documentation](https://learn.microsoft.com/en-us/azure/ai-services/openai/reference-preview-latest#create-response)
 
 ---
 
