@@ -37,7 +37,7 @@ The Responses API supports a wide range of models including:
 - `gpt-3.5-turbo` series
 - And other models as they become available
 
-> **Note:** Model availability varies by region. Check the [Azure OpenAI models documentation](https://docs.microsoft.com/en-us/azure/ai-services/openai/concepts/models) for the latest model and region availability.
+> **Note:** Model availability varies by region. Check the [Azure OpenAI models documentation](https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/models) for the latest model and region availability.
 
 ## Installation
 
