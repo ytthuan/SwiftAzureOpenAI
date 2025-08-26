@@ -5,10 +5,10 @@ public final class SwiftAzureOpenAI {
     private let httpClient: HTTPClient
     private let responseService: ResponseService
 
-    public init(configuration: OpenAIConfiguration) {
+    public init(configuration: OpenAIConfiguration, cache: ResponseCache? = nil) {
         self.configuration = configuration
         self.httpClient = HTTPClient(configuration: configuration)
-        self.responseService = ResponseService()
+        self.responseService = ResponseService(cache: cache)
     }
 
     public func processResponse<T: Codable>(from request: APIRequest) async throws -> APIResponse<T> {
