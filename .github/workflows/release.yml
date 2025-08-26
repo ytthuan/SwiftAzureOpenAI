@@ -1,0 +1,206 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+      - '[0-9]+.[0-9]+.[0-9]+-*'
+
+jobs:
+  validate-release:
+    name: Validate Release
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Setup Swift
+      uses: swift-actions/setup-swift@v2
+      with:
+        swift-version: '6.1.2'
+    
+    - name: Validate package
+      run: |
+        echo "Validating package for release..."
+        swift package describe
+        swift build --configuration release
+        swift test --configuration release
+        echo "✅ Package validation successful"
+    
+    - name: Extract version from tag
+      id: version
+      run: |
+        VERSION=${GITHUB_REF#refs/tags/}
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "Release version: $VERSION"
+
+  test-release:
+    name: Test Release Builds
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        swift-version: ['6.1.2']
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Setup Swift (Linux)
+      if: runner.os == 'Linux'
+      uses: swift-actions/setup-swift@v2
+      with:
+        swift-version: ${{ matrix.swift-version }}
+    
+    - name: Select Xcode (macOS)
+      if: runner.os == 'macOS'
+      run: sudo xcode-select -s /Applications/Xcode_15.4.app
+    
+    - name: Build release
+      run: swift build --configuration release
+    
+    - name: Test release
+      run: swift test --configuration release
+
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [validate-release, test-release]
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Extract version from tag
+      id: version
+      run: |
+        VERSION=${GITHUB_REF#refs/tags/}
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "Release version: $VERSION"
+    
+    - name: Generate changelog
+      id: changelog
+      run: |
+        echo "Generating changelog for version ${{ steps.version.outputs.version }}..."
+        
+        # Get the previous tag
+        PREV_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
+        
+        if [ -n "$PREV_TAG" ]; then
+          echo "Previous tag: $PREV_TAG"
+          CHANGELOG=$(git log --pretty=format:"- %s" $PREV_TAG..HEAD)
+        else
+          echo "No previous tag found, using all commits"
+          CHANGELOG=$(git log --pretty=format:"- %s")
+        fi
+        
+        # Prepare changelog for GitHub release
+        echo "changelog<<EOF" >> $GITHUB_OUTPUT
+        echo "## Changes in ${{ steps.version.outputs.version }}" >> $GITHUB_OUTPUT
+        echo "" >> $GITHUB_OUTPUT
+        if [ -n "$CHANGELOG" ]; then
+          echo "$CHANGELOG" >> $GITHUB_OUTPUT
+        else
+          echo "- Initial release" >> $GITHUB_OUTPUT
+        fi
+        echo "" >> $GITHUB_OUTPUT
+        echo "## Package Information" >> $GITHUB_OUTPUT
+        echo "- Swift Package Manager compatible" >> $GITHUB_OUTPUT
+        echo "- Supports iOS 13.0+, macOS 10.15+, watchOS 6.0+, tvOS 13.0+" >> $GITHUB_OUTPUT
+        echo "- Swift 6.1+ required" >> $GITHUB_OUTPUT
+        echo "- Zero external dependencies" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+    
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ steps.version.outputs.version }}
+        release_name: SwiftAzureOpenAI ${{ steps.version.outputs.version }}
+        body: ${{ steps.changelog.outputs.changelog }}
+        draft: false
+        prerelease: ${{ contains(steps.version.outputs.version, '-') }}
+
+  validate-installation:
+    name: Validate Installation
+    runs-on: ${{ matrix.os }}
+    needs: create-release
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    
+    steps:
+    - name: Setup Swift (Linux)
+      if: runner.os == 'Linux'
+      uses: swift-actions/setup-swift@v2
+      with:
+        swift-version: '6.1.2'
+    
+    - name: Select Xcode (macOS)
+      if: runner.os == 'macOS'
+      run: sudo xcode-select -s /Applications/Xcode_15.4.app
+    
+    - name: Create test project
+      run: |
+        mkdir test-installation
+        cd test-installation
+        swift package init --type executable --name TestInstallation
+    
+    - name: Add SwiftAzureOpenAI dependency
+      run: |
+        cd test-installation
+        cat > Package.swift << EOF
+        // swift-tools-version: 6.1
+        import PackageDescription
+        
+        let package = Package(
+            name: "TestInstallation",
+            dependencies: [
+                .package(url: "https://github.com/ytthuan/SwiftAzureOpenAI", from: "${GITHUB_REF#refs/tags/}")
+            ],
+            targets: [
+                .executableTarget(
+                    name: "TestInstallation",
+                    dependencies: ["SwiftAzureOpenAI"]
+                )
+            ]
+        )
+        EOF
+    
+    - name: Create test code
+      run: |
+        cd test-installation
+        cat > Sources/TestInstallation/main.swift << EOF
+        import SwiftAzureOpenAI
+        
+        // Test basic functionality
+        let config = AzureOpenAIConfiguration(
+            endpoint: "https://test.openai.azure.com",
+            apiKey: "test-key",
+            deploymentName: "test-deployment"
+        )
+        
+        let request = ResponsesRequest(
+            model: "test-model",
+            input: [
+                ResponseMessage(
+                    role: .user,
+                    content: [.inputText(.init(text: "Hello, world!"))]
+                )
+            ],
+            maxOutputTokens: 100
+        )
+        
+        print("✅ SwiftAzureOpenAI imported and basic functionality working")
+        EOF
+    
+    - name: Test build
+      run: |
+        cd test-installation
+        swift build
+        swift run TestInstallation

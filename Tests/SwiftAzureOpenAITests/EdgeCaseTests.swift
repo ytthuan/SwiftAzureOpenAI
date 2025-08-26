@@ -65,7 +65,7 @@ final class EdgeCaseTests: XCTestCase {
     
     func testJSONValueWithLargeNumbers() throws {
         let largeNumbers: JSONValue = .object([
-            "large_int": .number(9223372036854775000), // Large number that can be represented as Double
+            "large_int": .number(9223372036854774784), // Large number that can be represented as Double
             "large_double": .number(1.7976931348623157e+308), // Close to Double.max
             "small_double": .number(2.2250738585072014e-308) // Close to Double.min
         ])
