@@ -9,6 +9,11 @@ public enum OutputContentPart: Codable, Equatable {
         public let type: String = "output_text"
         public let text: String
 
+        enum CodingKeys: String, CodingKey {
+            case type
+            case text
+        }
+
         public init(text: String) {
             self.text = text
         }
