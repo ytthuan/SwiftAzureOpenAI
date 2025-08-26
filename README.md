@@ -4,22 +4,40 @@ A Swift package focused on the Azure OpenAI/OpenAI Responses API for iOS, macOS,
 
 ## Overview
 
-SwiftAzureOpenAI provides Swift-native models and utilities for working with the Responses API as described in Microsoft's Azure OpenAI documentation. It emphasizes strongly typed request/response models, response metadata extraction, and streaming-friendly types.
+SwiftAzureOpenAI provides Swift-native models and utilities for working with the Azure OpenAI Responses API. The Responses API is a stateful API from Azure OpenAI that brings together the best capabilities from the chat completions and assistants API in one unified experience.
+
+This package emphasizes strongly typed request/response models, response metadata extraction, and streaming-friendly types, designed specifically for Apple platforms and Swift development.
 
 ## Features
 
-- 🚀 **Responses API-first**: Unified request/response models aligned with the Responses API
+- 🚀 **Azure OpenAI Responses API**: Unified request/response models aligned with the latest Azure OpenAI Responses API
 - 🔄 **Async/Await-ready**: Modern Swift concurrency-friendly data types
 - 🛡️ **Typed errors**: Clear error modeling with `OpenAIError` and `ErrorResponse`
 - 🧩 **Structured content**: Input and output content parts (text, images)
-- 📊 **Metadata extraction-ready**: Models for response metadata and rate limits
+- 📊 **Metadata extraction**: Built-in support for response metadata and rate limits
+- 🌐 **Cross-platform**: Works with both Azure OpenAI and OpenAI services
 - 📦 **Swift Package Manager**: Easy integration with SPM
+- 🔐 **Secure**: Support for Azure authentication patterns
 
 ## Requirements
 
 - iOS 13.0+ / macOS 10.15+ / watchOS 6.0+ / tvOS 13.0+
 - Xcode 15.0+
 - Swift 5.9+
+
+## API Support
+
+This package is designed for the Azure OpenAI Responses API (Preview) and OpenAI Responses API. The Responses API provides a unified experience that combines the best capabilities from chat completions and assistants APIs.
+
+### Supported Models
+
+The Responses API supports a wide range of models including:
+- `gpt-4o` series (including `gpt-4o-mini`)
+- `gpt-4` series
+- `gpt-3.5-turbo` series
+- And other models as they become available
+
+> **Note:** Model availability varies by region. Check the [Azure OpenAI models documentation](https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/models) for the latest model and region availability.
 
 ## Installation
 
@@ -59,6 +77,8 @@ import SwiftAzureOpenAI
 
 ### Build a Responses API request
 
+Create a request following the Azure OpenAI Responses API specification:
+
 ```swift
 import SwiftAzureOpenAI
 
@@ -71,13 +91,15 @@ let request = ResponsesRequest(
         ),
         ResponseMessage(
             role: .user,
-            content: [ .inputText(.init(text: "Write a haiku about Swift.")) ]
+            content: [ .inputText(.init(text: "Write a haiku about Swift programming.")) ]
         )
     ],
     maxOutputTokens: 200,
     temperature: 0.7
 )
 ```
+
+The `input` parameter uses an array of `ResponseMessage` objects, each containing structured content parts. This unified approach replaces the separate `messages` parameter from the legacy chat completions API.
 
 ### Decode a Responses API response
 
@@ -147,63 +169,158 @@ func processStream(chunks: AsyncThrowingStream<Data, Error>) async throws {
 
 ## Data Models
 
-- `ResponsesRequest`
-  - `model: String?` — Azure deployment or OpenAI model
-  - `input: [ResponseMessage]` — messages with structured content parts
-  - `maxOutputTokens: Int?`, `temperature: Double?`, `topP: Double?`, `tools: [ToolDefinition]?`
-- `ResponseMessage`
-  - `role: MessageRole` — `.system | .user | .assistant | .tool`
-  - `content: [InputContentPart]`
-- `InputContentPart`
-  - `.inputText(InputText)` — `{ type: "input_text", text }`
-  - `.inputImage(InputImage)` — `{ type: "input_image", image_url }`
-- `ResponsesResponse`
-  - `id: String?`, `model: String?`, `created: Int?`
-  - `output: [ResponseOutput]` — array of content for the assistant's output
-  - `usage: TokenUsage?` — token accounting
-- `ResponseOutput`
-  - `content: [OutputContentPart]`, `role: String?`
-- `OutputContentPart`
-  - `.outputText(OutputText)` — `{ type: "output_text", text }`
-- `TokenUsage`
-  - `inputTokens`, `outputTokens`, `totalTokens`
-- `APIResponse<T>`
-  - `data: T`, `metadata: ResponseMetadata`, `statusCode: Int`, `headers: [String: String]`
-- `ResponseMetadata`
-  - `requestId: String?`, `timestamp: Date`, `processingTime: TimeInterval?`, `rateLimit: RateLimitInfo?`
-- `RateLimitInfo`
+The Responses API uses a unified data model structure that consolidates the best features from chat completions and assistants APIs:
+
+### Request Models
+
+- **`ResponsesRequest`** - Main request payload for the Responses API
+  - `model: String?` — Azure deployment name or OpenAI model name
+  - `input: [ResponseMessage]` — Unified message array with structured content parts
+  - `maxOutputTokens: Int?` — Maximum tokens to generate in the response
+  - `temperature: Double?`, `topP: Double?` — Sampling parameters
+  - `tools: [ToolDefinition]?` — Optional tool definitions for function calling
+
+- **`ResponseMessage`** - Individual message in the conversation
+  - `role: MessageRole` — Message role: `.system`, `.user`, `.assistant`, or `.tool`
+  - `content: [InputContentPart]` — Array of structured content parts
+
+- **`InputContentPart`** - Structured input content
+  - `.inputText(InputText)` — Text content: `{ type: "input_text", text: "..." }`
+  - `.inputImage(InputImage)` — Image content: `{ type: "input_image", image_url: "..." }`
+
+### Response Models
+
+- **`ResponsesResponse`** - Main response payload from the Responses API
+  - `id: String?` — Unique response identifier
+  - `model: String?` — Model used for the response
+  - `created: Int?` — Creation timestamp
+  - `output: [ResponseOutput]` — Array of output content from the assistant
+  - `usage: TokenUsage?` — Token consumption details
+
+- **`ResponseOutput`** - Assistant's output content
+  - `content: [OutputContentPart]` — Array of output content parts
+  - `role: String?` — Output role (typically "assistant")
+
+- **`OutputContentPart`** - Structured output content
+  - `.outputText(OutputText)` — Text output: `{ type: "output_text", text: "..." }`
+
+### Supporting Models
+
+- **`TokenUsage`** - Token consumption tracking
+  - `inputTokens: Int?`, `outputTokens: Int?`, `totalTokens: Int?`
+
+- **`APIResponse<T>`** - Wrapper for HTTP response data
+  - `data: T` — Decoded response payload
+  - `metadata: ResponseMetadata` — Request/response metadata
+  - `statusCode: Int` — HTTP status code
+  - `headers: [String: String]` — Response headers
+
+- **`ResponseMetadata`** - Request/response tracking
+  - `requestId: String?` — Unique request identifier
+  - `timestamp: Date` — Response timestamp
+  - `processingTime: TimeInterval?` — Processing duration
+  - `rateLimit: RateLimitInfo?` — Rate limit information
+
+- **`RateLimitInfo`** - Rate limiting details
   - `remaining: Int?`, `resetTime: Date?`, `limit: Int?`
-- `OpenAIError`, `ErrorResponse`
+
+- **`OpenAIError`**, **`ErrorResponse`** - Error handling
   - Typed errors for network, decoding, and server-reported issues
 
 ## Usage with Azure OpenAI and OpenAI
 
-This package provides data models only. You can use any HTTP client (e.g., `URLSession`) to call either Azure OpenAI or OpenAI endpoints.
+This package provides data models and configurations for both Azure OpenAI and OpenAI services. You can use any HTTP client (e.g., `URLSession`) to call the respective endpoints.
 
-- **Azure OpenAI (Responses API)**
-  - Endpoint: `https://{resource}.openai.azure.com/openai/v1/responses?api-version=preview`
-  - Headers: `api-key: <AZURE_API_KEY>`, `Content-Type: application/json`
-  - Body: `ResponsesRequest` encoded as JSON
+### Azure OpenAI Configuration
 
-- **OpenAI (Responses API)**
-  - Endpoint: `https://api.openai.com/v1/responses`
-  - Headers: `Authorization: Bearer <OPENAI_API_KEY>`, `Content-Type: application/json`
-  - Body: `ResponsesRequest` encoded as JSON
-
-Example request sending with `URLSession` (sketch):
+For Azure OpenAI, use the Responses API endpoint with your resource configuration:
 
 ```swift
-let json = try JSONEncoder().encode(request)
-var url = URL(string: "https://api.openai.com/v1/responses")!
-var urlRequest = URLRequest(url: url)
-urlRequest.httpMethod = "POST"
-urlRequest.httpBody = json
-urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
-urlRequest.setValue("Bearer YOUR_OPENAI_API_KEY", forHTTPHeaderField: "Authorization")
+import SwiftAzureOpenAI
 
-let (data, response) = try await URLSession.shared.data(for: urlRequest)
-let httpResponse = response as! HTTPURLResponse
-let apiResponse: APIResponse<ResponsesResponse> = try handleResponse(data: data, httpResponse: httpResponse)
+// Configure Azure OpenAI
+let azureConfig = AzureOpenAIConfiguration(
+    endpoint: "https://your-resource.openai.azure.com",
+    apiKey: "your-azure-api-key",
+    deploymentName: "gpt-4o-mini", // Your deployment name
+    apiVersion: "preview" // Latest preview API version for Responses API
+)
+
+// Build your request
+let request = ResponsesRequest(
+    model: azureConfig.deploymentName,
+    input: [
+        ResponseMessage(
+            role: .user,
+            content: [.inputText(.init(text: "Hello, Azure OpenAI!"))]
+        )
+    ],
+    maxOutputTokens: 100
+)
+```
+
+**Azure OpenAI Responses API Endpoint:**
+- URL: `https://{resource}.openai.azure.com/openai/v1/responses?api-version=preview`
+- Headers: `api-key: <AZURE_API_KEY>`, `Content-Type: application/json`
+- Body: `ResponsesRequest` encoded as JSON
+
+### OpenAI Configuration
+
+For OpenAI, use the standard Responses API endpoint:
+
+```swift
+// Configure OpenAI
+let openaiConfig = OpenAIServiceConfiguration(
+    apiKey: "sk-your-openai-api-key",
+    organization: "org-your-organization" // Optional
+)
+```
+
+**OpenAI Responses API Endpoint:**
+- URL: `https://api.openai.com/v1/responses`
+- Headers: `Authorization: Bearer <OPENAI_API_KEY>`, `Content-Type: application/json`
+- Body: `ResponsesRequest` encoded as JSON
+
+### Example HTTP Request
+
+Here's a complete example using `URLSession` with Azure OpenAI:
+
+```swift
+import Foundation
+import SwiftAzureOpenAI
+
+func sendResponsesRequest() async throws -> APIResponse<ResponsesResponse> {
+    let config = AzureOpenAIConfiguration(
+        endpoint: "https://your-resource.openai.azure.com",
+        apiKey: "your-api-key",
+        deploymentName: "gpt-4o-mini"
+    )
+    
+    let request = ResponsesRequest(
+        model: config.deploymentName,
+        input: [
+            ResponseMessage(
+                role: .user,
+                content: [.inputText(.init(text: "Hello!"))]
+            )
+        ]
+    )
+    
+    let json = try JSONEncoder().encode(request)
+    var urlRequest = URLRequest(url: config.baseURL)
+    urlRequest.httpMethod = "POST"
+    urlRequest.httpBody = json
+    
+    // Apply configuration headers
+    for (key, value) in config.headers {
+        urlRequest.setValue(value, forHTTPHeaderField: key)
+    }
+    
+    let (data, response) = try await URLSession.shared.data(for: urlRequest)
+    let httpResponse = response as! HTTPURLResponse
+    
+    return try handleResponse(data: data, httpResponse: httpResponse)
+}
 ```
 
 ## Error Handling
@@ -224,17 +341,61 @@ If the server returns a structured error payload, decode into `ErrorResponse` an
 
 ## Testing
 
+### Running Tests
+
 ```bash
 swift test
 ```
 
-For live testing, export environment variables for your client code (not provided by this package), then run your tests. Example:
+### Live API Testing
+
+For live testing with Azure OpenAI or OpenAI services, you can set environment variables and implement client code using this package:
 
 ```bash
+# Azure OpenAI
 export AZURE_OPENAI_ENDPOINT="https://your-resource.openai.azure.com"
-export AZURE_OPENAI_API_KEY="your-azure-key"
-export AZURE_OPENAI_DEPLOYMENT="your-deployment"
-export OPENAI_API_KEY="your-openai-key"
+export AZURE_OPENAI_API_KEY="your-azure-api-key"
+export AZURE_OPENAI_DEPLOYMENT="your-deployment-name"
+
+# Or OpenAI
+export OPENAI_API_KEY="sk-your-openai-api-key"
+```
+
+Then create a simple test client:
+
+```swift
+import SwiftAzureOpenAI
+import Foundation
+
+// Example test function
+func testAzureOpenAI() async throws {
+    guard let endpoint = ProcessInfo.processInfo.environment["AZURE_OPENAI_ENDPOINT"],
+          let apiKey = ProcessInfo.processInfo.environment["AZURE_OPENAI_API_KEY"],
+          let deployment = ProcessInfo.processInfo.environment["AZURE_OPENAI_DEPLOYMENT"] else {
+        print("Azure OpenAI environment variables not set")
+        return
+    }
+    
+    let config = AzureOpenAIConfiguration(
+        endpoint: endpoint,
+        apiKey: apiKey,
+        deploymentName: deployment
+    )
+    
+    let request = ResponsesRequest(
+        model: deployment,
+        input: [
+            ResponseMessage(
+                role: .user,
+                content: [.inputText(.init(text: "Hello, Azure OpenAI!"))]
+            )
+        ],
+        maxOutputTokens: 50
+    )
+    
+    // Implement your HTTP client logic here
+    print("Request configured successfully")
+}
 ```
 
 ## License
@@ -244,8 +405,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Support
 
 - 📖 Documentation: project README (this file)
-- 🐛 Issues: GitHub Issues
+- 🐛 Issues: [GitHub Issues](https://github.com/ytthuan/SwiftAzureOpenAI/issues)
+- 📚 Azure OpenAI Responses API: [Official Documentation](https://learn.microsoft.com/en-us/azure/ai-services/openai/reference-preview-latest#create-response)
 
 ---
 
-Note: This package is community-maintained and not officially affiliated with OpenAI or Microsoft. It focuses on data models aligned to the Responses API specification.
+**Note:** This package is community-maintained and not officially affiliated with OpenAI or Microsoft. It provides Swift-native data models specifically designed for the Azure OpenAI Responses API and OpenAI Responses API. The Responses API represents the latest unified approach that combines the best capabilities from chat completions and assistants APIs.
