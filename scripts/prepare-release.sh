@@ -77,7 +77,7 @@ fi
 # 8. Package summary
 echo -e "\n8. Package Summary:"
 echo "   • Name: SwiftAzureOpenAI"
-echo "   • Swift Tools Version: 6.1"
+echo "   • Swift Tools Version: 6.0"
 echo "   • Dependencies: None"
 echo "   • Test Coverage: $TEST_COUNT tests"
 echo "   • Platforms: iOS 13.0+, macOS 10.15+, watchOS 6.0+, tvOS 13.0+"

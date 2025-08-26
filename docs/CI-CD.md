@@ -14,7 +14,7 @@ This package includes comprehensive CI/CD automation through GitHub Actions to e
 
 **Jobs:**
 - **test-macos**: Tests on macOS with Xcode 15.4
-- **test-linux**: Tests on Ubuntu with Swift 6.1.2
+- **test-linux**: Tests on Ubuntu with Swift 6.0.2
 - **validate-package**: Validates package structure and dependencies
 - **code-quality**: Checks for warnings and code quality
 
@@ -86,7 +86,7 @@ This script validates:
 ### Build Quality
 - **Zero warnings** requirement
 - **No external dependencies** policy
-- **Swift 6.1+ compatibility**
+- **Swift 6.0+ compatibility**
 - **Cross-platform compilation**
 
 ### Code Quality
