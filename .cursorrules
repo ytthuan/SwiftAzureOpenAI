@@ -18,7 +18,7 @@ This repository contains SwiftAzureOpenAI, a Swift package providing seamless in
 - **Primary Focus**: Implement comprehensive response handling and processing services
 - Support both Azure OpenAI Service and direct OpenAI API endpoints
 - Implement proper authentication headers for Azure (api-key) and OpenAI (Authorization: Bearer)
-- Use correct API versioning for Azure endpoints (e.g., api-version=2024-02-01)
+- Use correct API versioning for Azure endpoints (e.g., api-version=2024-10-21)
 - **Core Feature**: Advanced response parsing, validation, and transformation
 - Handle Azure-specific deployment names and endpoints
 - Provide response caching and optimization services

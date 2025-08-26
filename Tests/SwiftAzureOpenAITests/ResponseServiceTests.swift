@@ -1,4 +1,7 @@
 import XCTest
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 @testable import SwiftAzureOpenAI
 
 final class ResponseServiceTests: XCTestCase {
@@ -17,7 +20,7 @@ final class ResponseServiceTests: XCTestCase {
         let meta = svc.extractMetadata(from: response)
 
         XCTAssertEqual(meta.requestId, "req_123")
-        XCTAssertEqual(meta.processingTime, 0.25, accuracy: 0.0001)
+        XCTAssertEqual(meta.processingTime ?? 0, 0.25, accuracy: 0.0001)
         XCTAssertEqual(meta.rateLimit?.remaining, 99)
         XCTAssertEqual(meta.rateLimit?.limit, 100)
         XCTAssertNotNil(meta.rateLimit?.resetTime)
@@ -54,5 +57,35 @@ final class ResponseServiceTests: XCTestCase {
         let dataSameKey = data // identical bytes act as key
         let second: APIResponse<Dummy> = try await svc.processResponse(dataSameKey, response: http, type: Dummy.self)
         XCTAssertEqual(second.data, Dummy(a: 1))
+    }
+
+    func testGetResponseIdFromHeaders() async throws {
+        let headers = [
+            "x-request-id": "req_abc123",
+            "content-type": "application/json"
+        ]
+        let url = URL(string: "https://example.com")!
+        let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: headers)!
+        
+        let svc = ResponseService()
+        let meta = svc.extractMetadata(from: response)
+        
+        // Verify request ID is extracted
+        XCTAssertEqual(meta.requestId, "req_abc123")
+    }
+
+    func testGetResponseIdFromAzureHeaders() async throws {
+        let headers = [
+            "x-ms-request-id": "azure_req_xyz789",
+            "content-type": "application/json"
+        ]
+        let url = URL(string: "https://example.com")!
+        let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: headers)!
+        
+        let svc = ResponseService()
+        let meta = svc.extractMetadata(from: response)
+        
+        // Verify Azure request ID is extracted
+        XCTAssertEqual(meta.requestId, "azure_req_xyz789")
     }
 }

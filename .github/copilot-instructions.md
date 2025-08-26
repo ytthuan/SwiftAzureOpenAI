@@ -95,21 +95,35 @@ swift package update
 SwiftAzureOpenAI/
 ├── Package.swift                          # Package manifest (Swift 6.1 tools version)
 ├── README.md                             # Comprehensive documentation
+├── LICENSE                               # MIT License
 ├── Sources/
 │   └── SwiftAzureOpenAI/
-│       └── SwiftAzureOpenAI.swift       # Main library source (minimal placeholder)
+│       ├── Core/
+│       │   ├── Configuration.swift       # Azure OpenAI and OpenAI configurations
+│       │   ├── HTTPClient.swift          # HTTP networking client
+│       │   └── SwiftAzureOpenAI.swift    # Main client class
+│       ├── Services/
+│       │   ├── ResponseService.swift     # Response processing and metadata extraction
+│       │   ├── ResponseParsingService.swift # JSON parsing and validation
+│       │   ├── ResponseCacheService.swift    # Response caching
+│       │   └── StreamingResponseService.swift # Streaming response handling
+│       ├── Models/
+│       │   ├── Common/                   # Shared models (errors, responses, metadata)
+│       │   ├── Requests/                 # Request models
+│       │   └── Responses/                # Response models
+│       └── Extensions/
+│           └── Foundation+Extensions.swift # Foundation type extensions
 ├── Tests/
-│   └── SwiftAzureOpenAITests/
-│       └── SwiftAzureOpenAITests.swift  # Test suite (placeholder test)
+│   └── SwiftAzureOpenAITests/           # Comprehensive test suite
 └── .build/                              # Build artifacts (created after building)
 ```
 
 ### Important Notes About Project Structure
 - **No external dependencies**: This package has zero external dependencies
-- **Minimal implementation**: Current source files contain placeholder code only
-- **Missing files**: CONTRIBUTING.md, LICENSE, CHANGELOG.md mentioned in README do not exist
-- **No Examples directory**: Despite README mentions, the Examples directory does not exist
-- **No GitHub workflows**: No CI/CD configuration present
+- **Full implementation**: Complete Azure OpenAI/OpenAI Responses API implementation
+- **Comprehensive test suite**: 21+ tests covering all major functionality
+- **Cross-platform**: Works on iOS, macOS, watchOS, tvOS, and Linux
+- **Modern Swift**: Uses Swift 6.1 with full concurrency support
 
 ## Working Effectively
 
@@ -151,14 +165,18 @@ SwiftAzureOpenAI/
    ```
 
 ### Manual Testing Scenarios
-Since this is a library package with minimal implementation:
+Since this is a fully-featured library package:
 
 1. **Build verification**: Ensure both debug and release builds complete successfully
-2. **Test execution**: Verify test suite runs without failures
+2. **Test execution**: Verify comprehensive test suite runs without failures (21+ tests)
 3. **Package validation**: Confirm package structure is valid
 4. **Environment variable testing**: Test with Azure OpenAI environment variables set
+5. **Response ID functionality**: Test request/response ID extraction from headers and response body
+6. **Error handling**: Test API error parsing and mapping
+7. **Caching**: Test response caching functionality
+8. **Streaming**: Test streaming response processing
 
-**Note**: Currently no functional validation scenarios are possible due to placeholder implementation.
+**Note**: Full functional validation possible with real Azure OpenAI/OpenAI endpoints.
 
 ## Common Tasks and Troubleshooting
 
@@ -170,7 +188,7 @@ Since this is a library package with minimal implementation:
 ### Test Issues  
 - **Tests hanging**: NEVER CANCEL - test runs may take up to 15 seconds
 - **Environment variable tests**: Set AZURE_OPENAI_* variables before running tests
-- **No actual tests**: Current test suite only contains a placeholder test
+- **Comprehensive test suite**: 21+ tests covering all functionality including response ID extraction, error handling, caching, and streaming
 
 ### Package Issues
 - **No dependencies**: This package intentionally has no external dependencies
@@ -244,4 +262,4 @@ swift package clean               # Clean build artifacts
 swift package resolve             # Resolve dependencies (instant)
 ```
 
-**Remember**: This package is currently in early development with placeholder implementation. The comprehensive API described in the README is not yet implemented in the source code.
+**Remember**: This package is a fully-functional Azure OpenAI/OpenAI Responses API implementation with comprehensive features including response processing, error handling, caching, streaming, and full request/response ID tracking.

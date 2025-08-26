@@ -1,7 +1,7 @@
 import Foundation
 
 /// A single chunk of a streaming response.
-public struct StreamingResponseChunk<T: Codable>: Codable {
+public struct StreamingResponseChunk<T: Codable>: Codable, Sendable where T: Sendable {
     /// The decoded piece of the streamed payload.
     public let chunk: T
     /// Indicates whether the stream has completed.

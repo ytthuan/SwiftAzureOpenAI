@@ -6,7 +6,7 @@ public struct ErrorResponse: Codable, Error {
     public let error: APIErrorDetail
 
     /// Detailed error information.
-    public struct APIErrorDetail: Codable {
+    public struct APIErrorDetail: Codable, Sendable {
         /// Human-readable message explaining the error.
         public let message: String
         /// Error type, if provided by the server.
