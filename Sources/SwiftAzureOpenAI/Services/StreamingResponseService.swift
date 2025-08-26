@@ -1,11 +1,11 @@
 import Foundation
 
-public protocol StreamingResponseParser {
+public protocol StreamingResponseParser: Sendable {
     func parseChunk<T: Codable>(_ data: Data, as type: T.Type) throws -> T
     func isComplete(_ data: Data) -> Bool
 }
 
-public final class DefaultStreamingResponseParser: StreamingResponseParser {
+public final class DefaultStreamingResponseParser: StreamingResponseParser, Sendable {
     private let decoder: JSONDecoder
 
     public init(decoder: JSONDecoder = JSONDecoder()) {
@@ -26,14 +26,14 @@ public final class DefaultStreamingResponseParser: StreamingResponseParser {
     }
 }
 
-public final class StreamingResponseService {
+public final class StreamingResponseService: Sendable {
     private let parser: StreamingResponseParser
 
     public init(parser: StreamingResponseParser = DefaultStreamingResponseParser()) {
         self.parser = parser
     }
 
-    public func processStream<T: Codable>(_ stream: AsyncThrowingStream<Data, Error>, type: T.Type) -> AsyncThrowingStream<StreamingResponseChunk<T>, Error> {
+    public func processStream<T: Codable & Sendable>(_ stream: AsyncThrowingStream<Data, Error>, type: T.Type) -> AsyncThrowingStream<StreamingResponseChunk<T>, Error> {
         AsyncThrowingStream { continuation in
             Task {
                 var sequenceNumber = 0

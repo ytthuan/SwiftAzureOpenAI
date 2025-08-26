@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 extension Dictionary where Key == String, Value == Any {
     func stringValue(forHeader key: String) -> String? {

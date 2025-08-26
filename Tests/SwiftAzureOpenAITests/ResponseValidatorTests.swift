@@ -1,4 +1,7 @@
 import XCTest
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 @testable import SwiftAzureOpenAI
 
 final class ResponseValidatorTests: XCTestCase {

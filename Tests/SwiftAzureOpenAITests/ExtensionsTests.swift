@@ -1,4 +1,7 @@
 import XCTest
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 @testable import SwiftAzureOpenAI
 
 final class ExtensionsTests: XCTestCase {
@@ -11,7 +14,7 @@ final class ExtensionsTests: XCTestCase {
             headerFields: [
                 "X-Request-Id": "abc",
                 "x-RateLimit-Remaining": "42",
-                "mixed": NSNumber(value: 123)
+                "mixed": "123"
             ]
         )!
 

@@ -1,7 +1,7 @@
 import Foundation
 
 /// Typed errors for SDK consumers, mapping HTTP failures and decoding issues.
-public enum OpenAIError: Error, LocalizedError {
+public enum OpenAIError: Error, LocalizedError, Equatable {
     case invalidAPIKey
     case rateLimitExceeded
     case serverError(statusCode: Int)
@@ -37,6 +37,26 @@ public enum OpenAIError: Error, LocalizedError {
             return "Failed to decode response: \(error.localizedDescription)"
         case .apiError(let errorResponse):
             return errorResponse.error.message
+        }
+    }
+    
+    public static func == (lhs: OpenAIError, rhs: OpenAIError) -> Bool {
+        switch (lhs, rhs) {
+        case (.invalidAPIKey, .invalidAPIKey),
+             (.rateLimitExceeded, .rateLimitExceeded):
+            return true
+        case (.serverError(let lhsCode), .serverError(let rhsCode)):
+            return lhsCode == rhsCode
+        case (.invalidRequest(let lhsMessage), .invalidRequest(let rhsMessage)):
+            return lhsMessage == rhsMessage
+        case (.apiError(let lhsResponse), .apiError(let rhsResponse)):
+            return lhsResponse.error.message == rhsResponse.error.message
+        case (.networkError(let lhsError), .networkError(let rhsError)):
+            return lhsError.localizedDescription == rhsError.localizedDescription
+        case (.decodingError(let lhsError), .decodingError(let rhsError)):
+            return lhsError.localizedDescription == rhsError.localizedDescription
+        default:
+            return false
         }
     }
 }
