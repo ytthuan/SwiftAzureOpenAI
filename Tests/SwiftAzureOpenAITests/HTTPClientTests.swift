@@ -7,7 +7,6 @@ import FoundationNetworking
 final class HTTPClientTests: XCTestCase {
     func testBuildsURLRequestWithMergedHeaders() throws {
         let config = OpenAIServiceConfiguration(apiKey: "sk-xyz", organization: nil)
-        let client = HTTPClient(configuration: config)
         let url = URL(string: "https://api.openai.com/v1/responses")!
         let req = APIRequest(method: "POST", url: url, headers: ["X-Test": "1"], body: Data("{}".utf8))
 
