@@ -58,4 +58,34 @@ final class ResponseServiceTests: XCTestCase {
         let second: APIResponse<Dummy> = try await svc.processResponse(dataSameKey, response: http, type: Dummy.self)
         XCTAssertEqual(second.data, Dummy(a: 1))
     }
+
+    func testGetResponseIdFromHeaders() async throws {
+        let headers = [
+            "x-request-id": "req_abc123",
+            "content-type": "application/json"
+        ]
+        let url = URL(string: "https://example.com")!
+        let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: headers)!
+        
+        let svc = ResponseService()
+        let meta = svc.extractMetadata(from: response)
+        
+        // Verify request ID is extracted
+        XCTAssertEqual(meta.requestId, "req_abc123")
+    }
+
+    func testGetResponseIdFromAzureHeaders() async throws {
+        let headers = [
+            "x-ms-request-id": "azure_req_xyz789",
+            "content-type": "application/json"
+        ]
+        let url = URL(string: "https://example.com")!
+        let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: headers)!
+        
+        let svc = ResponseService()
+        let meta = svc.extractMetadata(from: response)
+        
+        // Verify Azure request ID is extracted
+        XCTAssertEqual(meta.requestId, "azure_req_xyz789")
+    }
 }

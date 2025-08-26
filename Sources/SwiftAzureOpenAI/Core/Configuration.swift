@@ -11,7 +11,7 @@ public struct AzureOpenAIConfiguration: OpenAIConfiguration {
     public let deploymentName: String
     public let apiVersion: String
 
-    public init(endpoint: String, apiKey: String, deploymentName: String, apiVersion: String = "2024-02-01") {
+    public init(endpoint: String, apiKey: String, deploymentName: String, apiVersion: String = "2024-10-21") {
         self.endpoint = endpoint
         self.apiKey = apiKey
         self.deploymentName = deploymentName
@@ -19,7 +19,7 @@ public struct AzureOpenAIConfiguration: OpenAIConfiguration {
     }
 
     public var baseURL: URL {
-        // https://{resource}.openai.azure.com/openai/responses?api-version=2024-02-01
+        // https://{resource}.openai.azure.com/openai/responses?api-version=2024-10-21
         var components = URLComponents(string: endpoint)!
         components.path = "/openai/responses"
         components.queryItems = [URLQueryItem(name: "api-version", value: apiVersion)]
