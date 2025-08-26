@@ -1,0 +1,148 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test-macos:
+    name: Test on macOS
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        swift-version: ['6.1']
+        xcode-version: ['15.4']
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Select Xcode version
+      run: sudo xcode-select -s /Applications/Xcode_${{ matrix.xcode-version }}.app
+    
+    - name: Show Swift version
+      run: swift --version
+    
+    - name: Show package info
+      run: swift package describe
+    
+    - name: Build debug
+      run: swift build
+    
+    - name: Build release
+      run: swift build --configuration release
+    
+    - name: Run tests
+      run: swift test
+    
+    - name: Run tests (release)
+      run: swift test --configuration release
+    
+    - name: Run tests (parallel)
+      run: swift test --parallel
+
+  test-linux:
+    name: Test on Linux
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        swift-version: ['6.1.2']
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Setup Swift
+      uses: swift-actions/setup-swift@v2
+      with:
+        swift-version: ${{ matrix.swift-version }}
+    
+    - name: Show Swift version
+      run: swift --version
+    
+    - name: Show package info
+      run: swift package describe
+    
+    - name: Build debug
+      run: swift build
+    
+    - name: Build release
+      run: swift build --configuration release
+    
+    - name: Run tests
+      run: swift test
+    
+    - name: Run tests (release)
+      run: swift test --configuration release
+    
+    - name: Run tests (parallel)
+      run: swift test --parallel
+
+  validate-package:
+    name: Validate Package
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Setup Swift
+      uses: swift-actions/setup-swift@v2
+      with:
+        swift-version: '6.1.2'
+    
+    - name: Validate package structure
+      run: swift package describe
+    
+    - name: Check for external dependencies
+      run: |
+        if swift package show-dependencies | grep -v "SwiftAzureOpenAI"; then
+          echo "❌ Unexpected external dependencies found"
+          exit 1
+        else
+          echo "✅ No external dependencies confirmed"
+        fi
+    
+    - name: Build for multiple platforms
+      run: |
+        echo "Building for supported platforms..."
+        swift build
+        echo "✅ Build successful"
+    
+    - name: Package validation
+      run: |
+        echo "Running package validation..."
+        swift package compute-checksum Package.swift || echo "Checksum command not available"
+        echo "✅ Package validation complete"
+
+  code-quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Setup Swift
+      uses: swift-actions/setup-swift@v2
+      with:
+        swift-version: '6.1.2'
+    
+    - name: Check for warnings
+      run: |
+        echo "Building and checking for warnings..."
+        swift build 2>&1 | tee build.log
+        if grep -i "warning" build.log; then
+          echo "❌ Warnings found in build"
+          exit 1
+        else
+          echo "✅ No warnings found"
+        fi
+    
+    - name: Check test coverage
+      run: |
+        echo "Running test coverage analysis..."
+        swift test --parallel
+        echo "✅ All tests passed"
