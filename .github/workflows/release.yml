@@ -18,7 +18,7 @@ jobs:
     - name: Setup Swift
       uses: swift-actions/setup-swift@v2
       with:
-        swift-version: '6.1.2'
+        swift-version: '6.0.2'
     
     - name: Validate package
       run: |
@@ -41,7 +41,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
-        swift-version: ['6.1.2']
+        swift-version: ['6.0.2']
     
     steps:
     - name: Checkout
@@ -110,7 +110,7 @@ jobs:
         echo "## Package Information" >> $GITHUB_OUTPUT
         echo "- Swift Package Manager compatible" >> $GITHUB_OUTPUT
         echo "- Supports iOS 13.0+, macOS 10.15+, watchOS 6.0+, tvOS 13.0+" >> $GITHUB_OUTPUT
-        echo "- Swift 6.1+ required" >> $GITHUB_OUTPUT
+        echo "- Swift 6.0+ required" >> $GITHUB_OUTPUT
         echo "- Zero external dependencies" >> $GITHUB_OUTPUT
         echo "EOF" >> $GITHUB_OUTPUT
     
@@ -139,7 +139,7 @@ jobs:
       if: runner.os == 'Linux'
       uses: swift-actions/setup-swift@v2
       with:
-        swift-version: '6.1.2'
+        swift-version: '6.0.2'
     
     - name: Select Xcode (macOS)
       if: runner.os == 'macOS'
@@ -155,7 +155,7 @@ jobs:
       run: |
         cd test-installation
         cat > Package.swift << EOF
-        // swift-tools-version: 6.1
+        // swift-tools-version: 6.0
         import PackageDescription
         
         let package = Package(

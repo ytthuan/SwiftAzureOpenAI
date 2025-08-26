@@ -6,7 +6,7 @@ SwiftAzureOpenAI is a Swift Package Manager library that provides seamless integ
 
 ## Requirements
 
-- Swift 6.1+ (verified working with Swift 6.1.2)
+- Swift 6.0+ (verified working with Swift 6.0.2)
 - Swift Package Manager (built into Swift toolchain)
 - No external dependencies required
 
@@ -93,7 +93,7 @@ swift package update
 ### Key Directories and Files
 ```
 SwiftAzureOpenAI/
-├── Package.swift                          # Package manifest (Swift 6.1 tools version)
+├── Package.swift                          # Package manifest (Swift 6.0 tools version)
 ├── README.md                             # Comprehensive documentation
 ├── LICENSE                               # MIT License
 ├── Sources/
@@ -123,7 +123,7 @@ SwiftAzureOpenAI/
 - **Full implementation**: Complete Azure OpenAI/OpenAI Responses API implementation
 - **Comprehensive test suite**: 21+ tests covering all major functionality
 - **Cross-platform**: Works on iOS, macOS, watchOS, tvOS, and Linux
-- **Modern Swift**: Uses Swift 6.1 with full concurrency support
+- **Modern Swift**: Uses Swift 6.0 with full concurrency support
 
 ## Working Effectively
 
@@ -183,7 +183,7 @@ Since this is a fully-featured library package:
 ### Build Issues
 - **Clean build**: Use `swift package clean` to remove all build artifacts
 - **Build hanging**: NEVER CANCEL - builds may take up to 25 seconds
-- **Missing Swift**: Verify Swift 6.1+ is installed with `swift --version`
+- **Missing Swift**: Verify Swift 6.0+ is installed with `swift --version`
 
 ### Test Issues  
 - **Tests hanging**: NEVER CANCEL - test runs may take up to 15 seconds
@@ -216,7 +216,7 @@ When using these commands in automated environments:
 ### Supported Platforms (per README)
 - iOS 13.0+ / macOS 10.15+ / watchOS 6.0+ / tvOS 13.0+
 - Xcode 15.0+
-- Swift 5.9+ (package uses Swift 6.1 tools version)
+- Swift 5.9+ (package uses Swift 6.0 tools version)
 
 ### Build Targets
 - **SwiftAzureOpenAI**: Main library target
@@ -242,7 +242,7 @@ Before committing changes, ALWAYS:
 ### Repository Information
 - **GitHub URL**: https://github.com/ytthuan/SwiftAzureOpenAI
 - **Package Name**: SwiftAzureOpenAI
-- **Swift Tools Version**: 6.1
+- **Swift Tools Version**: 6.0
 - **Dependencies**: None
 - **License**: MIT (per README, file not present)
 

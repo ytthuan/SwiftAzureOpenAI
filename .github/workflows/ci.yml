@@ -12,7 +12,7 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        swift-version: ['6.1']
+        swift-version: ['6.0']
         xcode-version: ['15.4']
     
     steps:
@@ -48,7 +48,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        swift-version: ['6.1.2']
+        swift-version: ['6.0.2']
     
     steps:
     - name: Checkout
@@ -91,7 +91,7 @@ jobs:
     - name: Setup Swift
       uses: swift-actions/setup-swift@v2
       with:
-        swift-version: '6.1.2'
+        swift-version: '6.0.2'
     
     - name: Validate package structure
       run: swift package describe
@@ -128,7 +128,7 @@ jobs:
     - name: Setup Swift
       uses: swift-actions/setup-swift@v2
       with:
-        swift-version: '6.1.2'
+        swift-version: '6.0.2'
     
     - name: Check for warnings
       run: |
