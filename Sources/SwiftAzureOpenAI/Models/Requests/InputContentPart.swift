@@ -10,6 +10,11 @@ public enum InputContentPart: Codable, Equatable {
         public let type: String = "input_text"
         public let text: String
 
+        enum CodingKeys: String, CodingKey {
+            case type
+            case text
+        }
+
         public init(text: String) {
             self.text = text
         }
