@@ -3,6 +3,8 @@ name: Release
 on:
   push:
     tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-*'
       - '[0-9]+.[0-9]+.[0-9]+'
       - '[0-9]+.[0-9]+.[0-9]+-*'
 
@@ -10,6 +12,9 @@ jobs:
   validate-release:
     name: Validate Release
     runs-on: ubuntu-22.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
     
     steps:
     - name: Checkout
@@ -56,8 +61,19 @@ jobs:
       id: version
       run: |
         VERSION=${GITHUB_REF#refs/tags/}
+        # Remove 'v' prefix if present
+        VERSION=${VERSION#v}
         echo "version=$VERSION" >> $GITHUB_OUTPUT
         echo "Release version: $VERSION"
+        
+        # Determine if this is a prerelease
+        if [[ "$VERSION" == *"-"* ]]; then
+          echo "prerelease=true" >> $GITHUB_OUTPUT
+          echo "This is a prerelease version"
+        else
+          echo "prerelease=false" >> $GITHUB_OUTPUT
+          echo "This is a stable release version"
+        fi
 
   test-release:
     name: Test Release Builds
@@ -128,6 +144,8 @@ jobs:
       id: version
       run: |
         VERSION=${GITHUB_REF#refs/tags/}
+        # Remove 'v' prefix if present
+        VERSION=${VERSION#v}
         echo "version=$VERSION" >> $GITHUB_OUTPUT
         echo "Release version: $VERSION"
     
@@ -149,7 +167,7 @@ jobs:
         
         # Prepare changelog for GitHub release
         echo "changelog<<EOF" >> $GITHUB_OUTPUT
-        echo "## Changes in ${{ steps.version.outputs.version }}" >> $GITHUB_OUTPUT
+        echo "## Changes in v${{ needs.validate-release.outputs.version }}" >> $GITHUB_OUTPUT
         echo "" >> $GITHUB_OUTPUT
         if [ -n "$CHANGELOG" ]; then
           echo "$CHANGELOG" >> $GITHUB_OUTPUT
@@ -170,11 +188,11 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ steps.version.outputs.version }}
-        release_name: SwiftAzureOpenAI ${{ steps.version.outputs.version }}
+        tag_name: v${{ needs.validate-release.outputs.version }}
+        release_name: SwiftAzureOpenAI v${{ needs.validate-release.outputs.version }}
         body: ${{ steps.changelog.outputs.changelog }}
         draft: false
-        prerelease: ${{ contains(steps.version.outputs.version, '-') }}
+        prerelease: ${{ needs.validate-release.outputs.prerelease == 'true' }}
 
   validate-installation:
     name: Validate Installation
@@ -237,7 +255,7 @@ jobs:
         let package = Package(
             name: "TestInstallation",
             dependencies: [
-                .package(url: "https://github.com/ytthuan/SwiftAzureOpenAI", from: "${GITHUB_REF#refs/tags/}")
+                .package(url: "https://github.com/ytthuan/SwiftAzureOpenAI", from: "${{ needs.validate-release.outputs.version }}")
             ],
             targets: [
                 .executableTarget(
