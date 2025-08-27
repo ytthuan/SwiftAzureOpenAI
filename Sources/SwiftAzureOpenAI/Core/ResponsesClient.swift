@@ -22,7 +22,8 @@ public final class ResponsesClient {
         maxOutputTokens: Int? = nil,
         temperature: Double? = nil,
         topP: Double? = nil,
-        previousResponseId: String? = nil
+        previousResponseId: String? = nil,
+        reasoning: Reasoning? = nil
     ) async throws -> ResponsesResponse {
         let message = ResponseMessage(
             role: .user,
@@ -35,7 +36,8 @@ public final class ResponsesClient {
             maxOutputTokens: maxOutputTokens,
             temperature: temperature,
             topP: topP,
-            previousResponseId: previousResponseId
+            previousResponseId: previousResponseId,
+            reasoning: reasoning
         )
         
         return try await sendRequest(request)
@@ -49,7 +51,8 @@ public final class ResponsesClient {
         temperature: Double? = nil,
         topP: Double? = nil,
         tools: [ToolDefinition]? = nil,
-        previousResponseId: String? = nil
+        previousResponseId: String? = nil,
+        reasoning: Reasoning? = nil
     ) async throws -> ResponsesResponse {
         let request = ResponsesRequest(
             model: model,
@@ -58,7 +61,8 @@ public final class ResponsesClient {
             temperature: temperature,
             topP: topP,
             tools: tools,
-            previousResponseId: previousResponseId
+            previousResponseId: previousResponseId,
+            reasoning: reasoning
         )
         
         return try await sendRequest(request)

@@ -220,4 +220,67 @@ final class ResponsesClientEnhancementTests: XCTestCase {
         XCTAssertEqual(simpleRequest.model, "gpt-4o")
         XCTAssertNil(simpleRequest.previousResponseId)
     }
+    
+    // MARK: - Tests for reasoning parameter
+    
+    func testResponsesClientCreateWithReasoningParameterString() {
+        // Test that the string input version accepts reasoning parameter
+        let client = mockClient.responses
+        let reasoning = Reasoning(effort: "medium")
+        
+        // This should compile and not throw at creation time
+        XCTAssertNoThrow({
+            let _ = { () async throws -> ResponsesResponse in
+                return try await client.create(
+                    model: "o4-mini",
+                    input: "What is the weather like today?",
+                    maxOutputTokens: 100,
+                    temperature: 0.7,
+                    topP: 1.0,
+                    previousResponseId: nil,
+                    reasoning: reasoning
+                )
+            }
+        }())
+    }
+    
+    func testResponsesClientCreateWithReasoningParameterArray() {
+        // Test that the array input version accepts reasoning parameter
+        let client = mockClient.responses
+        let message = ResponseMessage(role: .user, text: "Test message")
+        let reasoning = Reasoning(effort: "high")
+        
+        // This should compile and not throw at creation time
+        XCTAssertNoThrow({
+            let _ = { () async throws -> ResponsesResponse in
+                return try await client.create(
+                    model: "o4-mini",
+                    input: [message],
+                    maxOutputTokens: 100,
+                    temperature: 0.7,
+                    topP: 1.0,
+                    tools: nil,
+                    previousResponseId: nil,
+                    reasoning: reasoning
+                )
+            }
+        }())
+    }
+    
+    func testResponsesRequestWithReasoningParameter() {
+        // Test that ResponsesRequest correctly includes reasoning parameter
+        let message = ResponseMessage(role: .user, text: "Test message")
+        let reasoning = Reasoning(effort: "low")
+        
+        let request = ResponsesRequest(
+            model: "o3-mini",
+            input: [message],
+            maxOutputTokens: 50,
+            reasoning: reasoning
+        )
+        
+        XCTAssertEqual(request.model, "o3-mini")
+        XCTAssertEqual(request.reasoning?.effort, "low")
+        XCTAssertNotNil(request.reasoning)
+    }
 }
