@@ -23,5 +23,23 @@ public struct ResponseMessage: Codable, Equatable {
         self.role = role
         self.content = [.inputText(.init(text: text))]
     }
+    
+    /// Convenience initializer for text + image URL
+    public init(role: MessageRole, text: String, imageURL: String) {
+        self.role = role
+        self.content = [
+            .inputText(.init(text: text)),
+            .inputImage(.init(imageURL: imageURL))
+        ]
+    }
+    
+    /// Convenience initializer for text + base64 image
+    public init(role: MessageRole, text: String, base64Image: String, mimeType: String = "image/jpeg") {
+        self.role = role
+        self.content = [
+            .inputText(.init(text: text)),
+            .inputImage(.init(base64Data: base64Image, mimeType: mimeType))
+        ]
+    }
 }
 
