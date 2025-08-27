@@ -33,6 +33,11 @@ public enum InputContentPart: Codable, Equatable {
         public init(imageURL: String) {
             self.imageURL = imageURL
         }
+        
+        /// Create an InputImage with a base64-encoded image
+        public init(base64Data: String, mimeType: String = "image/jpeg") {
+            self.imageURL = "data:\(mimeType);base64,\(base64Data)"
+        }
     }
 
     public init(from decoder: Decoder) throws {

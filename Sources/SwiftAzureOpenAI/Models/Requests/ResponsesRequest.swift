@@ -14,6 +14,8 @@ public struct ResponsesRequest: Codable, Equatable {
     public let topP: Double?
     /// Optional tool definitions.
     public let tools: [ToolDefinition]?
+    /// Previous response ID for chaining responses.
+    public let previousResponseId: String?
 
     public init(
         model: String? = nil,
@@ -21,7 +23,8 @@ public struct ResponsesRequest: Codable, Equatable {
         maxOutputTokens: Int? = nil,
         temperature: Double? = nil,
         topP: Double? = nil,
-        tools: [ToolDefinition]? = nil
+        tools: [ToolDefinition]? = nil,
+        previousResponseId: String? = nil
     ) {
         self.model = model
         self.input = input
@@ -29,6 +32,7 @@ public struct ResponsesRequest: Codable, Equatable {
         self.temperature = temperature
         self.topP = topP
         self.tools = tools
+        self.previousResponseId = previousResponseId
     }
 
     enum CodingKeys: String, CodingKey {
@@ -38,6 +42,7 @@ public struct ResponsesRequest: Codable, Equatable {
         case temperature
         case topP = "top_p"
         case tools
+        case previousResponseId = "previous_response_id"
     }
 }
 
