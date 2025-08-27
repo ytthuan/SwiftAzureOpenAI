@@ -7,6 +7,11 @@ public final class SwiftAzureOpenAI {
     private let configuration: OpenAIConfiguration
     private let httpClient: HTTPClient
     private let responseService: ResponseService
+    
+    /// Python-style responses client for simplified API access
+    public lazy var responses: ResponsesClient = {
+        ResponsesClient(httpClient: httpClient, responseService: responseService, configuration: configuration)
+    }()
 
     public init(configuration: OpenAIConfiguration, cache: ResponseCache? = nil) {
         self.configuration = configuration
