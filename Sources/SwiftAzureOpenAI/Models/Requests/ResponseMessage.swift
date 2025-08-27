@@ -17,5 +17,11 @@ public struct ResponseMessage: Codable, Equatable {
         self.role = role
         self.content = content
     }
+    
+    /// Convenience initializer for simple text messages
+    public init(role: MessageRole, text: String) {
+        self.role = role
+        self.content = [.inputText(.init(text: text))]
+    }
 }
 

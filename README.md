@@ -88,19 +88,82 @@ Then add it to your target dependencies:
 
 ## Quick Start
 
+SwiftAzureOpenAI now offers two APIs:
+- **🎉 Simple Python-style API** (Recommended) - For easy, quick usage
+- **Advanced API** - For complex scenarios requiring full control
+
 ### Import the Package
 
 ```swift
 import SwiftAzureOpenAI
 ```
 
-### Build a Responses API request
+### Simple Python-style API (Recommended)
 
-Create a request following the Azure OpenAI Responses API specification:
+The easiest way to use SwiftAzureOpenAI with a simple, Python-inspired API:
 
 ```swift
 import SwiftAzureOpenAI
 
+// Configure your client
+let config = AzureOpenAIConfiguration(
+    endpoint: "https://your-resource.openai.azure.com",
+    apiKey: "your-api-key",
+    deploymentName: "gpt-4o-mini"
+)
+let client = SwiftAzureOpenAI(configuration: config)
+
+// Simple string input - just like Python!
+let response = try await client.responses.create(
+    model: "gpt-4o-mini",
+    input: "Write a haiku about Swift programming.",
+    maxOutputTokens: 200,
+    temperature: 0.7
+)
+
+// Extract the response text
+if let output = response.output.first,
+   let content = output.content.first,
+   case let .outputText(text) = content {
+    print(text.text)
+}
+```
+
+### Advanced Usage with Multiple Messages
+
+For conversations with multiple messages:
+
+```swift
+// Create messages easily with convenience initializer
+let messages = [
+    ResponseMessage(role: .system, text: "You are a helpful assistant."),
+    ResponseMessage(role: .user, text: "What's the weather like?"),
+    ResponseMessage(role: .assistant, text: "I don't have real-time weather data."),
+    ResponseMessage(role: .user, text: "Can you help me with Swift programming?")
+]
+
+let response = try await client.responses.create(
+    model: "gpt-4o-mini",
+    input: messages,
+    maxOutputTokens: 300
+)
+```
+
+### Retrieve and Delete Responses
+
+```swift
+// Retrieve a response by ID
+let retrieved = try await client.responses.retrieve("resp_abc123")
+
+// Delete a response
+let deleted = try await client.responses.delete("resp_abc123")
+```
+
+### Advanced: Build a Responses API request (Legacy)
+
+For advanced use cases, you can still use the detailed API:
+
+```swift
 let request = ResponsesRequest(
     model: "gpt-4o-mini", // Azure: deployment name; OpenAI: model name
     input: [
