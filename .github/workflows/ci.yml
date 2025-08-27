@@ -145,11 +145,14 @@ jobs:
     
     - name: Check for external dependencies
       run: |
-        if swift package show-dependencies | grep -v "SwiftAzureOpenAI"; then
-          echo "❌ Unexpected external dependencies found"
-          exit 1
-        else
+        DEPS=$(swift package show-dependencies)
+        echo "Dependencies output: $DEPS"
+        if [ "$DEPS" = "No external dependencies found" ]; then
           echo "✅ No external dependencies confirmed"
+        else
+          echo "❌ Unexpected external dependencies found:"
+          echo "$DEPS"
+          exit 1
         fi
     
     - name: Build for multiple platforms
