@@ -244,4 +244,32 @@ final class ModelTests: XCTestCase {
         XCTAssertEqual(decoded.name, "encode_test")
         XCTAssertEqual(decoded.description, "Encoding test")
     }
+    
+    // MARK: - Reasoning Tests
+    
+    func testReasoningInitialization() {
+        let reasoning = Reasoning(effort: "medium")
+        XCTAssertEqual(reasoning.effort, "medium")
+    }
+    
+    func testReasoningCodable() throws {
+        let reasoning = Reasoning(effort: "high")
+        
+        // Encode
+        let encoded = try JSONEncoder().encode(reasoning)
+        
+        // Decode
+        let decoded = try JSONDecoder().decode(Reasoning.self, from: encoded)
+        
+        XCTAssertEqual(decoded.effort, "high")
+    }
+    
+    func testReasoningEquatable() {
+        let reasoning1 = Reasoning(effort: "low")
+        let reasoning2 = Reasoning(effort: "low")
+        let reasoning3 = Reasoning(effort: "medium")
+        
+        XCTAssertEqual(reasoning1, reasoning2)
+        XCTAssertNotEqual(reasoning1, reasoning3)
+    }
 }

@@ -29,6 +29,36 @@ final class ModelsCodingTests: XCTestCase {
         XCTAssertNotNil(json["tools"])        
     }
 
+    func testResponsesRequestWithReasoningParameter() throws {
+        let message = ResponseMessage(
+            role: .user,
+            content: [.inputText(.init(text: "What is the weather like today?"))]
+        )
+        let reasoning = Reasoning(effort: "medium")
+        let req = ResponsesRequest(
+            model: "o4-mini",
+            input: [message],
+            maxOutputTokens: 100,
+            temperature: 0.5,
+            reasoning: reasoning
+        )
+
+        let data = try JSONEncoder().encode(req)
+        let json = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        XCTAssertEqual(json["model"] as? String, "o4-mini")
+        XCTAssertNotNil(json["input"])
+        XCTAssertEqual(json["max_output_tokens"] as? Int, 100)
+        XCTAssertEqual(json["temperature"] as? Double, 0.5)
+        
+        // Verify reasoning parameter
+        XCTAssertNotNil(json["reasoning"])
+        if let reasoningDict = json["reasoning"] as? [String: Any] {
+            XCTAssertEqual(reasoningDict["effort"] as? String, "medium")
+        } else {
+            XCTFail("Expected reasoning to be a dictionary")
+        }
+    }
+
     func testResponsesResponseDecoding() throws {
         let payload = {
             () -> [String: Any] in
