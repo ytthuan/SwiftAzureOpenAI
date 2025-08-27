@@ -149,6 +149,31 @@ let response = try await client.responses.create(
 )
 ```
 
+### Reasoning Models Support
+
+For reasoning models like `o1`, `o3-mini`, `o4-mini`, you can specify reasoning effort:
+
+```swift
+// Create reasoning configuration
+let reasoning = Reasoning(effort: "medium") // "low", "medium", "high"
+
+// Use with simple string input
+let response = try await client.responses.create(
+    model: "o4-mini",
+    input: "What is the weather like today?",
+    maxOutputTokens: 100,
+    reasoning: reasoning
+)
+
+// Or with message arrays
+let response = try await client.responses.create(
+    model: "o3-mini", 
+    input: messages,
+    maxOutputTokens: 300,
+    reasoning: Reasoning(effort: "high")
+)
+```
+
 ### Retrieve and Delete Responses
 
 ```swift
@@ -261,6 +286,10 @@ The Responses API uses a unified data model structure that consolidates the best
   - `maxOutputTokens: Int?` — Maximum tokens to generate in the response
   - `temperature: Double?`, `topP: Double?` — Sampling parameters
   - `tools: [ToolDefinition]?` — Optional tool definitions for function calling
+  - `reasoning: Reasoning?` — Reasoning configuration for reasoning models
+
+- **`Reasoning`** - Reasoning configuration for reasoning models
+  - `effort: String` — Reasoning effort level: "low", "medium", or "high"
 
 - **`ResponseMessage`** - Individual message in the conversation
   - `role: MessageRole` — Message role: `.system`, `.user`, `.assistant`, or `.tool`
