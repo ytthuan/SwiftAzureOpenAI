@@ -32,10 +32,29 @@ This package is designed for the Azure OpenAI Responses API (Preview) and OpenAI
 ### Supported Models
 
 The Responses API supports a wide range of models including:
-- `gpt-4o` series (including `gpt-4o-mini`)
-- `gpt-4` series
-- `gpt-3.5-turbo` series
-- And other models as they become available
+
+**GPT-5 Series:**
+- `gpt-5` (Version: `2025-08-07`)
+- `gpt-5-mini` (Version: `2025-08-07`)
+- `gpt-5-nano` (Version: `2025-08-07`)
+- `gpt-5-chat` (Version: `2025-08-07`)
+
+**GPT-4 Series:**
+- `gpt-4o` (Versions: `2024-11-20`, `2024-08-06`, `2024-05-13`)
+- `gpt-4o-mini` (Version: `2024-07-18`)
+- `gpt-4.1` (Version: `2025-04-14`)
+- `gpt-4.1-nano` (Version: `2025-04-14`)
+- `gpt-4.1-mini` (Version: `2025-04-14`)
+
+**Reasoning Models:**
+- `o1` (Version: `2024-12-17`)
+- `o3-mini` (Version: `2025-01-31`)
+- `o3` (Version: `2025-04-16`)
+- `o4-mini` (Version: `2025-04-16`)
+
+**Specialized Models:**
+- `computer-use-preview`
+- `gpt-image-1` (Version: `2025-04-15`)
 
 > **Note:** Model availability varies by region. Check the [Azure OpenAI models documentation](https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/models) for the latest model and region availability.
 
