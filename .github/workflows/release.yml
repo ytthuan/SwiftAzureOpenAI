@@ -9,16 +9,40 @@ on:
 jobs:
   validate-release:
     name: Validate Release
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     
     steps:
     - name: Checkout
       uses: actions/checkout@v4
     
-    - name: Setup Swift
-      uses: swift-actions/setup-swift@v2
-      with:
-        swift-version: '6.0.2'
+    - name: Install Swift
+      run: |
+        # Download and install Swift 6.0.2 from Swift.org
+        SWIFT_VERSION="6.0.2"
+        SWIFT_URL="https://download.swift.org/swift-${SWIFT_VERSION}-release/ubuntu2204/swift-${SWIFT_VERSION}-RELEASE/swift-${SWIFT_VERSION}-RELEASE-ubuntu22.04.tar.gz"
+        
+        echo "Installing Swift ${SWIFT_VERSION} from ${SWIFT_URL}"
+        
+        # Install dependencies first
+        sudo apt-get update
+        sudo apt-get install -y libc6-dev libicu-dev libcurl4-openssl-dev libssl-dev
+        
+        # Download Swift
+        curl -fsSL "${SWIFT_URL}" -o swift.tar.gz
+        
+        # Extract Swift
+        sudo tar -xzf swift.tar.gz -C /opt/
+        
+        # Add to PATH
+        echo "/opt/swift-${SWIFT_VERSION}-RELEASE-ubuntu22.04/usr/bin" >> $GITHUB_PATH
+        
+        # Verify installation
+        /opt/swift-${SWIFT_VERSION}-RELEASE-ubuntu22.04/usr/bin/swift --version || {
+          echo "❌ Swift installation failed"
+          exit 1
+        }
+        
+        echo "✅ Swift ${SWIFT_VERSION} installed successfully"
     
     - name: Validate package
       run: |
@@ -40,22 +64,48 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-22.04, macos-15]
         swift-version: ['6.0.2']
     
     steps:
     - name: Checkout
       uses: actions/checkout@v4
     
-    - name: Setup Swift (Linux)
+    - name: Install Swift (Linux)
       if: runner.os == 'Linux'
-      uses: swift-actions/setup-swift@v2
-      with:
-        swift-version: ${{ matrix.swift-version }}
+      run: |
+        # Download and install Swift 6.0.2 from Swift.org
+        SWIFT_VERSION="${{ matrix.swift-version }}"
+        SWIFT_URL="https://download.swift.org/swift-${SWIFT_VERSION}-release/ubuntu2204/swift-${SWIFT_VERSION}-RELEASE/swift-${SWIFT_VERSION}-RELEASE-ubuntu22.04.tar.gz"
+        
+        echo "Installing Swift ${SWIFT_VERSION} from ${SWIFT_URL}"
+        
+        # Install dependencies first
+        sudo apt-get update
+        sudo apt-get install -y libc6-dev libicu-dev libcurl4-openssl-dev libssl-dev
+        
+        # Download Swift
+        curl -fsSL "${SWIFT_URL}" -o swift.tar.gz
+        
+        # Extract Swift
+        sudo tar -xzf swift.tar.gz -C /opt/
+        
+        # Add to PATH
+        echo "/opt/swift-${SWIFT_VERSION}-RELEASE-ubuntu22.04/usr/bin" >> $GITHUB_PATH
+        
+        # Verify installation
+        /opt/swift-${SWIFT_VERSION}-RELEASE-ubuntu22.04/usr/bin/swift --version || {
+          echo "❌ Swift installation failed"
+          exit 1
+        }
+        
+        echo "✅ Swift ${SWIFT_VERSION} installed successfully"
     
     - name: Select Xcode (macOS)
       if: runner.os == 'macOS'
-      run: sudo xcode-select -s /Applications/Xcode_15.4.app
+      run: |
+        # Use the default Xcode version for macos-15 which should have Swift 6.0+
+        xcode-select -p
     
     - name: Build release
       run: swift build --configuration release
@@ -132,18 +182,44 @@ jobs:
     needs: create-release
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-22.04, macos-15]
     
     steps:
-    - name: Setup Swift (Linux)
+    - name: Install Swift (Linux)
       if: runner.os == 'Linux'
-      uses: swift-actions/setup-swift@v2
-      with:
-        swift-version: '6.0.2'
+      run: |
+        # Download and install Swift 6.0.2 from Swift.org
+        SWIFT_VERSION="6.0.2"
+        SWIFT_URL="https://download.swift.org/swift-${SWIFT_VERSION}-release/ubuntu2204/swift-${SWIFT_VERSION}-RELEASE/swift-${SWIFT_VERSION}-RELEASE-ubuntu22.04.tar.gz"
+        
+        echo "Installing Swift ${SWIFT_VERSION} from ${SWIFT_URL}"
+        
+        # Install dependencies first
+        sudo apt-get update
+        sudo apt-get install -y libc6-dev libicu-dev libcurl4-openssl-dev libssl-dev
+        
+        # Download Swift
+        curl -fsSL "${SWIFT_URL}" -o swift.tar.gz
+        
+        # Extract Swift
+        sudo tar -xzf swift.tar.gz -C /opt/
+        
+        # Add to PATH
+        echo "/opt/swift-${SWIFT_VERSION}-RELEASE-ubuntu22.04/usr/bin" >> $GITHUB_PATH
+        
+        # Verify installation
+        /opt/swift-${SWIFT_VERSION}-RELEASE-ubuntu22.04/usr/bin/swift --version || {
+          echo "❌ Swift installation failed"
+          exit 1
+        }
+        
+        echo "✅ Swift ${SWIFT_VERSION} installed successfully"
     
     - name: Select Xcode (macOS)
       if: runner.os == 'macOS'
-      run: sudo xcode-select -s /Applications/Xcode_15.4.app
+      run: |
+        # Use the default Xcode version for macos-15 which should have Swift 6.0+
+        xcode-select -p
     
     - name: Create test project
       run: |
