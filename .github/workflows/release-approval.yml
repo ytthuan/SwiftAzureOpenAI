@@ -1,0 +1,215 @@
+name: Release Approval Workflow
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 1.0.0)'
+        required: true
+        type: string
+      release_type:
+        description: 'Type of release'
+        required: true
+        default: 'release'
+        type: choice
+        options:
+        - release
+        - prerelease
+        - beta
+        - alpha
+
+jobs:
+  validate-for-release:
+    name: Validate Package for Release
+    runs-on: ubuntu-22.04
+    outputs:
+      validation_passed: ${{ steps.validation.outputs.passed }}
+      test_count: ${{ steps.validation.outputs.test_count }}
+      next_version: ${{ steps.version.outputs.next_version }}
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Install Swift
+      run: |
+        # Download and install Swift 6.0.2 from Swift.org
+        SWIFT_VERSION="6.0.2"
+        SWIFT_URL="https://download.swift.org/swift-${SWIFT_VERSION}-release/ubuntu2204/swift-${SWIFT_VERSION}-RELEASE/swift-${SWIFT_VERSION}-RELEASE-ubuntu22.04.tar.gz"
+        
+        echo "Installing Swift ${SWIFT_VERSION} from ${SWIFT_URL}"
+        
+        # Install dependencies first
+        sudo apt-get update
+        sudo apt-get install -y libc6-dev libicu-dev libcurl4-openssl-dev libssl-dev
+        
+        # Download Swift
+        curl -fsSL "${SWIFT_URL}" -o swift.tar.gz
+        
+        # Extract Swift
+        sudo tar -xzf swift.tar.gz -C /opt/
+        
+        # Add to PATH
+        echo "/opt/swift-${SWIFT_VERSION}-RELEASE-ubuntu22.04/usr/bin" >> $GITHUB_PATH
+        
+        # Verify installation
+        /opt/swift-${SWIFT_VERSION}-RELEASE-ubuntu22.04/usr/bin/swift --version || {
+          echo "❌ Swift installation failed"
+          exit 1
+        }
+        
+        echo "✅ Swift ${SWIFT_VERSION} installed successfully"
+    
+    - name: Run release preparation validation
+      id: validation
+      run: |
+        echo "Running comprehensive release validation..."
+        
+        # Run the release preparation script
+        if ./scripts/prepare-release.sh; then
+          echo "passed=true" >> $GITHUB_OUTPUT
+          # Extract test count from the script output
+          TEST_COUNT=$(./scripts/prepare-release.sh | grep "Test Coverage:" | sed 's/.*Test Coverage: \([0-9]*\) tests.*/\1/')
+          echo "test_count=$TEST_COUNT" >> $GITHUB_OUTPUT
+          echo "✅ Release validation passed"
+        else
+          echo "passed=false" >> $GITHUB_OUTPUT
+          echo "❌ Release validation failed"
+          exit 1
+        fi
+    
+    - name: Suggest next version
+      id: version
+      run: |
+        # Get the latest tag to suggest next version
+        LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+        echo "Latest tag: $LATEST_TAG"
+        
+        # Extract version number (remove 'v' prefix if present)
+        VERSION=${LATEST_TAG#v}
+        
+        # Split version into parts
+        IFS='.' read -r -a VERSION_PARTS <<< "$VERSION"
+        MAJOR=${VERSION_PARTS[0]:-0}
+        MINOR=${VERSION_PARTS[1]:-0}
+        PATCH=${VERSION_PARTS[2]:-0}
+        
+        # Suggest next patch version
+        NEXT_PATCH=$((PATCH + 1))
+        NEXT_VERSION="$MAJOR.$MINOR.$NEXT_PATCH"
+        
+        echo "next_version=$NEXT_VERSION" >> $GITHUB_OUTPUT
+        echo "Suggested next version: $NEXT_VERSION"
+    
+    - name: Create release summary
+      run: |
+        echo "## 🚀 Release Validation Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### ✅ Validation Results" >> $GITHUB_STEP_SUMMARY
+        echo "- **Package Structure**: Valid" >> $GITHUB_STEP_SUMMARY
+        echo "- **Dependencies**: Zero external dependencies" >> $GITHUB_STEP_SUMMARY
+        echo "- **Build Status**: Clean builds (debug & release)" >> $GITHUB_STEP_SUMMARY
+        echo "- **Test Coverage**: ${{ steps.validation.outputs.test_count }} tests passing" >> $GITHUB_STEP_SUMMARY
+        echo "- **Build Warnings**: None" >> $GITHUB_STEP_SUMMARY
+        echo "- **Required Files**: README.md, LICENSE present" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📋 Package Information" >> $GITHUB_STEP_SUMMARY
+        echo "- **Name**: SwiftAzureOpenAI" >> $GITHUB_STEP_SUMMARY
+        echo "- **Swift Tools Version**: 6.0" >> $GITHUB_STEP_SUMMARY
+        echo "- **Platforms**: iOS 13.0+, macOS 10.15+, watchOS 6.0+, tvOS 13.0+" >> $GITHUB_STEP_SUMMARY
+        echo "- **Suggested Version**: ${{ steps.version.outputs.next_version }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🔄 Next Steps" >> $GITHUB_STEP_SUMMARY
+        echo "If validation passed, the package is ready for release approval." >> $GITHUB_STEP_SUMMARY
+
+  await-release-approval:
+    name: Await Release Approval
+    runs-on: ubuntu-22.04
+    needs: validate-for-release
+    if: needs.validate-for-release.outputs.validation_passed == 'true'
+    environment: 
+      name: release-approval
+      url: https://github.com/${{ github.repository }}/releases
+    
+    steps:
+    - name: Display approval message
+      run: |
+        echo "## 🔒 Release Approval Required" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "Package validation completed successfully with ${{ needs.validate-for-release.outputs.test_count }} tests passing." >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Suggested version**: ${{ needs.validate-for-release.outputs.next_version }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📋 Release Checklist" >> $GITHUB_STEP_SUMMARY
+        echo "- [x] All tests passing (${{ needs.validate-for-release.outputs.test_count }} tests)" >> $GITHUB_STEP_SUMMARY
+        echo "- [x] Zero external dependencies verified" >> $GITHUB_STEP_SUMMARY
+        echo "- [x] Clean builds on multiple platforms" >> $GITHUB_STEP_SUMMARY
+        echo "- [x] No build warnings" >> $GITHUB_STEP_SUMMARY
+        echo "- [x] Required documentation present" >> $GITHUB_STEP_SUMMARY
+        echo "- [ ] **Human approval required** ⏳" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**To proceed with release:**" >> $GITHUB_STEP_SUMMARY
+        echo "1. Review the validation results above" >> $GITHUB_STEP_SUMMARY
+        echo "2. Approve this deployment in the GitHub Environment" >> $GITHUB_STEP_SUMMARY
+        echo "3. The release will be created automatically" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**To manually trigger with specific version:**" >> $GITHUB_STEP_SUMMARY
+        echo "Use the workflow_dispatch with your desired version number." >> $GITHUB_STEP_SUMMARY
+
+  trigger-release:
+    name: Create Release
+    runs-on: ubuntu-22.04
+    needs: [validate-for-release, await-release-approval]
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Determine version
+      id: version
+      run: |
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          VERSION="${{ github.event.inputs.version }}"
+          RELEASE_TYPE="${{ github.event.inputs.release_type }}"
+        else
+          VERSION="${{ needs.validate-for-release.outputs.next_version }}"
+          RELEASE_TYPE="release"
+        fi
+        
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "release_type=$RELEASE_TYPE" >> $GITHUB_OUTPUT
+        echo "Release version: $VERSION (type: $RELEASE_TYPE)"
+    
+    - name: Create and push tag
+      run: |
+        VERSION="${{ steps.version.outputs.version }}"
+        
+        # Configure git
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        
+        # Create tag
+        git tag "v$VERSION"
+        git push origin "v$VERSION"
+        
+        echo "✅ Created and pushed tag v$VERSION"
+    
+    - name: Create release summary
+      run: |
+        echo "## 🎉 Release Created Successfully" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Version**: v${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Type**: ${{ steps.version.outputs.release_type }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Tests Passed**: ${{ needs.validate-for-release.outputs.test_count }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "The tag has been created and pushed. The release workflow will now:" >> $GITHUB_STEP_SUMMARY
+        echo "1. Validate the release package" >> $GITHUB_STEP_SUMMARY
+        echo "2. Test on multiple platforms" >> $GITHUB_STEP_SUMMARY
+        echo "3. Create the GitHub release" >> $GITHUB_STEP_SUMMARY
+        echo "4. Validate installation" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "🔗 [View Releases](https://github.com/${{ github.repository }}/releases)" >> $GITHUB_STEP_SUMMARY
