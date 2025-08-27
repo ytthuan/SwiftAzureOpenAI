@@ -164,6 +164,8 @@ jobs:
     name: Create Release
     runs-on: ubuntu-22.04
     needs: [validate-for-release, await-release-approval]
+    permissions:
+      contents: write
     
     steps:
     - name: Checkout
