@@ -24,7 +24,7 @@ final class GitHubIssueComplianceTests: XCTestCase {
         // )
         
         // Our Swift equivalent using the convenience method:
-        let message = ResponseMessage(
+        let message = SAOAIMessage(
             role: .user,
             text: "what is in this image?",
             imageURL: "https://example.com/image.jpg"
@@ -51,16 +51,16 @@ final class GitHubIssueComplianceTests: XCTestCase {
         }
         
         // Test that it works with the client (structure only, no HTTP call)
-        let config = AzureOpenAIConfiguration(
+        let config = SAOAIAzureConfiguration(
             endpoint: "https://test.openai.azure.com",
             apiKey: "test-key",
             deploymentName: "gpt-4o"
         )
-        let client = SwiftAzureOpenAI(configuration: config)
+        let client = SAOAIClient(configuration: config)
         
         // This would compile and execute the request structure
         XCTAssertNoThrow({
-            let _ = { () async throws -> ResponsesResponse in
+            let _ = { () async throws -> SAOAIResponse in
                 return try await client.responses.create(
                     model: "gpt-4o",
                     input: [message]
@@ -96,7 +96,7 @@ final class GitHubIssueComplianceTests: XCTestCase {
         let base64Image = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
         
         // Our Swift equivalent using the convenience method:
-        let message = ResponseMessage(
+        let message = SAOAIMessage(
             role: .user,
             text: "what is in this image?",
             base64Image: base64Image,
@@ -136,16 +136,16 @@ final class GitHubIssueComplianceTests: XCTestCase {
         //     input=[{"role": "user", "content": "Explain this at a level that could be understood by a college freshman"}]
         // )
         
-        let config = AzureOpenAIConfiguration(
+        let config = SAOAIAzureConfiguration(
             endpoint: "https://test.openai.azure.com",
             apiKey: "test-key",
             deploymentName: "gpt-4o"
         )
-        let client = SwiftAzureOpenAI(configuration: config)
+        let client = SAOAIClient(configuration: config)
         
         // Test the first request structure (string input)
         XCTAssertNoThrow({
-            let _ = { () async throws -> ResponsesResponse in
+            let _ = { () async throws -> SAOAIResponse in
                 return try await client.responses.create(
                     model: "gpt-4o",
                     input: "Define and explain the concept of catastrophic forgetting?"
@@ -154,13 +154,13 @@ final class GitHubIssueComplianceTests: XCTestCase {
         }())
         
         // Test the second request structure (with previous_response_id)
-        let followUpMessage = ResponseMessage(
+        let followUpMessage = SAOAIMessage(
             role: .user, 
             text: "Explain this at a level that could be understood by a college freshman"
         )
         
         XCTAssertNoThrow({
-            let _ = { () async throws -> ResponsesResponse in
+            let _ = { () async throws -> SAOAIResponse in
                 return try await client.responses.create(
                     model: "gpt-4o",
                     input: [followUpMessage],
@@ -172,13 +172,13 @@ final class GitHubIssueComplianceTests: XCTestCase {
     
     func testRequestStructureMatchesPythonJSON() throws {
         // Test that our JSON output matches what the Python SDK would generate
-        let message = ResponseMessage(
+        let message = SAOAIMessage(
             role: .user,
             text: "what is in this image?",
             imageURL: "https://example.com/image.jpg"
         )
         
-        let request = ResponsesRequest(
+        let request = SAOAIRequest(
             model: "gpt-4o",
             input: [message],
             maxOutputTokens: 200,
@@ -208,15 +208,15 @@ final class GitHubIssueComplianceTests: XCTestCase {
     func testCompleteWorkflowFromGitHubIssue() throws {
         // This test demonstrates the complete workflow described in the GitHub issue
         
-        let config = AzureOpenAIConfiguration(
+        let config = SAOAIAzureConfiguration(
             endpoint: "https://test.openai.azure.com",
             apiKey: "test-key",
             deploymentName: "gpt-4o"
         )
-        let client = SwiftAzureOpenAI(configuration: config)
+        let client = SAOAIClient(configuration: config)
         
         // Step 1: Create multi-modal request
-        let multiModalMessage = ResponseMessage(
+        let multiModalMessage = SAOAIMessage(
             role: .user,
             text: "what is in this image?",
             imageURL: "https://example.com/image.jpg"
@@ -224,14 +224,14 @@ final class GitHubIssueComplianceTests: XCTestCase {
         
         // Step 2: Create base64 image request
         let base64Image = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
-        let base64Message = ResponseMessage(
+        let base64Message = SAOAIMessage(
             role: .user,
             text: "analyze this image",
             base64Image: base64Image
         )
         
         // Step 3: Create requests with chaining capability
-        let chainedMessage = ResponseMessage(role: .user, text: "Follow up question")
+        let chainedMessage = SAOAIMessage(role: .user, text: "Follow up question")
         
         // Verify all these would work (structure compilation test)
         XCTAssertNoThrow({

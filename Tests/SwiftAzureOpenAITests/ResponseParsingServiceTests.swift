@@ -31,7 +31,7 @@ final class ResponseParsingServiceTests: XCTestCase {
         do {
             _ = try await parser.parse(invalidData, as: TestModel.self)
             XCTFail("Expected decodingError to be thrown")
-        } catch let error as OpenAIError {
+        } catch let error as SAOAIError {
             if case .decodingError = error {
                 // Expected error type
             } else {
@@ -54,7 +54,7 @@ final class ResponseParsingServiceTests: XCTestCase {
         do {
             _ = try await parser.parse(data, as: TestModel.self)
             XCTFail("Expected decodingError to be thrown")
-        } catch let error as OpenAIError {
+        } catch let error as SAOAIError {
             if case .decodingError = error {
                 // Expected error type
             } else {

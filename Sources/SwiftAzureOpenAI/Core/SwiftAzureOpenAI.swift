@@ -3,8 +3,8 @@ import Foundation
 import FoundationNetworking
 #endif
 
-public final class SwiftAzureOpenAI {
-    private let configuration: OpenAIConfiguration
+public final class SAOAIClient {
+    private let configuration: SAOAIConfiguration
     private let httpClient: HTTPClient
     private let responseService: ResponseService
     
@@ -13,7 +13,7 @@ public final class SwiftAzureOpenAI {
         ResponsesClient(httpClient: httpClient, responseService: responseService, configuration: configuration)
     }()
 
-    public init(configuration: OpenAIConfiguration, cache: ResponseCache? = nil) {
+    public init(configuration: SAOAIConfiguration, cache: ResponseCache? = nil) {
         self.configuration = configuration
         self.httpClient = HTTPClient(configuration: configuration)
         self.responseService = ResponseService(cache: cache)
@@ -30,9 +30,8 @@ public final class SwiftAzureOpenAI {
 
     public func handleResponse<T: Codable>(data: Data, response: URLResponse) async throws -> APIResponse<T> {
         guard let http = response as? HTTPURLResponse else {
-            throw OpenAIError.networkError(URLError(.badServerResponse))
+            throw SAOAIError.networkError(URLError(.badServerResponse))
         }
         return try await responseService.processResponse(data, response: http, type: T.self)
     }
 }
-

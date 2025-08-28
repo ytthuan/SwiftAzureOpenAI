@@ -1,7 +1,7 @@
 import Foundation
 
 /// Supported input content parts for the Responses API.
-public enum InputContentPart: Codable, Equatable {
+public enum SAOAIInputContent: Codable, Equatable {
     case inputText(InputText)
     case inputImage(InputImage)
 

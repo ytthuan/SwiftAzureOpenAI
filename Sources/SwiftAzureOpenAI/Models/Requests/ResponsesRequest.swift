@@ -1,11 +1,11 @@
 import Foundation
 
 /// Request payload for the Azure/OpenAI Responses API.
-public struct ResponsesRequest: Codable, Equatable {
+public struct SAOAIRequest: Codable, Equatable {
     /// Model or deployment name. For Azure, this is the deployment name.
     public let model: String?
     /// Unified input for the Responses API. Typically an array of messages with content parts.
-    public let input: [ResponseMessage]
+    public let input: [SAOAIMessage]
     /// Maximum number of tokens to generate in the output.
     public let maxOutputTokens: Int?
     /// Sampling temperature.
@@ -13,21 +13,21 @@ public struct ResponsesRequest: Codable, Equatable {
     /// Nucleus sampling parameter.
     public let topP: Double?
     /// Optional tool definitions.
-    public let tools: [ToolDefinition]?
+    public let tools: [SAOAITool]?
     /// Previous response ID for chaining responses.
     public let previousResponseId: String?
     /// Reasoning configuration for reasoning models.
-    public let reasoning: Reasoning?
+    public let reasoning: SAOAIReasoning?
 
     public init(
         model: String? = nil,
-        input: [ResponseMessage],
+        input: [SAOAIMessage],
         maxOutputTokens: Int? = nil,
         temperature: Double? = nil,
         topP: Double? = nil,
-        tools: [ToolDefinition]? = nil,
+        tools: [SAOAITool]? = nil,
         previousResponseId: String? = nil,
-        reasoning: Reasoning? = nil
+        reasoning: SAOAIReasoning? = nil
     ) {
         self.model = model
         self.input = input

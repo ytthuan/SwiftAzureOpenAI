@@ -1,7 +1,7 @@
 import Foundation
 
 /// Typed errors for SDK consumers, mapping HTTP failures and decoding issues.
-public enum OpenAIError: Error, LocalizedError, Equatable {
+public enum SAOAIError: Error, LocalizedError, Equatable {
     case invalidAPIKey
     case rateLimitExceeded
     case serverError(statusCode: Int)
@@ -11,7 +11,7 @@ public enum OpenAIError: Error, LocalizedError, Equatable {
     case apiError(ErrorResponse)
 
     /// Creates a common error from a status code, if recognized.
-    public static func from(statusCode: Int) -> OpenAIError? {
+    public static func from(statusCode: Int) -> SAOAIError? {
         switch statusCode {
         case 401: return .invalidAPIKey
         case 429: return .rateLimitExceeded
@@ -40,7 +40,7 @@ public enum OpenAIError: Error, LocalizedError, Equatable {
         }
     }
     
-    public static func == (lhs: OpenAIError, rhs: OpenAIError) -> Bool {
+    public static func == (lhs: SAOAIError, rhs: SAOAIError) -> Bool {
         switch (lhs, rhs) {
         case (.invalidAPIKey, .invalidAPIKey),
              (.rateLimitExceeded, .rateLimitExceeded):

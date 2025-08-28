@@ -176,34 +176,34 @@ final class ModelTests: XCTestCase {
         XCTAssertEqual(decoded.sequenceNumber, 10)
     }
     
-    // MARK: - TokenUsage Tests
+    // MARK: - SAOAITokenUsage Tests
     
-    func testTokenUsageInitialization() {
-        let usage = TokenUsage(inputTokens: 100, outputTokens: 50, totalTokens: 150)
+    func testSAOAITokenUsageInitialization() {
+        let usage = SAOAITokenUsage(inputTokens: 100, outputTokens: 50, totalTokens: 150)
         
         XCTAssertEqual(usage.inputTokens, 100)
         XCTAssertEqual(usage.outputTokens, 50)
         XCTAssertEqual(usage.totalTokens, 150)
     }
     
-    func testTokenUsageCodable() throws {
-        let usage = TokenUsage(inputTokens: 75, outputTokens: 25, totalTokens: 100)
+    func testSAOAITokenUsageCodable() throws {
+        let usage = SAOAITokenUsage(inputTokens: 75, outputTokens: 25, totalTokens: 100)
         
         // Encode
         let encoded = try JSONEncoder().encode(usage)
         
         // Decode
-        let decoded = try JSONDecoder().decode(TokenUsage.self, from: encoded)
+        let decoded = try JSONDecoder().decode(SAOAITokenUsage.self, from: encoded)
         
         XCTAssertEqual(decoded.inputTokens, 75)
         XCTAssertEqual(decoded.outputTokens, 25)
         XCTAssertEqual(decoded.totalTokens, 100)
     }
     
-    // MARK: - ToolDefinition Tests
+    // MARK: - SAOAITool Tests
     
-    func testToolDefinitionInitialization() {
-        let params: JSONValue = .object([
+    func testSAOAIToolInitialization() {
+        let params: SAOAIJSONValue = .object([
             "type": .string("object"),
             "properties": .object([
                 "name": .object([
@@ -213,7 +213,7 @@ final class ModelTests: XCTestCase {
             ])
         ])
         
-        let tool = ToolDefinition(
+        let tool = SAOAITool(
             type: "function",
             name: "test_function",
             description: "A test function",
@@ -225,9 +225,9 @@ final class ModelTests: XCTestCase {
         XCTAssertEqual(tool.description, "A test function")
     }
     
-    func testToolDefinitionCodable() throws {
-        let params: JSONValue = .object(["type": .string("object")])
-        let tool = ToolDefinition(
+    func testSAOAIToolCodable() throws {
+        let params: SAOAIJSONValue = .object(["type": .string("object")])
+        let tool = SAOAITool(
             type: "function",
             name: "encode_test",
             description: "Encoding test",
@@ -238,36 +238,36 @@ final class ModelTests: XCTestCase {
         let encoded = try JSONEncoder().encode(tool)
         
         // Decode
-        let decoded = try JSONDecoder().decode(ToolDefinition.self, from: encoded)
+        let decoded = try JSONDecoder().decode(SAOAITool.self, from: encoded)
         
         XCTAssertEqual(decoded.type, "function")
         XCTAssertEqual(decoded.name, "encode_test")
         XCTAssertEqual(decoded.description, "Encoding test")
     }
     
-    // MARK: - Reasoning Tests
+    // MARK: - SAOAIReasoning Tests
     
-    func testReasoningInitialization() {
-        let reasoning = Reasoning(effort: "medium")
+    func testSAOAIReasoningInitialization() {
+        let reasoning = SAOAIReasoning(effort: "medium")
         XCTAssertEqual(reasoning.effort, "medium")
     }
     
-    func testReasoningCodable() throws {
-        let reasoning = Reasoning(effort: "high")
+    func testSAOAIReasoningCodable() throws {
+        let reasoning = SAOAIReasoning(effort: "high")
         
         // Encode
         let encoded = try JSONEncoder().encode(reasoning)
         
         // Decode
-        let decoded = try JSONDecoder().decode(Reasoning.self, from: encoded)
+        let decoded = try JSONDecoder().decode(SAOAIReasoning.self, from: encoded)
         
         XCTAssertEqual(decoded.effort, "high")
     }
     
-    func testReasoningEquatable() {
-        let reasoning1 = Reasoning(effort: "low")
-        let reasoning2 = Reasoning(effort: "low")
-        let reasoning3 = Reasoning(effort: "medium")
+    func testSAOAIReasoningEquatable() {
+        let reasoning1 = SAOAIReasoning(effort: "low")
+        let reasoning2 = SAOAIReasoning(effort: "low")
+        let reasoning3 = SAOAIReasoning(effort: "medium")
         
         XCTAssertEqual(reasoning1, reasoning2)
         XCTAssertNotEqual(reasoning1, reasoning3)

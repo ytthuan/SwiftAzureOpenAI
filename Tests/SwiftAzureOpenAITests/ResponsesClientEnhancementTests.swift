@@ -3,16 +3,16 @@ import XCTest
 
 final class ResponsesClientEnhancementTests: XCTestCase {
     
-    var mockClient: SwiftAzureOpenAI!
+    var mockClient: SAOAIClient!
     
     override func setUp() {
         super.setUp()
-        let config = AzureOpenAIConfiguration(
+        let config = SAOAIAzureConfiguration(
             endpoint: "https://test.openai.azure.com",
             apiKey: "test-key",
             deploymentName: "test-model"
         )
-        mockClient = SwiftAzureOpenAI(configuration: config)
+        mockClient = SAOAIClient(configuration: config)
     }
     
     // MARK: - Tests for previousResponseId parameter
@@ -25,7 +25,7 @@ final class ResponsesClientEnhancementTests: XCTestCase {
         // This should compile and not throw at creation time
         // We can't test the actual HTTP call without mocking, but we can verify the signature exists
         XCTAssertNoThrow({
-            let _ = { () async throws -> ResponsesResponse in
+            let _ = { () async throws -> SAOAIResponse in
                 return try await client.create(
                     model: "gpt-4o",
                     input: "Test message",
@@ -41,11 +41,11 @@ final class ResponsesClientEnhancementTests: XCTestCase {
     func testResponsesClientCreateWithPreviousResponseIdArray() {
         // Test that the array input version accepts previousResponseId
         let client = mockClient.responses
-        let message = ResponseMessage(role: .user, text: "Test message")
+        let message = SAOAIMessage(role: .user, text: "Test message")
         
         // This should compile and not throw at creation time
         XCTAssertNoThrow({
-            let _ = { () async throws -> ResponsesResponse in
+            let _ = { () async throws -> SAOAIResponse in
                 return try await client.create(
                     model: "gpt-4o",
                     input: [message],
@@ -62,7 +62,7 @@ final class ResponsesClientEnhancementTests: XCTestCase {
     // MARK: - Tests for multi-modal convenience methods
     
     func testConvenienceMethodForTextAndImageURL() {
-        let message = ResponseMessage(
+        let message = SAOAIMessage(
             role: .user,
             text: "What is in this image?",
             imageURL: "https://example.com/test.jpg"
@@ -90,7 +90,7 @@ final class ResponsesClientEnhancementTests: XCTestCase {
     
     func testConvenienceMethodForTextAndBase64Image() {
         let base64Data = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
-        let message = ResponseMessage(
+        let message = SAOAIMessage(
             role: .user,
             text: "Analyze this image",
             base64Image: base64Data,
@@ -117,7 +117,7 @@ final class ResponsesClientEnhancementTests: XCTestCase {
     
     func testConvenienceMethodForTextAndBase64ImageDefaultMimeType() {
         let base64Data = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
-        let message = ResponseMessage(
+        let message = SAOAIMessage(
             role: .user,
             text: "Describe this image",
             base64Image: base64Data
@@ -140,12 +140,12 @@ final class ResponsesClientEnhancementTests: XCTestCase {
         let base64Data = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
         
         // Test with specific MIME type
-        let imageWithMime = InputContentPart.InputImage(base64Data: base64Data, mimeType: "image/png")
+        let imageWithMime = SAOAIInputContent.InputImage(base64Data: base64Data, mimeType: "image/png")
         XCTAssertEqual(imageWithMime.type, "input_image")
         XCTAssertEqual(imageWithMime.imageURL, "data:image/png;base64,\(base64Data)")
         
         // Test with default MIME type
-        let imageDefault = InputContentPart.InputImage(base64Data: base64Data)
+        let imageDefault = SAOAIInputContent.InputImage(base64Data: base64Data)
         XCTAssertEqual(imageDefault.type, "input_image")
         XCTAssertEqual(imageDefault.imageURL, "data:image/jpeg;base64,\(base64Data)")
     }
@@ -156,7 +156,7 @@ final class ResponsesClientEnhancementTests: XCTestCase {
         // This test demonstrates that we can now replicate the Python-style API requested in the issue
         
         // Example 1: Multi-modal with image URL (from the issue)
-        let message1 = ResponseMessage(
+        let message1 = SAOAIMessage(
             role: .user,
             text: "what is in this image?",
             imageURL: "https://example.com/image.jpg"
@@ -166,7 +166,7 @@ final class ResponsesClientEnhancementTests: XCTestCase {
         
         // Example 2: Multi-modal with base64 image (from the issue)
         let base64Data = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
-        let message2 = ResponseMessage(
+        let message2 = SAOAIMessage(
             role: .user,
             text: "what is in this image?",
             base64Image: base64Data,
@@ -181,7 +181,7 @@ final class ResponsesClientEnhancementTests: XCTestCase {
         }
         
         // Example 3: Response chaining (from the issue)
-        let request = ResponsesRequest(
+        let request = SAOAIRequest(
             model: "gpt-4o",
             input: [message1],
             previousResponseId: "resp_abc123"
@@ -198,11 +198,11 @@ final class ResponsesClientEnhancementTests: XCTestCase {
         // Ensure that all existing code still works without changes
         
         // Simple text message (existing functionality)
-        let simpleMessage = ResponseMessage(role: .user, text: "Hello")
+        let simpleMessage = SAOAIMessage(role: .user, text: "Hello")
         XCTAssertEqual(simpleMessage.content.count, 1)
         
         // Manual content creation (existing functionality)
-        let manualMessage = ResponseMessage(
+        let manualMessage = SAOAIMessage(
             role: .user,
             content: [
                 .inputText(.init(text: "Hello")),
@@ -212,7 +212,7 @@ final class ResponsesClientEnhancementTests: XCTestCase {
         XCTAssertEqual(manualMessage.content.count, 2)
         
         // Request without previousResponseId (existing functionality)
-        let simpleRequest = ResponsesRequest(
+        let simpleRequest = SAOAIRequest(
             model: "gpt-4o",
             input: [simpleMessage],
             maxOutputTokens: 100
@@ -223,14 +223,14 @@ final class ResponsesClientEnhancementTests: XCTestCase {
     
     // MARK: - Tests for reasoning parameter
     
-    func testResponsesClientCreateWithReasoningParameterString() {
+    func testResponsesClientCreateWithSAOAIReasoningParameterString() {
         // Test that the string input version accepts reasoning parameter
         let client = mockClient.responses
-        let reasoning = Reasoning(effort: "medium")
+        let reasoning = SAOAIReasoning(effort: "medium")
         
         // This should compile and not throw at creation time
         XCTAssertNoThrow({
-            let _ = { () async throws -> ResponsesResponse in
+            let _ = { () async throws -> SAOAIResponse in
                 return try await client.create(
                     model: "o4-mini",
                     input: "What is the weather like today?",
@@ -244,15 +244,15 @@ final class ResponsesClientEnhancementTests: XCTestCase {
         }())
     }
     
-    func testResponsesClientCreateWithReasoningParameterArray() {
+    func testResponsesClientCreateWithSAOAIReasoningParameterArray() {
         // Test that the array input version accepts reasoning parameter
         let client = mockClient.responses
-        let message = ResponseMessage(role: .user, text: "Test message")
-        let reasoning = Reasoning(effort: "high")
+        let message = SAOAIMessage(role: .user, text: "Test message")
+        let reasoning = SAOAIReasoning(effort: "high")
         
         // This should compile and not throw at creation time
         XCTAssertNoThrow({
-            let _ = { () async throws -> ResponsesResponse in
+            let _ = { () async throws -> SAOAIResponse in
                 return try await client.create(
                     model: "o4-mini",
                     input: [message],
@@ -267,12 +267,12 @@ final class ResponsesClientEnhancementTests: XCTestCase {
         }())
     }
     
-    func testResponsesRequestWithReasoningParameter() {
-        // Test that ResponsesRequest correctly includes reasoning parameter
-        let message = ResponseMessage(role: .user, text: "Test message")
-        let reasoning = Reasoning(effort: "low")
+    func testSAOAIRequestWithSAOAIReasoningParameter() {
+        // Test that SAOAIRequest correctly includes reasoning parameter
+        let message = SAOAIMessage(role: .user, text: "Test message")
+        let reasoning = SAOAIReasoning(effort: "low")
         
-        let request = ResponsesRequest(
+        let request = SAOAIRequest(
             model: "o3-mini",
             input: [message],
             maxOutputTokens: 50,

@@ -18,7 +18,7 @@ public final class DefaultResponseParser: ResponseParser {
         do {
             return try decoder.decode(T.self, from: data)
         } catch {
-            throw OpenAIError.decodingError(error)
+            throw SAOAIError.decodingError(error)
         }
     }
 }
@@ -35,12 +35,12 @@ public final class DefaultResponseValidator: ResponseValidator {
         guard (200..<300).contains(statusCode) else {
             // Try to decode structured error first
             if let error = try? JSONDecoder().decode(ErrorResponse.self, from: data) {
-                throw OpenAIError.apiError(error)
+                throw SAOAIError.apiError(error)
             }
             // Fall back to known status code errors
-            if let specific = OpenAIError.from(statusCode: statusCode) { throw specific }
+            if let specific = SAOAIError.from(statusCode: statusCode) { throw specific }
             // Finally, generic server error
-            throw OpenAIError.serverError(statusCode: statusCode)
+            throw SAOAIError.serverError(statusCode: statusCode)
         }
     }
 }

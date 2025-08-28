@@ -2,12 +2,12 @@ import Foundation
 
 // MARK: - Lightweight JSON value representation
 
-public enum JSONValue: Codable, Equatable {
+public enum SAOAIJSONValue: Codable, Equatable {
     case string(String)
     case number(Double)
     case bool(Bool)
-    case object([String: JSONValue])
-    case array([JSONValue])
+    case object([String: SAOAIJSONValue])
+    case array([SAOAIJSONValue])
     case null
 
     public init(from decoder: Decoder) throws {
@@ -20,9 +20,9 @@ public enum JSONValue: Codable, Equatable {
             self = .bool(bool)
         } else if let number = try? container.decode(Double.self) {
             self = .number(number)
-        } else if let object = try? container.decode([String: JSONValue].self) {
+        } else if let object = try? container.decode([String: SAOAIJSONValue].self) {
             self = .object(object)
-        } else if let array = try? container.decode([JSONValue].self) {
+        } else if let array = try? container.decode([SAOAIJSONValue].self) {
             self = .array(array)
         } else {
             throw DecodingError.dataCorrupted(

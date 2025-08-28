@@ -2,8 +2,8 @@ import XCTest
 @testable import SwiftAzureOpenAI
 
 final class ConfigurationTests: XCTestCase {
-    func testAzureOpenAIConfigurationBuildsBaseURLAndHeaders() {
-        let config = AzureOpenAIConfiguration(
+    func testSAOAIAzureConfigurationBuildsBaseURLAndHeaders() {
+        let config = SAOAIAzureConfiguration(
             endpoint: "https://myresource.openai.azure.com",
             apiKey: "test-key",
             deploymentName: "gpt-4o-mini",
@@ -23,8 +23,8 @@ final class ConfigurationTests: XCTestCase {
         XCTAssertEqual(config.headers["Content-Type"], "application/json")
     }
 
-    func testAzureOpenAIConfigurationDefaultAPIVersion() {
-        let config = AzureOpenAIConfiguration(
+    func testSAOAIAzureConfigurationDefaultAPIVersion() {
+        let config = SAOAIAzureConfiguration(
             endpoint: "https://myresource.openai.azure.com",
             apiKey: "test-key",
             deploymentName: "gpt-4o-mini"
@@ -35,8 +35,8 @@ final class ConfigurationTests: XCTestCase {
         XCTAssertEqual(apiVersion, "preview")
     }
 
-    func testOpenAIServiceConfigurationHeaders() {
-        let config = OpenAIServiceConfiguration(apiKey: "sk-123", organization: "org_abc")
+    func testSAOAIOpenAIConfigurationHeaders() {
+        let config = SAOAIOpenAIConfiguration(apiKey: "sk-123", organization: "org_abc")
         XCTAssertEqual(config.baseURL.absoluteString, "https://api.openai.com/v1/responses")
 
         let headers = config.headers

@@ -98,6 +98,30 @@ SwiftAzureOpenAI now offers two APIs:
 import SwiftAzureOpenAI
 ```
 
+### 🆕 Improved Class Names (v2.0+)
+
+SwiftAzureOpenAI v2.0 introduces improved class names with the `SAOAI` prefix to resolve naming conflicts and improve clarity:
+
+**New Recommended Names:**
+- `SAOAIClient` (main client class)
+- `SAOAIResponse` (fixes confusing "ResponsesResponse" name)
+- `SAOAIRequest`, `SAOAIMessage`, `SAOAIOutput`
+- `SAOAIConfiguration`, `SAOAIAzureConfiguration`, `SAOAIOpenAIConfiguration`
+- `SAOAIError`, `SAOAIJSONValue` (prevents conflicts with Foundation/other libraries)
+
+**Full Backward Compatibility:**
+All old class names are still supported via deprecated aliases, so existing code continues to work without changes.
+
+```swift
+// ✅ New recommended syntax
+let client = SAOAIClient(configuration: SAOAIAzureConfiguration(...))
+let response: SAOAIResponse = try await client.responses.create(...)
+
+// ✅ Legacy syntax (still works, shows deprecation warnings)
+let client = SwiftAzureOpenAI(configuration: AzureOpenAIConfiguration(...))
+let response: ResponsesResponse = try await client.responses.create(...)
+```
+
 ### Simple Python-style API (Recommended)
 
 The easiest way to use SwiftAzureOpenAI with a simple, Python-inspired API:
