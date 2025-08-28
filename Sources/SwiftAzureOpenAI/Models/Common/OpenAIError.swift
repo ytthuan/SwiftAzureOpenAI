@@ -61,7 +61,3 @@ public enum SAOAIError: Error, LocalizedError, Equatable {
     }
 }
 
-// MARK: - Backward Compatibility
-@available(*, deprecated, renamed: "SAOAIError")
-public typealias OpenAIError = SAOAIError
-

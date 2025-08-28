@@ -33,7 +33,7 @@ final class ResponseServiceTests: XCTestCase {
         do {
             try svc.validateResponse(resp401)
             XCTFail("Expected invalidAPIKey")
-        } catch let e as OpenAIError {
+        } catch let e as SAOAIError {
             switch e { case .invalidAPIKey: break; default: XCTFail("Wrong error: \(e)") }
         }
     }

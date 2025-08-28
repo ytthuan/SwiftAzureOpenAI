@@ -18,11 +18,11 @@ public struct APIRequest: Sendable {
 }
 
 public final class HTTPClient {
-    private let configuration: OpenAIConfiguration
+    private let configuration: SAOAIConfiguration
     private let urlSession: URLSession
     private let maxRetries: Int
 
-    public init(configuration: OpenAIConfiguration, session: URLSession = .shared, maxRetries: Int = 2) {
+    public init(configuration: SAOAIConfiguration, session: URLSession = .shared, maxRetries: Int = 2) {
         self.configuration = configuration
         self.urlSession = session
         self.maxRetries = maxRetries
@@ -37,7 +37,7 @@ public final class HTTPClient {
                 let urlRequest = try buildURLRequest(from: request)
                 let (data, response) = try await urlSession.data(for: urlRequest)
                 guard let http = response as? HTTPURLResponse else {
-                    throw OpenAIError.networkError(URLError(.badServerResponse))
+                    throw SAOAIError.networkError(URLError(.badServerResponse))
                 }
                 return (data, http)
             } catch {
@@ -48,7 +48,7 @@ public final class HTTPClient {
                 try? await Task.sleep(nanoseconds: sleepMs * 1_000_000)
             }
         }
-        throw OpenAIError.networkError(lastError ?? URLError(.unknown))
+        throw SAOAIError.networkError(lastError ?? URLError(.unknown))
     }
 
     private func buildURLRequest(from request: APIRequest) throws -> URLRequest {

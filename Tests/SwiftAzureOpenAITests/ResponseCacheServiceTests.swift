@@ -130,19 +130,19 @@ final class ResponseCacheServiceTests: XCTestCase {
         let cache = InMemoryResponseCache()
         
         let response = APIResponse(
-            data: ResponsesResponse(
+            data: SAOAIResponse(
                 id: "resp_complex",
                 model: "gpt-4o-mini",
                 created: 1700000000,
                 output: [
-                    ResponseOutput(
+                    SAOAIOutput(
                         content: [
-                            .outputText(OutputContentPart.OutputText(text: "Complex response test"))
+                            .outputText(SAOAIOutputContent.OutputText(text: "Complex response test"))
                         ],
                         role: "assistant"
                     )
                 ],
-                usage: TokenUsage(inputTokens: 50, outputTokens: 25, totalTokens: 75)
+                usage: SAOAITokenUsage(inputTokens: 50, outputTokens: 25, totalTokens: 75)
             ),
             metadata: ResponseMetadata(
                 requestId: "complex_req",
@@ -161,7 +161,7 @@ final class ResponseCacheServiceTests: XCTestCase {
         
         // Store and retrieve complex data
         await cache.store(response: response, for: key)
-        let retrieved: APIResponse<ResponsesResponse>? = await cache.retrieve(for: key, as: ResponsesResponse.self)
+        let retrieved: APIResponse<SAOAIResponse>? = await cache.retrieve(for: key, as: SAOAIResponse.self)
         
         XCTAssertNotNil(retrieved)
         XCTAssertEqual(retrieved?.data.id, "resp_complex")

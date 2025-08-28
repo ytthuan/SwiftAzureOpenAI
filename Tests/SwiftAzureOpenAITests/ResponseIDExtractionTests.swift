@@ -63,10 +63,10 @@ final class ResponseIDExtractionTests: XCTestCase {
         // No request ID in headers this time
         let httpResponse = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: [:])!
         
-        let result: APIResponse<ResponsesResponse> = try await service.processResponse(
+        let result: APIResponse<SAOAIResponse> = try await service.processResponse(
             data, 
             response: httpResponse, 
-            type: ResponsesResponse.self
+            type: SAOAIResponse.self
         )
         
         // Response ID should be available in the decoded response body
@@ -102,10 +102,10 @@ final class ResponseIDExtractionTests: XCTestCase {
         let headers = ["x-request-id": "req_header_888"] // Header ID
         let httpResponse = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: headers)!
         
-        let result: APIResponse<ResponsesResponse> = try await service.processResponse(
+        let result: APIResponse<SAOAIResponse> = try await service.processResponse(
             data, 
             response: httpResponse, 
-            type: ResponsesResponse.self
+            type: SAOAIResponse.self
         )
         
         // Should have both IDs available
@@ -209,10 +209,10 @@ final class ResponseIDExtractionTests: XCTestCase {
         ]
         let httpResponse = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: headers)!
         
-        let result: APIResponse<ResponsesResponse> = try await service.processResponse(
+        let result: APIResponse<SAOAIResponse> = try await service.processResponse(
             data, 
             response: httpResponse, 
-            type: ResponsesResponse.self
+            type: SAOAIResponse.self
         )
         
         // Main response ID from body

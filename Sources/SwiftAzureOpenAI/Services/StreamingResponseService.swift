@@ -16,7 +16,7 @@ public final class DefaultStreamingResponseParser: StreamingResponseParser, Send
         do {
             return try decoder.decode(T.self, from: data)
         } catch {
-            throw OpenAIError.decodingError(error)
+            throw SAOAIError.decodingError(error)
         }
     }
 

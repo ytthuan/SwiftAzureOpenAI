@@ -7,9 +7,9 @@ import FoundationNetworking
 public final class ResponsesClient {
     private let httpClient: HTTPClient
     private let responseService: ResponseService
-    private let configuration: OpenAIConfiguration
+    private let configuration: SAOAIConfiguration
     
-    internal init(httpClient: HTTPClient, responseService: ResponseService, configuration: OpenAIConfiguration) {
+    internal init(httpClient: HTTPClient, responseService: ResponseService, configuration: SAOAIConfiguration) {
         self.httpClient = httpClient
         self.responseService = responseService
         self.configuration = configuration
@@ -23,14 +23,14 @@ public final class ResponsesClient {
         temperature: Double? = nil,
         topP: Double? = nil,
         previousResponseId: String? = nil,
-        reasoning: Reasoning? = nil
-    ) async throws -> ResponsesResponse {
-        let message = ResponseMessage(
+        reasoning: SAOAIReasoning? = nil
+    ) async throws -> SAOAIResponse {
+        let message = SAOAIMessage(
             role: .user,
             content: [.inputText(.init(text: input))]
         )
         
-        let request = ResponsesRequest(
+        let request = SAOAIRequest(
             model: model,
             input: [message],
             maxOutputTokens: maxOutputTokens,
@@ -46,15 +46,15 @@ public final class ResponsesClient {
     /// Create a response with array of messages (for more complex conversations)
     public func create(
         model: String,
-        input: [ResponseMessage],
+        input: [SAOAIMessage],
         maxOutputTokens: Int? = nil,
         temperature: Double? = nil,
         topP: Double? = nil,
-        tools: [ToolDefinition]? = nil,
+        tools: [SAOAITool]? = nil,
         previousResponseId: String? = nil,
-        reasoning: Reasoning? = nil
-    ) async throws -> ResponsesResponse {
-        let request = ResponsesRequest(
+        reasoning: SAOAIReasoning? = nil
+    ) async throws -> SAOAIResponse {
+        let request = SAOAIRequest(
             model: model,
             input: input,
             maxOutputTokens: maxOutputTokens,
@@ -69,7 +69,7 @@ public final class ResponsesClient {
     }
     
     /// Retrieve a response by ID
-    public func retrieve(_ responseId: String) async throws -> ResponsesResponse {
+    public func retrieve(_ responseId: String) async throws -> SAOAIResponse {
         var retrieveURL = configuration.baseURL
         retrieveURL = retrieveURL.appendingPathComponent(responseId)
         
@@ -80,7 +80,7 @@ public final class ResponsesClient {
         )
         
         let (data, httpResponse) = try await httpClient.send(request)
-        let result: APIResponse<ResponsesResponse> = try await responseService.processResponse(data, response: httpResponse, type: ResponsesResponse.self)
+        let result: APIResponse<SAOAIResponse> = try await responseService.processResponse(data, response: httpResponse, type: SAOAIResponse.self)
         return result.data
     }
     
@@ -101,7 +101,7 @@ public final class ResponsesClient {
     
     // MARK: - Private Methods
     
-    private func sendRequest(_ request: ResponsesRequest) async throws -> ResponsesResponse {
+    private func sendRequest(_ request: SAOAIRequest) async throws -> SAOAIResponse {
         let jsonData = try JSONEncoder().encode(request)
         
         let apiRequest = APIRequest(
@@ -112,7 +112,7 @@ public final class ResponsesClient {
         )
         
         let (data, httpResponse) = try await httpClient.send(apiRequest)
-        let result: APIResponse<ResponsesResponse> = try await responseService.processResponse(data, response: httpResponse, type: ResponsesResponse.self)
+        let result: APIResponse<SAOAIResponse> = try await responseService.processResponse(data, response: httpResponse, type: SAOAIResponse.self)
         return result.data
     }
 }

@@ -7,15 +7,15 @@ import FoundationNetworking
 final class ResponsesClientTests: XCTestCase {
     
     func testResponsesClientPropertyExists() {
-        let config = OpenAIServiceConfiguration(apiKey: "sk-test", organization: nil)
-        let client = SwiftAzureOpenAI(configuration: config)
+        let config = SAOAIOpenAIConfiguration(apiKey: "sk-test", organization: nil)
+        let client = SAOAIClient(configuration: config)
         
         // Verify that the responses property exists and is accessible
         XCTAssertNotNil(client.responses)
     }
     
     func testConvenienceMessageInitializer() {
-        let message = ResponseMessage(role: .user, text: "Hello, world!")
+        let message = SAOAIMessage(role: .user, text: "Hello, world!")
         
         XCTAssertEqual(message.role, .user)
         XCTAssertEqual(message.content.count, 1)
@@ -32,7 +32,7 @@ final class ResponsesClientTests: XCTestCase {
         // Create a mock configuration
         let config = TestableConfiguration()
         let cache = InMemoryResponseCache()
-        let client = SwiftAzureOpenAI(configuration: config, cache: cache)
+        let client = SAOAIClient(configuration: config, cache: cache)
         
         // This would normally make a network call, but let's test the method structure
         // Since we don't want to make actual HTTP calls in unit tests, we'll test the method exists
@@ -45,11 +45,11 @@ final class ResponsesClientTests: XCTestCase {
     
     func testResponsesClientCreateWithMessagesArray() async throws {
         let config = TestableConfiguration()
-        let client = SwiftAzureOpenAI(configuration: config)
+        let client = SAOAIClient(configuration: config)
         
         let messages = [
-            ResponseMessage(role: .system, text: "You are a helpful assistant."),
-            ResponseMessage(role: .user, text: "Hello!")
+            SAOAIMessage(role: .system, text: "You are a helpful assistant."),
+            SAOAIMessage(role: .user, text: "Hello!")
         ]
         
         // Test that the method exists and accepts the right parameters
@@ -75,7 +75,7 @@ final class ResponsesClientTests: XCTestCase {
     
     func testResponsesClientRetrieveMethod() {
         let config = TestableConfiguration()
-        let client = SwiftAzureOpenAI(configuration: config)
+        let client = SAOAIClient(configuration: config)
         
         // Test that the retrieve method exists
         let retrieveMethod = client.responses.retrieve
@@ -84,7 +84,7 @@ final class ResponsesClientTests: XCTestCase {
     
     func testResponsesClientDeleteMethod() {
         let config = TestableConfiguration()
-        let client = SwiftAzureOpenAI(configuration: config)
+        let client = SAOAIClient(configuration: config)
         
         // Test that the delete method exists
         let deleteMethod = client.responses.delete
@@ -92,17 +92,17 @@ final class ResponsesClientTests: XCTestCase {
     }
     
     func testBackwardCompatibilityWithExistingAPI() {
-        let config = OpenAIServiceConfiguration(apiKey: "sk-test", organization: nil)
-        let client = SwiftAzureOpenAI(configuration: config)
+        let config = SAOAIOpenAIConfiguration(apiKey: "sk-test", organization: nil)
+        let client = SAOAIClient(configuration: config)
         
         // Verify new method is available
         XCTAssertNotNil(client.responses)
         
         // Test that we can still create complex requests the old way
-        let request = ResponsesRequest(
+        let request = SAOAIRequest(
             model: "gpt-4o-mini",
             input: [
-                ResponseMessage(
+                SAOAIMessage(
                     role: .user,
                     content: [.inputText(.init(text: "Hello"))]
                 )
@@ -117,7 +117,7 @@ final class ResponsesClientTests: XCTestCase {
     
     func testComplexMessageStructureStillWorks() {
         // Verify that the old complex way still works
-        let complexMessage = ResponseMessage(
+        let complexMessage = SAOAIMessage(
             role: .user,
             content: [
                 .inputText(.init(text: "Hello")),
@@ -145,7 +145,7 @@ final class ResponsesClientTests: XCTestCase {
 // MARK: - Test Helper
 
 /// A testable configuration that provides a valid URL and headers without making network calls
-private struct TestableConfiguration: OpenAIConfiguration {
+private struct TestableConfiguration: SAOAIConfiguration {
     var baseURL: URL {
         URL(string: "https://api.openai.com/v1/responses")!
     }

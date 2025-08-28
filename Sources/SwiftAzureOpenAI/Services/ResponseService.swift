@@ -34,7 +34,7 @@ public final class ResponseService: ResponseServiceProtocol {
     }
 
     public func validateResponse(_ response: HTTPURLResponse) throws {
-        if let specific = OpenAIError.from(statusCode: response.statusCode) { throw specific }
+        if let specific = SAOAIError.from(statusCode: response.statusCode) { throw specific }
     }
 
     public func extractMetadata(from response: HTTPURLResponse) -> ResponseMetadata {

@@ -34,10 +34,3 @@ public struct SAOAIResponse: Codable, Equatable {
     }
 }
 
-// MARK: - Backward Compatibility
-@available(*, deprecated, renamed: "SAOAIOutput")
-public typealias ResponseOutput = SAOAIOutput
-
-@available(*, deprecated, renamed: "SAOAIResponse")
-public typealias ResponsesResponse = SAOAIResponse
-

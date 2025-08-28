@@ -7,29 +7,29 @@ import FoundationNetworking
 final class SwiftAzureOpenAITests: XCTestCase {
     
     func testInitializationWithConfiguration() {
-        let config = OpenAIServiceConfiguration(apiKey: "sk-test", organization: nil)
-        let client = SwiftAzureOpenAI(configuration: config)
+        let config = SAOAIOpenAIConfiguration(apiKey: "sk-test", organization: nil)
+        let client = SAOAIClient(configuration: config)
         
         // Should initialize without throwing
         XCTAssertNotNil(client)
     }
     
     func testInitializationWithCache() {
-        let config = AzureOpenAIConfiguration(
+        let config = SAOAIAzureConfiguration(
             endpoint: "https://test.openai.azure.com",
             apiKey: "test-key",
             deploymentName: "gpt-4o-mini"
         )
         let cache = InMemoryResponseCache()
-        let client = SwiftAzureOpenAI(configuration: config, cache: cache)
+        let client = SAOAIClient(configuration: config, cache: cache)
         
         // Should initialize with cache without throwing
         XCTAssertNotNil(client)
     }
     
     func testHandleResponseWithValidData() async throws {
-        let config = OpenAIServiceConfiguration(apiKey: "sk-test", organization: nil)
-        let client = SwiftAzureOpenAI(configuration: config)
+        let config = SAOAIOpenAIConfiguration(apiKey: "sk-test", organization: nil)
+        let client = SAOAIClient(configuration: config)
         
         // Prepare test response data
         let responseData: [String: Any] = [
@@ -63,7 +63,7 @@ final class SwiftAzureOpenAITests: XCTestCase {
             headerFields: ["x-request-id": "req_456"]
         )!
         
-        let result: APIResponse<ResponsesResponse> = try await client.handleResponse(
+        let result: APIResponse<SAOAIResponse> = try await client.handleResponse(
             data: data,
             response: httpResponse
         )
@@ -74,8 +74,8 @@ final class SwiftAzureOpenAITests: XCTestCase {
     }
     
     func testHandleResponseWithInvalidResponse() async throws {
-        let config = OpenAIServiceConfiguration(apiKey: "sk-test", organization: nil)
-        let client = SwiftAzureOpenAI(configuration: config)
+        let config = SAOAIOpenAIConfiguration(apiKey: "sk-test", organization: nil)
+        let client = SAOAIClient(configuration: config)
         
         let data = Data("test".utf8)
         
@@ -84,12 +84,12 @@ final class SwiftAzureOpenAITests: XCTestCase {
         let invalidResponse = URLResponse(url: url, mimeType: nil, expectedContentLength: 0, textEncodingName: nil)
         
         do {
-            let _: APIResponse<ResponsesResponse> = try await client.handleResponse(
+            let _: APIResponse<SAOAIResponse> = try await client.handleResponse(
                 data: data,
                 response: invalidResponse
             )
             XCTFail("Expected networkError to be thrown")
-        } catch let error as OpenAIError {
+        } catch let error as SAOAIError {
             if case .networkError(let urlError as URLError) = error {
                 XCTAssertEqual(urlError.code, URLError.badServerResponse)
             } else {
@@ -99,8 +99,8 @@ final class SwiftAzureOpenAITests: XCTestCase {
     }
     
     func testProcessStreamingResponseReturnsStream() {
-        let config = OpenAIServiceConfiguration(apiKey: "sk-test", organization: nil)
-        let client = SwiftAzureOpenAI(configuration: config)
+        let config = SAOAIOpenAIConfiguration(apiKey: "sk-test", organization: nil)
+        let client = SAOAIClient(configuration: config)
         
         // Create test streaming data
         let inputStream = AsyncThrowingStream<Data, Error> { continuation in

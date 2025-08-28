@@ -59,13 +59,3 @@ public struct SAOAIOpenAIConfiguration: SAOAIConfiguration {
     }
 }
 
-// MARK: - Backward Compatibility
-@available(*, deprecated, renamed: "SAOAIConfiguration")
-public typealias OpenAIConfiguration = SAOAIConfiguration
-
-@available(*, deprecated, renamed: "SAOAIAzureConfiguration")
-public typealias AzureOpenAIConfiguration = SAOAIAzureConfiguration
-
-@available(*, deprecated, renamed: "SAOAIOpenAIConfiguration")
-public typealias OpenAIServiceConfiguration = SAOAIOpenAIConfiguration
-

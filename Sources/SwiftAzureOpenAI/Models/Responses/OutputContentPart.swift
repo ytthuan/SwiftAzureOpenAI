@@ -44,7 +44,3 @@ public enum SAOAIOutputContent: Codable, Equatable {
     }
 }
 
-// MARK: - Backward Compatibility
-@available(*, deprecated, renamed: "SAOAIOutputContent")
-public typealias OutputContentPart = SAOAIOutputContent
-

@@ -50,7 +50,3 @@ public enum SAOAIJSONValue: Codable, Equatable {
     }
 }
 
-// MARK: - Backward Compatibility
-@available(*, deprecated, renamed: "SAOAIJSONValue")
-public typealias JSONValue = SAOAIJSONValue
-

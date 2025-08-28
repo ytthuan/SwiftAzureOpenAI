@@ -69,7 +69,3 @@ public enum SAOAIInputContent: Codable, Equatable {
     }
 }
 
-// MARK: - Backward Compatibility
-@available(*, deprecated, renamed: "SAOAIInputContent")
-public typealias InputContentPart = SAOAIInputContent
-

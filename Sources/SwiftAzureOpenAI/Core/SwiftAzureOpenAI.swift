@@ -35,8 +35,3 @@ public final class SAOAIClient {
         return try await responseService.processResponse(data, response: http, type: T.self)
     }
 }
-
-// MARK: - Backward Compatibility
-@available(*, deprecated, renamed: "SAOAIClient")
-public typealias SwiftAzureOpenAI = SAOAIClient
-

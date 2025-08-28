@@ -6,7 +6,7 @@ import FoundationNetworking
 
 final class HTTPClientTests: XCTestCase {
     func testBuildsURLRequestWithMergedHeaders() throws {
-        let config = OpenAIServiceConfiguration(apiKey: "sk-xyz", organization: nil)
+        let config = SAOAIOpenAIConfiguration(apiKey: "sk-xyz", organization: nil)
         let url = URL(string: "https://api.openai.com/v1/responses")!
         let req = APIRequest(method: "POST", url: url, headers: ["X-Test": "1"], body: Data("{}".utf8))
 
@@ -20,7 +20,7 @@ final class HTTPClientTests: XCTestCase {
     }
     
     func testHTTPClientInitialization() {
-        let config = AzureOpenAIConfiguration(
+        let config = SAOAIAzureConfiguration(
             endpoint: "https://test.openai.azure.com",
             apiKey: "test-key",
             deploymentName: "gpt-4o-mini"
@@ -98,12 +98,12 @@ final class HTTPClientTests: XCTestCase {
     
     func testHTTPClientWithDifferentConfigurations() {
         // Test with OpenAI configuration
-        let openAIConfig = OpenAIServiceConfiguration(apiKey: "sk-test", organization: "org-123")
+        let openAIConfig = SAOAIOpenAIConfiguration(apiKey: "sk-test", organization: "org-123")
         let openAIClient = HTTPClient(configuration: openAIConfig)
         XCTAssertNotNil(openAIClient)
         
         // Test with Azure configuration  
-        let azureConfig = AzureOpenAIConfiguration(
+        let azureConfig = SAOAIAzureConfiguration(
             endpoint: "https://myresource.openai.azure.com",
             apiKey: "azure-key",
             deploymentName: "gpt-4o-mini",

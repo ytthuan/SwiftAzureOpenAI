@@ -10,7 +10,7 @@ final class EdgeCaseTests: XCTestCase {
     
     func testAzureConfigurationWithInvalidEndpoint() {
         // Should not crash with malformed endpoint
-        let config = AzureOpenAIConfiguration(
+        let config = SAOAIAzureConfiguration(
             endpoint: "not-a-valid-url",
             apiKey: "test-key",
             deploymentName: "gpt-4o-mini"
@@ -22,7 +22,7 @@ final class EdgeCaseTests: XCTestCase {
     }
     
     func testAzureConfigurationWithEmptyValues() {
-        let config = AzureOpenAIConfiguration(
+        let config = SAOAIAzureConfiguration(
             endpoint: "",
             apiKey: "",
             deploymentName: ""
@@ -32,8 +32,8 @@ final class EdgeCaseTests: XCTestCase {
         XCTAssertNotNil(config.baseURL)
     }
     
-    func testOpenAIConfigurationWithEmptyOrganization() {
-        let config = OpenAIServiceConfiguration(apiKey: "sk-test", organization: "")
+    func testSAOAIConfigurationWithEmptyOrganization() {
+        let config = SAOAIOpenAIConfiguration(apiKey: "sk-test", organization: "")
         
         // Empty organization should be included in headers
         XCTAssertEqual(config.headers["OpenAI-Organization"], "")
@@ -41,8 +41,8 @@ final class EdgeCaseTests: XCTestCase {
     
     // MARK: - JSON Parsing Edge Cases
     
-    func testJSONValueWithDeeplyNestedStructure() throws {
-        let deepNested: JSONValue = .object([
+    func testSAOAIJSONValueWithDeeplyNestedStructure() throws {
+        let deepNested: SAOAIJSONValue = .object([
             "level1": .object([
                 "level2": .object([
                     "level3": .object([
@@ -58,26 +58,26 @@ final class EdgeCaseTests: XCTestCase {
         ])
         
         let encoded = try JSONEncoder().encode(deepNested)
-        let decoded = try JSONDecoder().decode(JSONValue.self, from: encoded)
+        let decoded = try JSONDecoder().decode(SAOAIJSONValue.self, from: encoded)
         
         XCTAssertEqual(decoded, deepNested)
     }
     
-    func testJSONValueWithLargeNumbers() throws {
-        let largeNumbers: JSONValue = .object([
+    func testSAOAIJSONValueWithLargeNumbers() throws {
+        let largeNumbers: SAOAIJSONValue = .object([
             "large_int": .number(9223372036854774784), // Large number that can be represented as Double
             "large_double": .number(1.7976931348623157e+308), // Close to Double.max
             "small_double": .number(2.2250738585072014e-308) // Close to Double.min
         ])
         
         let encoded = try JSONEncoder().encode(largeNumbers)
-        let decoded = try JSONDecoder().decode(JSONValue.self, from: encoded)
+        let decoded = try JSONDecoder().decode(SAOAIJSONValue.self, from: encoded)
         
         XCTAssertEqual(decoded, largeNumbers)
     }
     
-    func testJSONValueWithUnicodeCharacters() throws {
-        let unicode: JSONValue = .object([
+    func testSAOAIJSONValueWithUnicodeCharacters() throws {
+        let unicode: SAOAIJSONValue = .object([
             "emoji": .string("🚀🎉💻"),
             "chinese": .string("你好世界"),
             "arabic": .string("مرحبا بالعالم"),
@@ -85,13 +85,13 @@ final class EdgeCaseTests: XCTestCase {
         ])
         
         let encoded = try JSONEncoder().encode(unicode)
-        let decoded = try JSONDecoder().decode(JSONValue.self, from: encoded)
+        let decoded = try JSONDecoder().decode(SAOAIJSONValue.self, from: encoded)
         
         XCTAssertEqual(decoded, unicode)
     }
     
-    func testJSONValueWithEmptyStructures() throws {
-        let empty: JSONValue = .object([
+    func testSAOAIJSONValueWithEmptyStructures() throws {
+        let empty: SAOAIJSONValue = .object([
             "empty_object": .object([:]),
             "empty_array": .array([]),
             "empty_string": .string(""),
@@ -99,35 +99,35 @@ final class EdgeCaseTests: XCTestCase {
         ])
         
         let encoded = try JSONEncoder().encode(empty)
-        let decoded = try JSONDecoder().decode(JSONValue.self, from: encoded)
+        let decoded = try JSONDecoder().decode(SAOAIJSONValue.self, from: encoded)
         
         XCTAssertEqual(decoded, empty)
     }
     
     // MARK: - Error Handling Edge Cases
     
-    func testOpenAIErrorWithUnknownStatusCode() {
+    func testSAOAIErrorWithUnknownStatusCode() {
         // Test boundary cases
-        XCTAssertNil(OpenAIError.from(statusCode: 0))
-        XCTAssertNil(OpenAIError.from(statusCode: -1))
-        XCTAssertNil(OpenAIError.from(statusCode: 999))
+        XCTAssertNil(SAOAIError.from(statusCode: 0))
+        XCTAssertNil(SAOAIError.from(statusCode: -1))
+        XCTAssertNil(SAOAIError.from(statusCode: 999))
         
         // Test exact boundaries
-        XCTAssertNil(OpenAIError.from(statusCode: 199))
-        XCTAssertNil(OpenAIError.from(statusCode: 300))
-        XCTAssertEqual(OpenAIError.from(statusCode: 400), .invalidRequest("Bad Request"))
-        XCTAssertEqual(OpenAIError.from(statusCode: 401), .invalidAPIKey)
+        XCTAssertNil(SAOAIError.from(statusCode: 199))
+        XCTAssertNil(SAOAIError.from(statusCode: 300))
+        XCTAssertEqual(SAOAIError.from(statusCode: 400), .invalidRequest("Bad Request"))
+        XCTAssertEqual(SAOAIError.from(statusCode: 401), .invalidAPIKey)
     }
     
-    func testOpenAIErrorDescriptionLengths() {
+    func testSAOAIErrorDescriptionLengths() {
         // Test very long error messages
         let longMessage = String(repeating: "a", count: 10000)
-        let longError = OpenAIError.invalidRequest(longMessage)
+        let longError = SAOAIError.invalidRequest(longMessage)
         
         XCTAssertTrue(longError.errorDescription?.contains(longMessage) == true)
         
         // Test empty error message
-        let emptyError = OpenAIError.invalidRequest("")
+        let emptyError = SAOAIError.invalidRequest("")
         XCTAssertEqual(emptyError.errorDescription, "Invalid request: ")
     }
     
@@ -141,7 +141,7 @@ final class EdgeCaseTests: XCTestCase {
         
         XCTAssertThrowsError(try validator.validate(response, data: malformedData)) { error in
             // Should fall back to status code mapping when JSON parsing fails
-            guard case OpenAIError.invalidRequest = error else {
+            guard case SAOAIError.invalidRequest = error else {
                 return XCTFail("Expected invalidRequest, got: \(error)")
             }
         }
@@ -244,7 +244,7 @@ final class EdgeCaseTests: XCTestCase {
             }
         } catch {
             // Expected to throw error
-            XCTAssertTrue(error is DecodingError || error is OpenAIError)
+            XCTAssertTrue(error is DecodingError || error is SAOAIError)
         }
     }
     

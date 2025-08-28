@@ -6,27 +6,27 @@ final class MultiModalAndChainingTests: XCTestCase {
     // MARK: - Multi-Modal Input Tests
     
     func testInputImageWithURL() {
-        let imageInput = InputContentPart.InputImage(imageURL: "https://example.com/image.jpg")
+        let imageInput = SAOAIInputContent.InputImage(imageURL: "https://example.com/image.jpg")
         XCTAssertEqual(imageInput.type, "input_image")
         XCTAssertEqual(imageInput.imageURL, "https://example.com/image.jpg")
     }
     
     func testInputImageWithBase64() {
         let base64Data = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
-        let imageInput = InputContentPart.InputImage(base64Data: base64Data, mimeType: "image/png")
+        let imageInput = SAOAIInputContent.InputImage(base64Data: base64Data, mimeType: "image/png")
         XCTAssertEqual(imageInput.type, "input_image")
         XCTAssertEqual(imageInput.imageURL, "data:image/png;base64,\(base64Data)")
     }
     
     func testInputImageWithBase64DefaultMimeType() {
         let base64Data = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
-        let imageInput = InputContentPart.InputImage(base64Data: base64Data)
+        let imageInput = SAOAIInputContent.InputImage(base64Data: base64Data)
         XCTAssertEqual(imageInput.type, "input_image")
         XCTAssertEqual(imageInput.imageURL, "data:image/jpeg;base64,\(base64Data)")
     }
     
-    func testResponseMessageWithTextAndImageURL() {
-        let message = ResponseMessage(role: .user, text: "What is in this image?", imageURL: "https://example.com/image.jpg")
+    func testSAOAIMessageWithTextAndImageURL() {
+        let message = SAOAIMessage(role: .user, text: "What is in this image?", imageURL: "https://example.com/image.jpg")
         XCTAssertEqual(message.role, .user)
         XCTAssertEqual(message.content.count, 2)
         
@@ -45,9 +45,9 @@ final class MultiModalAndChainingTests: XCTestCase {
         }
     }
     
-    func testResponseMessageWithTextAndBase64Image() {
+    func testSAOAIMessageWithTextAndBase64Image() {
         let base64Data = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
-        let message = ResponseMessage(role: .user, text: "Analyze this image", base64Image: base64Data, mimeType: "image/png")
+        let message = SAOAIMessage(role: .user, text: "Analyze this image", base64Image: base64Data, mimeType: "image/png")
         XCTAssertEqual(message.role, .user)
         XCTAssertEqual(message.content.count, 2)
         
@@ -66,9 +66,9 @@ final class MultiModalAndChainingTests: XCTestCase {
         }
     }
     
-    func testResponseMessageWithTextAndBase64ImageDefaultMimeType() {
+    func testSAOAIMessageWithTextAndBase64ImageDefaultMimeType() {
         let base64Data = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
-        let message = ResponseMessage(role: .user, text: "Describe this image", base64Image: base64Data)
+        let message = SAOAIMessage(role: .user, text: "Describe this image", base64Image: base64Data)
         XCTAssertEqual(message.role, .user)
         XCTAssertEqual(message.content.count, 2)
         
@@ -82,9 +82,9 @@ final class MultiModalAndChainingTests: XCTestCase {
     
     // MARK: - Response Chaining Tests
     
-    func testResponsesRequestWithPreviousResponseId() {
-        let message = ResponseMessage(role: .user, text: "Continue the conversation")
-        let request = ResponsesRequest(
+    func testSAOAIRequestWithPreviousResponseId() {
+        let message = SAOAIMessage(role: .user, text: "Continue the conversation")
+        let request = SAOAIRequest(
             model: "gpt-4o",
             input: [message],
             maxOutputTokens: 200,
@@ -103,9 +103,9 @@ final class MultiModalAndChainingTests: XCTestCase {
         XCTAssertEqual(request.previousResponseId, "resp_abc123")
     }
     
-    func testResponsesRequestWithoutPreviousResponseId() {
-        let message = ResponseMessage(role: .user, text: "Start a new conversation")
-        let request = ResponsesRequest(
+    func testSAOAIRequestWithoutPreviousResponseId() {
+        let message = SAOAIMessage(role: .user, text: "Start a new conversation")
+        let request = SAOAIRequest(
             model: "gpt-4o",
             input: [message]
         )
@@ -121,9 +121,9 @@ final class MultiModalAndChainingTests: XCTestCase {
     
     // MARK: - JSON Encoding/Decoding Tests
     
-    func testResponsesRequestJSONEncodingWithPreviousResponseId() throws {
-        let message = ResponseMessage(role: .user, text: "Test message")
-        let request = ResponsesRequest(
+    func testSAOAIRequestJSONEncodingWithPreviousResponseId() throws {
+        let message = SAOAIMessage(role: .user, text: "Test message")
+        let request = SAOAIRequest(
             model: "gpt-4o",
             input: [message],
             maxOutputTokens: 100,
@@ -145,9 +145,9 @@ final class MultiModalAndChainingTests: XCTestCase {
         XCTAssertTrue(jsonString.contains("\"top_p\":0.9"))
     }
     
-    func testResponsesRequestJSONEncodingWithoutPreviousResponseId() throws {
-        let message = ResponseMessage(role: .user, text: "Test message")
-        let request = ResponsesRequest(
+    func testSAOAIRequestJSONEncodingWithoutPreviousResponseId() throws {
+        let message = SAOAIMessage(role: .user, text: "Test message")
+        let request = SAOAIRequest(
             model: "gpt-4o",
             input: [message]
         )
@@ -164,7 +164,7 @@ final class MultiModalAndChainingTests: XCTestCase {
     
     func testInputImageJSONEncoding() throws {
         let base64Data = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
-        let imageInput = InputContentPart.InputImage(base64Data: base64Data, mimeType: "image/png")
+        let imageInput = SAOAIInputContent.InputImage(base64Data: base64Data, mimeType: "image/png")
         
         let encoder = JSONEncoder()
         encoder.keyEncodingStrategy = .convertToSnakeCase
@@ -177,7 +177,7 @@ final class MultiModalAndChainingTests: XCTestCase {
     }
     
     func testMultiModalMessageJSONEncoding() throws {
-        let message = ResponseMessage(
+        let message = SAOAIMessage(
             role: .user,
             text: "What's in this image?",
             imageURL: "https://example.com/test.jpg"
@@ -199,14 +199,14 @@ final class MultiModalAndChainingTests: XCTestCase {
     
     func testCompleteMultiModalRequestStructure() throws {
         let base64Data = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
-        let message = ResponseMessage(
+        let message = SAOAIMessage(
             role: .user,
             text: "Please analyze this image and tell me what you see",
             base64Image: base64Data,
             mimeType: "image/png"
         )
         
-        let request = ResponsesRequest(
+        let request = SAOAIRequest(
             model: "gpt-4o",
             input: [message],
             maxOutputTokens: 300,
@@ -243,7 +243,7 @@ final class MultiModalAndChainingTests: XCTestCase {
     
     func testBackwardCompatibilityWithExistingCode() {
         // Test that existing code still works without changes
-        let message = ResponseMessage(role: .user, text: "Simple text message")
+        let message = SAOAIMessage(role: .user, text: "Simple text message")
         XCTAssertEqual(message.content.count, 1)
         
         if case .inputText(let textInput) = message.content[0] {
@@ -252,7 +252,7 @@ final class MultiModalAndChainingTests: XCTestCase {
             XCTFail("Content should be text")
         }
         
-        let request = ResponsesRequest(
+        let request = SAOAIRequest(
             model: "gpt-4o",
             input: [message],
             maxOutputTokens: 200

@@ -9,7 +9,3 @@ public struct SAOAIReasoning: Codable, Equatable {
         self.effort = effort
     }
 }
-
-// MARK: - Backward Compatibility
-@available(*, deprecated, renamed: "SAOAIReasoning")
-public typealias Reasoning = SAOAIReasoning

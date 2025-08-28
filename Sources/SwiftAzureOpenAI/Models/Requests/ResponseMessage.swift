@@ -43,10 +43,3 @@ public struct SAOAIMessage: Codable, Equatable {
     }
 }
 
-// MARK: - Backward Compatibility
-@available(*, deprecated, renamed: "SAOAIMessageRole")
-public typealias MessageRole = SAOAIMessageRole
-
-@available(*, deprecated, renamed: "SAOAIMessage")
-public typealias ResponseMessage = SAOAIMessage
-

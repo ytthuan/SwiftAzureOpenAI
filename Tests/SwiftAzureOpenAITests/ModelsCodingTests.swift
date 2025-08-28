@@ -2,21 +2,21 @@ import XCTest
 @testable import SwiftAzureOpenAI
 
 final class ModelsCodingTests: XCTestCase {
-    func testResponsesRequestEncodingKeys() throws {
-        let message = ResponseMessage(
+    func testSAOAIRequestEncodingKeys() throws {
+        let message = SAOAIMessage(
             role: .user,
             content: [
                 .inputText(.init(text: "Hello")),
                 .inputImage(.init(imageURL: "https://example.com/img.png"))
             ]
         )
-        let req = ResponsesRequest(
+        let req = SAOAIRequest(
             model: "gpt-4o-mini",
             input: [message],
             maxOutputTokens: 256,
             temperature: 0.3,
             topP: 0.9,
-            tools: [ToolDefinition(type: "function", name: "doThing", description: "desc", parameters: .object([:]))]
+            tools: [SAOAITool(type: "function", name: "doThing", description: "desc", parameters: .object([:]))]
         )
 
         let data = try JSONEncoder().encode(req)
@@ -29,13 +29,13 @@ final class ModelsCodingTests: XCTestCase {
         XCTAssertNotNil(json["tools"])        
     }
 
-    func testResponsesRequestWithReasoningParameter() throws {
-        let message = ResponseMessage(
+    func testSAOAIRequestWithSAOAIReasoningParameter() throws {
+        let message = SAOAIMessage(
             role: .user,
             content: [.inputText(.init(text: "What is the weather like today?"))]
         )
-        let reasoning = Reasoning(effort: "medium")
-        let req = ResponsesRequest(
+        let reasoning = SAOAIReasoning(effort: "medium")
+        let req = SAOAIRequest(
             model: "o4-mini",
             input: [message],
             maxOutputTokens: 100,
@@ -59,7 +59,7 @@ final class ModelsCodingTests: XCTestCase {
         }
     }
 
-    func testResponsesResponseDecoding() throws {
+    func testSAOAIResponseDecoding() throws {
         let payload = {
             () -> [String: Any] in
             let outputText: [String: Any] = ["type": "output_text", "text": "Hi there"]
@@ -80,7 +80,7 @@ final class ModelsCodingTests: XCTestCase {
             ]
         }()
         let data = try JSONSerialization.data(withJSONObject: payload)
-        let decoded = try JSONDecoder().decode(ResponsesResponse.self, from: data)
+        let decoded = try JSONDecoder().decode(SAOAIResponse.self, from: data)
 
         XCTAssertEqual(decoded.id, "resp_123")
         XCTAssertEqual(decoded.model, "gpt-4o-mini")

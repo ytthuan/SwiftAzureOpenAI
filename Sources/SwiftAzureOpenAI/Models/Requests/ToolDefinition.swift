@@ -15,7 +15,3 @@ public struct SAOAITool: Codable, Equatable {
     }
 }
 
-// MARK: - Backward Compatibility
-@available(*, deprecated, renamed: "SAOAITool")
-public typealias ToolDefinition = SAOAITool
-

@@ -19,7 +19,3 @@ public struct SAOAITokenUsage: Codable, Equatable {
     }
 }
 
-// MARK: - Backward Compatibility
-@available(*, deprecated, renamed: "SAOAITokenUsage")
-public typealias TokenUsage = SAOAITokenUsage
-

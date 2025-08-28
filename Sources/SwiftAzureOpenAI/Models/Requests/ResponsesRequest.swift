@@ -51,7 +51,3 @@ public struct SAOAIRequest: Codable, Equatable {
     }
 }
 
-// MARK: - Backward Compatibility
-@available(*, deprecated, renamed: "SAOAIRequest")
-public typealias ResponsesRequest = SAOAIRequest
-
