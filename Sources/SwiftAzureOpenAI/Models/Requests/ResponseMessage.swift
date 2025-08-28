@@ -1,7 +1,7 @@
 import Foundation
 
 /// Sender role in a conversation.
-public enum MessageRole: String, Codable {
+public enum SAOAIMessageRole: String, Codable {
     case system
     case user
     case assistant
@@ -9,23 +9,23 @@ public enum MessageRole: String, Codable {
 }
 
 /// A message with structured content parts for the Responses API.
-public struct ResponseMessage: Codable, Equatable {
-    public let role: MessageRole
+public struct SAOAIMessage: Codable, Equatable {
+    public let role: SAOAIMessageRole
     public let content: [InputContentPart]
 
-    public init(role: MessageRole, content: [InputContentPart]) {
+    public init(role: SAOAIMessageRole, content: [InputContentPart]) {
         self.role = role
         self.content = content
     }
     
     /// Convenience initializer for simple text messages
-    public init(role: MessageRole, text: String) {
+    public init(role: SAOAIMessageRole, text: String) {
         self.role = role
         self.content = [.inputText(.init(text: text))]
     }
     
     /// Convenience initializer for text + image URL
-    public init(role: MessageRole, text: String, imageURL: String) {
+    public init(role: SAOAIMessageRole, text: String, imageURL: String) {
         self.role = role
         self.content = [
             .inputText(.init(text: text)),
@@ -34,7 +34,7 @@ public struct ResponseMessage: Codable, Equatable {
     }
     
     /// Convenience initializer for text + base64 image
-    public init(role: MessageRole, text: String, base64Image: String, mimeType: String = "image/jpeg") {
+    public init(role: SAOAIMessageRole, text: String, base64Image: String, mimeType: String = "image/jpeg") {
         self.role = role
         self.content = [
             .inputText(.init(text: text)),
@@ -42,4 +42,11 @@ public struct ResponseMessage: Codable, Equatable {
         ]
     }
 }
+
+// MARK: - Backward Compatibility
+@available(*, deprecated, renamed: "SAOAIMessageRole")
+public typealias MessageRole = SAOAIMessageRole
+
+@available(*, deprecated, renamed: "SAOAIMessage")
+public typealias ResponseMessage = SAOAIMessage
 
