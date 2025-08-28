@@ -2,10 +2,10 @@ import Foundation
 
 /// A single assistant output message with one or more content parts.
 public struct SAOAIOutput: Codable, Equatable {
-    public let content: [OutputContentPart]
+    public let content: [SAOAIOutputContent]
     public let role: String?
 
-    public init(content: [OutputContentPart], role: String? = nil) {
+    public init(content: [SAOAIOutputContent], role: String? = nil) {
         self.content = content
         self.role = role
     }
@@ -17,14 +17,14 @@ public struct SAOAIResponse: Codable, Equatable {
     public let model: String?
     public let created: Int?
     public let output: [SAOAIOutput]
-    public let usage: TokenUsage?
+    public let usage: SAOAITokenUsage?
 
     public init(
         id: String?,
         model: String?,
         created: Int?,
         output: [SAOAIOutput],
-        usage: TokenUsage?
+        usage: SAOAITokenUsage?
     ) {
         self.id = id
         self.model = model

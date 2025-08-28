@@ -13,11 +13,11 @@ public struct SAOAIRequest: Codable, Equatable {
     /// Nucleus sampling parameter.
     public let topP: Double?
     /// Optional tool definitions.
-    public let tools: [ToolDefinition]?
+    public let tools: [SAOAITool]?
     /// Previous response ID for chaining responses.
     public let previousResponseId: String?
     /// Reasoning configuration for reasoning models.
-    public let reasoning: Reasoning?
+    public let reasoning: SAOAIReasoning?
 
     public init(
         model: String? = nil,
@@ -25,9 +25,9 @@ public struct SAOAIRequest: Codable, Equatable {
         maxOutputTokens: Int? = nil,
         temperature: Double? = nil,
         topP: Double? = nil,
-        tools: [ToolDefinition]? = nil,
+        tools: [SAOAITool]? = nil,
         previousResponseId: String? = nil,
-        reasoning: Reasoning? = nil
+        reasoning: SAOAIReasoning? = nil
     ) {
         self.model = model
         self.input = input

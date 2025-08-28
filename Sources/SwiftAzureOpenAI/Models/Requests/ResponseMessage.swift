@@ -11,9 +11,9 @@ public enum SAOAIMessageRole: String, Codable {
 /// A message with structured content parts for the Responses API.
 public struct SAOAIMessage: Codable, Equatable {
     public let role: SAOAIMessageRole
-    public let content: [InputContentPart]
+    public let content: [SAOAIInputContent]
 
-    public init(role: SAOAIMessageRole, content: [InputContentPart]) {
+    public init(role: SAOAIMessageRole, content: [SAOAIInputContent]) {
         self.role = role
         self.content = content
     }

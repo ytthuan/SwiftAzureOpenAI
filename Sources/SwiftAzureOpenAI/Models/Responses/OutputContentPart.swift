@@ -1,7 +1,7 @@
 import Foundation
 
 /// Output content parts produced by the Responses API.
-public enum OutputContentPart: Codable, Equatable {
+public enum SAOAIOutputContent: Codable, Equatable {
     case outputText(OutputText)
 
     /// Text content output.
@@ -43,4 +43,8 @@ public enum OutputContentPart: Codable, Equatable {
         case type
     }
 }
+
+// MARK: - Backward Compatibility
+@available(*, deprecated, renamed: "SAOAIOutputContent")
+public typealias OutputContentPart = SAOAIOutputContent
 

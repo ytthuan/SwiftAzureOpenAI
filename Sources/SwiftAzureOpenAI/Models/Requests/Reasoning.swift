@@ -1,7 +1,7 @@
 import Foundation
 
 /// Reasoning configuration for reasoning models.
-public struct Reasoning: Codable, Equatable {
+public struct SAOAIReasoning: Codable, Equatable {
     /// The effort level for reasoning models. Typically "low", "medium", or "high".
     public let effort: String
     
@@ -9,3 +9,7 @@ public struct Reasoning: Codable, Equatable {
         self.effort = effort
     }
 }
+
+// MARK: - Backward Compatibility
+@available(*, deprecated, renamed: "SAOAIReasoning")
+public typealias Reasoning = SAOAIReasoning
