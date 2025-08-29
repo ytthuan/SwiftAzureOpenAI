@@ -13,5 +13,19 @@ public struct SAOAITool: Codable, Equatable {
         self.description = description
         self.parameters = parameters
     }
+    
+    /// Create a function tool (Python-style convenience)
+    public static func function(
+        name: String,
+        description: String,
+        parameters: SAOAIJSONValue
+    ) -> SAOAITool {
+        return SAOAITool(
+            type: "function",
+            name: name,
+            description: description,
+            parameters: parameters
+        )
+    }
 }
 

@@ -4,6 +4,7 @@ import Foundation
 public enum SAOAIInputContent: Codable, Equatable {
     case inputText(InputText)
     case inputImage(InputImage)
+    case functionCallOutput(FunctionCallOutput)
 
     /// Text content input.
     public struct InputText: Codable, Equatable {
@@ -40,6 +41,24 @@ public enum SAOAIInputContent: Codable, Equatable {
         }
     }
 
+    /// Function call output result.
+    public struct FunctionCallOutput: Codable, Equatable {
+        public let type: String = "function_call_output"
+        public let callId: String
+        public let output: String
+
+        enum CodingKeys: String, CodingKey {
+            case type
+            case callId = "call_id"
+            case output
+        }
+
+        public init(callId: String, output: String) {
+            self.callId = callId
+            self.output = output
+        }
+    }
+
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let type = try container.decode(String.self, forKey: .type)
@@ -48,6 +67,8 @@ public enum SAOAIInputContent: Codable, Equatable {
             self = .inputText(try InputText(from: decoder))
         case "input_image":
             self = .inputImage(try InputImage(from: decoder))
+        case "function_call_output":
+            self = .functionCallOutput(try FunctionCallOutput(from: decoder))
         default:
             throw DecodingError.dataCorrupted(
                 .init(codingPath: decoder.codingPath, debugDescription: "Unsupported input content type: \(type)")
@@ -60,6 +81,8 @@ public enum SAOAIInputContent: Codable, Equatable {
         case .inputText(let value):
             try value.encode(to: encoder)
         case .inputImage(let value):
+            try value.encode(to: encoder)
+        case .functionCallOutput(let value):
             try value.encode(to: encoder)
         }
     }
