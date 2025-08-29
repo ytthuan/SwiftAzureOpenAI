@@ -130,12 +130,12 @@ The easiest way to use SwiftAzureOpenAI with a simple, Python-inspired API:
 import SwiftAzureOpenAI
 
 // Configure your client
-let config = AzureOpenAIConfiguration(
+let config = SAOAIAzureConfiguration(
     endpoint: "https://your-resource.openai.azure.com",
     apiKey: "your-api-key",
     deploymentName: "gpt-4o-mini"
 )
-let client = SwiftAzureOpenAI(configuration: config)
+let client = SAOAIClient(configuration: config)
 
 // Simple string input - just like Python!
 let response = try await client.responses.create(
@@ -160,10 +160,10 @@ For conversations with multiple messages:
 ```swift
 // Create messages easily with convenience initializer
 let messages = [
-    ResponseMessage(role: .system, text: "You are a helpful assistant."),
-    ResponseMessage(role: .user, text: "What's the weather like?"),
-    ResponseMessage(role: .assistant, text: "I don't have real-time weather data."),
-    ResponseMessage(role: .user, text: "Can you help me with Swift programming?")
+    SAOAIMessage(role: .system, text: "You are a helpful assistant."),
+    SAOAIMessage(role: .user, text: "What's the weather like?"),
+    SAOAIMessage(role: .assistant, text: "I don't have real-time weather data."),
+    SAOAIMessage(role: .user, text: "Can you help me with Swift programming?")
 ]
 
 let response = try await client.responses.create(
@@ -213,14 +213,14 @@ let deleted = try await client.responses.delete("resp_abc123")
 For advanced use cases, you can still use the detailed API:
 
 ```swift
-let request = ResponsesRequest(
+let request = SAOAIRequest(
     model: "gpt-4o-mini", // Azure: deployment name; OpenAI: model name
     input: [
-        ResponseMessage(
+        SAOAIMessage(
             role: .system,
             content: [ .inputText(.init(text: "You are a helpful assistant.")) ]
         ),
-        ResponseMessage(
+        SAOAIMessage(
             role: .user,
             content: [ .inputText(.init(text: "Write a haiku about Swift programming.")) ]
         )
@@ -230,7 +230,7 @@ let request = ResponsesRequest(
 )
 ```
 
-The `input` parameter uses an array of `ResponseMessage` objects, each containing structured content parts. This unified approach replaces the separate `messages` parameter from the legacy chat completions API.
+The `input` parameter uses an array of `SAOAIMessage` objects, each containing structured content parts. This unified approach replaces the separate `messages` parameter from the legacy chat completions API.
 
 ### Decode a Responses API response
 
@@ -243,7 +243,7 @@ import SwiftAzureOpenAI
 let decoder = JSONDecoder()
 // Configure if needed, e.g. date decoding strategy depending on your metadata usage.
 
-func handleResponse(data: Data, httpResponse: HTTPURLResponse) throws -> APIResponse<ResponsesResponse> {
+func handleResponse(data: Data, httpResponse: HTTPURLResponse) throws -> APIResponse<SAOAIResponse> {
     // Extract any metadata you collect from headers and timing
     let rateLimit = RateLimitInfo(remaining: nil, resetTime: nil, limit: nil)
     let metadata = ResponseMetadata(
@@ -253,7 +253,7 @@ func handleResponse(data: Data, httpResponse: HTTPURLResponse) throws -> APIResp
         rateLimit: rateLimit
     )
 
-    let body = try decoder.decode(ResponsesResponse.self, from: data)
+    let body = try decoder.decode(SAOAIResponse.self, from: data)
     return APIResponse(
         data: body,
         metadata: metadata,
@@ -266,7 +266,7 @@ func handleResponse(data: Data, httpResponse: HTTPURLResponse) throws -> APIResp
 ### Reading output content
 
 ```swift
-let apiResponse: APIResponse<ResponsesResponse> = /* from your network layer */
+let apiResponse: APIResponse<SAOAIResponse> = /* from your network layer */
 let outputs = apiResponse.data.output
 for output in outputs {
     for part in output.content {
@@ -280,13 +280,13 @@ for output in outputs {
 
 ### Streaming model support (types)
 
-This package provides `StreamingResponseChunk<T>` for representing streamed decoding results. You can adapt your networking layer (e.g., SSE) to yield `StreamingResponseChunk<ResponsesResponse>` items as they become available.
+This package provides `StreamingResponseChunk<T>` for representing streamed decoding results. You can adapt your networking layer (e.g., SSE) to yield `StreamingResponseChunk<SAOAIResponse>` items as they become available.
 
 ```swift
 func processStream(chunks: AsyncThrowingStream<Data, Error>) async throws {
     var sequence = 0
     for try await data in chunks {
-        let partial = try JSONDecoder().decode(ResponsesResponse.self, from: data)
+        let partial = try JSONDecoder().decode(SAOAIResponse.self, from: data)
         let chunk = StreamingResponseChunk(
             chunk: partial,
             isComplete: false, // set true when your parser detects completion
@@ -304,44 +304,44 @@ The Responses API uses a unified data model structure that consolidates the best
 
 ### Request Models
 
-- **`ResponsesRequest`** - Main request payload for the Responses API
+- **`SAOAIRequest`** - Main request payload for the Responses API
   - `model: String?` — Azure deployment name or OpenAI model name
-  - `input: [ResponseMessage]` — Unified message array with structured content parts
+  - `input: [SAOAIMessage]` — Unified message array with structured content parts
   - `maxOutputTokens: Int?` — Maximum tokens to generate in the response
   - `temperature: Double?`, `topP: Double?` — Sampling parameters
-  - `tools: [ToolDefinition]?` — Optional tool definitions for function calling
-  - `reasoning: Reasoning?` — Reasoning configuration for reasoning models
+  - `tools: [SAOAITool]?` — Optional tool definitions for function calling
+  - `reasoning: SAOAIReasoning?` — Reasoning configuration for reasoning models
 
-- **`Reasoning`** - Reasoning configuration for reasoning models
+- **`SAOAIReasoning`** - Reasoning configuration for reasoning models
   - `effort: String` — Reasoning effort level: "low", "medium", or "high"
 
-- **`ResponseMessage`** - Individual message in the conversation
-  - `role: MessageRole` — Message role: `.system`, `.user`, `.assistant`, or `.tool`
-  - `content: [InputContentPart]` — Array of structured content parts
+- **`SAOAIMessage`** - Individual message in the conversation
+  - `role: SAOAIMessageRole` — Message role: `.system`, `.user`, `.assistant`, or `.tool`
+  - `content: [SAOAIInputContent]` — Array of structured content parts
 
-- **`InputContentPart`** - Structured input content
-  - `.inputText(InputText)` — Text content: `{ type: "input_text", text: "..." }`
-  - `.inputImage(InputImage)` — Image content: `{ type: "input_image", image_url: "..." }`
+- **`SAOAIInputContent`** - Structured input content
+  - `.inputText(SAOAIInputText)` — Text content: `{ type: "input_text", text: "..." }`
+  - `.inputImage(SAOAIInputImage)` — Image content: `{ type: "input_image", image_url: "..." }`
 
 ### Response Models
 
-- **`ResponsesResponse`** - Main response payload from the Responses API
+- **`SAOAIResponse`** - Main response payload from the Responses API
   - `id: String?` — Unique response identifier
   - `model: String?` — Model used for the response
   - `created: Int?` — Creation timestamp
-  - `output: [ResponseOutput]` — Array of output content from the assistant
-  - `usage: TokenUsage?` — Token consumption details
+  - `output: [SAOAIOutput]` — Array of output content from the assistant
+  - `usage: SAOAITokenUsage?` — Token consumption details
 
-- **`ResponseOutput`** - Assistant's output content
-  - `content: [OutputContentPart]` — Array of output content parts
+- **`SAOAIOutput`** - Assistant's output content
+  - `content: [SAOAIOutputContent]` — Array of output content parts
   - `role: String?` — Output role (typically "assistant")
 
-- **`OutputContentPart`** - Structured output content
-  - `.outputText(OutputText)` — Text output: `{ type: "output_text", text: "..." }`
+- **`SAOAIOutputContent`** - Structured output content
+  - `.outputText(SAOAIOutputText)` — Text output: `{ type: "output_text", text: "..." }`
 
 ### Supporting Models
 
-- **`TokenUsage`** - Token consumption tracking
+- **`SAOAITokenUsage`** - Token consumption tracking
   - `inputTokens: Int?`, `outputTokens: Int?`, `totalTokens: Int?`
 
 - **`APIResponse<T>`** - Wrapper for HTTP response data
@@ -374,7 +374,7 @@ For Azure OpenAI, use the Responses API endpoint with your resource configuratio
 import SwiftAzureOpenAI
 
 // Configure Azure OpenAI
-let azureConfig = AzureOpenAIConfiguration(
+let azureConfig = SAOAIAzureConfiguration(
     endpoint: "https://your-resource.openai.azure.com",
     apiKey: "your-azure-api-key",
     deploymentName: "gpt-4o-mini", // Your deployment name
@@ -382,10 +382,10 @@ let azureConfig = AzureOpenAIConfiguration(
 )
 
 // Build your request
-let request = ResponsesRequest(
+let request = SAOAIRequest(
     model: azureConfig.deploymentName,
     input: [
-        ResponseMessage(
+        SAOAIMessage(
             role: .user,
             content: [.inputText(.init(text: "Hello, Azure OpenAI!"))]
         )
@@ -397,7 +397,7 @@ let request = ResponsesRequest(
 **Azure OpenAI Responses API Endpoint:**
 - URL: `https://{resource}.openai.azure.com/openai/v1/responses?api-version=preview`
 - Headers: `api-key: <AZURE_API_KEY>`, `Content-Type: application/json`
-- Body: `ResponsesRequest` encoded as JSON
+- Body: `SAOAIRequest` encoded as JSON
 
 ### OpenAI Configuration
 
@@ -414,7 +414,7 @@ let openaiConfig = OpenAIServiceConfiguration(
 **OpenAI Responses API Endpoint:**
 - URL: `https://api.openai.com/v1/responses`
 - Headers: `Authorization: Bearer <OPENAI_API_KEY>`, `Content-Type: application/json`
-- Body: `ResponsesRequest` encoded as JSON
+- Body: `SAOAIRequest` encoded as JSON
 
 ### Example HTTP Request
 
@@ -424,17 +424,17 @@ Here's a complete example using `URLSession` with Azure OpenAI:
 import Foundation
 import SwiftAzureOpenAI
 
-func sendResponsesRequest() async throws -> APIResponse<ResponsesResponse> {
-    let config = AzureOpenAIConfiguration(
+func sendResponsesRequest() async throws -> APIResponse<SAOAIResponse> {
+    let config = SAOAIAzureConfiguration(
         endpoint: "https://your-resource.openai.azure.com",
         apiKey: "your-api-key",
         deploymentName: "gpt-4o-mini"
     )
     
-    let request = ResponsesRequest(
+    let request = SAOAIRequest(
         model: config.deploymentName,
         input: [
-            ResponseMessage(
+            SAOAIMessage(
                 role: .user,
                 content: [.inputText(.init(text: "Hello!"))]
             )
@@ -511,16 +511,16 @@ func testAzureOpenAI() async throws {
         return
     }
     
-    let config = AzureOpenAIConfiguration(
+    let config = SAOAIAzureConfiguration(
         endpoint: endpoint,
         apiKey: apiKey,
         deploymentName: deployment
     )
     
-    let request = ResponsesRequest(
+    let request = SAOAIRequest(
         model: deployment,
         input: [
-            ResponseMessage(
+            SAOAIMessage(
                 role: .user,
                 content: [.inputText(.init(text: "Hello, Azure OpenAI!"))]
             )

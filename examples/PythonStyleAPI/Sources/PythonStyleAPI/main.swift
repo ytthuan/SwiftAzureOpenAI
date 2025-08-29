@@ -1,5 +1,3 @@
-#!/usr/bin/env swift
-
 import Foundation
 import SwiftAzureOpenAI
 
@@ -8,7 +6,7 @@ import SwiftAzureOpenAI
 // MARK: - Configuration Examples
 
 // Azure OpenAI Configuration
-let azureConfig = AzureOpenAIConfiguration(
+nonisolated(unsafe) let azureConfig = SAOAIAzureConfiguration(
     endpoint: "https://your-resource.openai.azure.com",
     apiKey: "your-azure-api-key",
     deploymentName: "gpt-4o-mini",
@@ -16,7 +14,7 @@ let azureConfig = AzureOpenAIConfiguration(
 )
 
 // OpenAI Configuration  
-let openaiConfig = OpenAIServiceConfiguration(
+nonisolated(unsafe) let openaiConfig = SAOAIOpenAIConfiguration(
     apiKey: "sk-your-openai-api-key",
     organization: nil
 )
@@ -24,7 +22,7 @@ let openaiConfig = OpenAIServiceConfiguration(
 // MARK: - Simple Usage (Python-style)
 
 func demonstrateSimpleAPI() async {
-    let client = SwiftAzureOpenAI(configuration: azureConfig)
+    let client = SAOAIClient(configuration: azureConfig)
     
     do {
         // 🎉 NEW: Simple string input (Python-style)
@@ -53,15 +51,15 @@ func demonstrateSimpleAPI() async {
 // MARK: - Multiple Messages (Conversation)
 
 func demonstrateConversationAPI() async {
-    let client = SwiftAzureOpenAI(configuration: azureConfig)
+    let client = SAOAIClient(configuration: azureConfig)
     
     do {
         // 🎉 NEW: Simple message creation with convenience initializer
         let messages = [
-            ResponseMessage(role: .system, text: "You are a helpful assistant."),
-            ResponseMessage(role: .user, text: "What's the weather like?"),
-            ResponseMessage(role: .assistant, text: "I don't have access to real-time weather data."),
-            ResponseMessage(role: .user, text: "Can you help me with Swift programming?")
+            SAOAIMessage(role: .system, text: "You are a helpful assistant."),
+            SAOAIMessage(role: .user, text: "What's the weather like?"),
+            SAOAIMessage(role: .assistant, text: "I don't have access to real-time weather data."),
+            SAOAIMessage(role: .user, text: "Can you help me with Swift programming?")
         ]
         
         let response = try await client.responses.create(
@@ -81,7 +79,7 @@ func demonstrateConversationAPI() async {
 // MARK: - Retrieve and Delete Operations (Python-style)
 
 func demonstrateRetrieveAndDelete() async {
-    let client = SwiftAzureOpenAI(configuration: azureConfig)
+    let client = SAOAIClient(configuration: azureConfig)
     
     do {
         // Create a response first
@@ -111,13 +109,13 @@ func demonstrateRetrieveAndDelete() async {
 // MARK: - Backward Compatibility
 
 func demonstrateBackwardCompatibility() async {
-    let client = SwiftAzureOpenAI(configuration: azureConfig)
+    let _ = SAOAIClient(configuration: azureConfig)
     
     // ✅ Old complex way still works for advanced users
-    let complexRequest = ResponsesRequest(
+    let complexRequest = SAOAIRequest(
         model: "gpt-4o-mini",
         input: [
-            ResponseMessage(
+            SAOAIMessage(
                 role: .user,
                 content: [
                     .inputText(.init(text: "Hello")),
@@ -139,10 +137,10 @@ func demonstrateBackwardCompatibility() async {
 func showBeforeAndAfter() {
     print("=== BEFORE (Complex) ===")
     print("""
-    let request = ResponsesRequest(
+    let request = SAOAIRequest(
         model: "gpt-5-chat",
         input: [
-            ResponseMessage(
+            SAOAIMessage(
                 role: .user,
                 content: [.inputText(.init(text: "Hello, what is the meaning of life?"))]
             )
@@ -168,20 +166,25 @@ func showBeforeAndAfter() {
 
 // MARK: - Demo
 
-print("🚀 SwiftAzureOpenAI - New Python-style API Demo")
-print("===============================================")
+@main
+struct PythonStyleAPIExample {
+    static func main() async {
+        print("🚀 SwiftAzureOpenAI - New Python-style API Demo")
+        print("===============================================")
 
-showBeforeAndAfter()
+        showBeforeAndAfter()
 
-print("\n✨ The new API provides:")
-print("• Simple string input: client.responses.create(model: ..., input: \"text\")")
-print("• Convenience message creation: ResponseMessage(role: .user, text: \"...\")")
-print("• Python-style operations: client.responses.retrieve(id), client.responses.delete(id)")
-print("• Full backward compatibility with existing complex API")
-print("• All the power of the underlying robust HTTP client and response processing")
+        print("\n✨ The new API provides:")
+        print("• Simple string input: client.responses.create(model: ..., input: \"text\")")
+        print("• Convenience message creation: SAOAIMessage(role: .user, text: \"...\")")
+        print("• Python-style operations: client.responses.retrieve(id), client.responses.delete(id)")
+        print("• Full backward compatibility with existing complex API")
+        print("• All the power of the underlying robust HTTP client and response processing")
 
-// Note: These functions would actually make HTTP calls if run with real credentials
-// demonstrateSimpleAPI()
-// demonstrateConversationAPI()
-// demonstrateRetrieveAndDelete()
-// demonstrateBackwardCompatibility()
+        // Note: These functions would actually make HTTP calls if run with real credentials
+        // await demonstrateSimpleAPI()
+        // await demonstrateConversationAPI()
+        // await demonstrateRetrieveAndDelete()
+        // await demonstrateBackwardCompatibility()
+    }
+}

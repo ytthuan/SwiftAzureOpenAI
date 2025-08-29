@@ -1,5 +1,3 @@
-#!/usr/bin/env swift
-
 import Foundation
 import SwiftAzureOpenAI
 
@@ -9,7 +7,7 @@ import SwiftAzureOpenAI
 // MARK: - Configuration
 
 // Azure OpenAI Configuration  
-let azureConfig = SAOAIAzureConfiguration(
+nonisolated(unsafe) let azureConfig = SAOAIAzureConfiguration(
     endpoint: "https://your-resource.openai.azure.com",
     apiKey: "your-azure-api-key",
     deploymentName: "gpt-4o",
@@ -17,7 +15,7 @@ let azureConfig = SAOAIAzureConfiguration(
 )
 
 // OpenAI Configuration (alternative)
-let openaiConfig = SAOAIOpenAIConfiguration(
+nonisolated(unsafe) let openaiConfig = SAOAIOpenAIConfiguration(
     apiKey: "sk-your-openai-api-key",
     organization: nil
 )
@@ -308,6 +306,9 @@ func runFunctionCallingDemo() async {
 
 // MARK: - Execution
 
-Task {
-    await runFunctionCallingDemo()
+@main 
+struct FunctionCallingExample {
+    static func main() async {
+        await runFunctionCallingDemo()
+    }
 }
