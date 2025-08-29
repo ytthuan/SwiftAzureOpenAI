@@ -120,8 +120,13 @@ jobs:
     - name: Select Xcode (macOS)
       if: runner.os == 'macOS'
       run: |
-        # Use the default Xcode version for macos-15 which should have Swift 6.0+
+        # Use Xcode 16.0 which includes Swift 6.0.2
+        sudo xcode-select -s /Applications/Xcode_16.0.app/Contents/Developer || {
+          echo "Xcode 16.0 not available, using default"
+          sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+        }
         xcode-select -p
+        swift --version
     
     - name: Build release
       run: swift build --configuration release
@@ -238,8 +243,13 @@ jobs:
     - name: Select Xcode (macOS)
       if: runner.os == 'macOS'
       run: |
-        # Use the default Xcode version for macos-15 which should have Swift 6.0+
+        # Use Xcode 16.0 which includes Swift 6.0.2
+        sudo xcode-select -s /Applications/Xcode_16.0.app/Contents/Developer || {
+          echo "Xcode 16.0 not available, using default"
+          sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+        }
         xcode-select -p
+        swift --version
     
     - name: Create test project
       run: |
