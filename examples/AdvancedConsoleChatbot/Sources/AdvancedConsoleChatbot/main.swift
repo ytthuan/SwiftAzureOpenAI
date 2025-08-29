@@ -4,7 +4,7 @@ import SwiftAzureOpenAI
 // MARK: - Advanced Console Chatbot Example
 
 /// Comprehensive console chatbot demonstrating all SwiftAzureOpenAI features:
-/// - Interactive console interface with streaming simulation
+/// - Interactive console interface
 /// - Function calling (weather API example)
 /// - Code interpreter tool support
 /// - Multi-modal support (images via URL and base64)
@@ -274,18 +274,6 @@ struct ImageProcessor {
     }
 }
 
-// MARK: - Streaming Simulation
-struct StreamingSimulator {
-    /// Simulate streaming output by yielding text chunks
-    static func simulateStreamingResponse(_ text: String) async {
-        let words = text.split(separator: " ")
-        for (index, word) in words.enumerated() {
-            print(word, terminator: index < words.count - 1 ? " " : "\n")
-            try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 second delay
-        }
-    }
-}
-
 // MARK: - Advanced Console Interface
 class AdvancedConsoleChatbot {
     private let chatHistory = AdvancedChatHistory()
@@ -309,7 +297,6 @@ class AdvancedConsoleChatbot {
         print("🚀 Advanced SwiftAzureOpenAI Console Chatbot")
         print("=============================================")
         print("Features demonstrated:")
-        print("• 🌊 Streaming output simulation")
         print("• 🔧 Function calling (weather, calculator)")
         print("• 🐍 Code interpreter tool")
         print("• 🖼️  Multi-modal support (images)")
@@ -421,7 +408,7 @@ class AdvancedConsoleChatbot {
             for content in output.content {
                 switch content {
                 case .outputText(let textOutput):
-                    await StreamingSimulator.simulateStreamingResponse(textOutput.text)
+                    print(textOutput.text)
                     
                 case .functionCall(let functionCall):
                     print("🔧 Calling tool: \(functionCall.name)")
@@ -464,7 +451,7 @@ class AdvancedConsoleChatbot {
             for output in finalResponse.output {
                 for content in output.content {
                     if case let .outputText(textOutput) = content {
-                        await StreamingSimulator.simulateStreamingResponse(textOutput.text)
+                        print(textOutput.text)
                     }
                 }
             }
@@ -485,7 +472,7 @@ class AdvancedConsoleChatbot {
         for output in response.output {
             for content in output.content {
                 if case let .outputText(textOutput) = content {
-                    await StreamingSimulator.simulateStreamingResponse(textOutput.text)
+                    print(textOutput.text)
                 }
             }
         }
@@ -530,7 +517,6 @@ func runDemoMode() {
     print("This example demonstrates all SwiftAzureOpenAI features in an interactive console:")
     print("")
     print("📝 Features showcased:")
-    print("• ✅ Streaming output simulation")
     print("• ✅ Function calling (weather API)")
     print("• ✅ Code interpreter tool")
     print("• ✅ Mathematical calculator")

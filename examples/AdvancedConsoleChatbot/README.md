@@ -1,12 +1,8 @@
 # Advanced Console Chatbot Example
 
-This is a comprehensive, interactive console chatbot demonstrating all major features of SwiftAzureOpenAI, including streaming output, function calling, code interpreter tools, and multimodal support.
+This is a comprehensive, interactive console chatbot demonstrating all major features of SwiftAzureOpenAI, including function calling, code interpreter tools, and multimodal support.
 
 ## Features Demonstrated
-
-### 🌊 Streaming Output Simulation
-- Simulates real-time streaming responses by displaying text word-by-word
-- Demonstrates how streaming could be implemented with the SDK's `StreamingResponseService`
 
 ### 🔧 Function Calling
 - **Weather API**: Get current weather for any location
@@ -120,19 +116,6 @@ The square root of 64 is 8.
 
 ## Technical Implementation
 
-### Streaming Simulation
-```swift
-struct StreamingSimulator {
-    static func simulateStreamingResponse(_ text: String) async {
-        let words = text.split(separator: " ")
-        for (index, word) in words.enumerated() {
-            print(word, terminator: index < words.count - 1 ? " " : "\n")
-            try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 second delay
-        }
-    }
-}
-```
-
 ### Tool Definition Example
 ```swift
 let weatherTool = SAOAITool.function(
@@ -203,8 +186,7 @@ This example serves as a complete reference for:
 1. **Interactive Console Applications**: Building responsive CLI interfaces
 2. **Function Calling Implementation**: Complete workflow from definition to execution
 3. **Multi-modal AI Integration**: Handling text and image inputs
-4. **Streaming Response Simulation**: Approximating real-time responses
-5. **Tool Integration Patterns**: Extensible tool system design
-6. **Error Handling**: Robust error management and user feedback
+4. **Tool Integration Patterns**: Extensible tool system design
+5. **Error Handling**: Robust error management and user feedback
 
 Perfect for developers learning to integrate Azure OpenAI capabilities into their Swift applications!

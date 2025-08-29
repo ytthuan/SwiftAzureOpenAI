@@ -9,7 +9,6 @@ Build of product 'AdvancedConsoleChatbot' complete! (0.85s)
 This example demonstrates all SwiftAzureOpenAI features in an interactive console:
 
 📝 Features showcased:
-• ✅ Streaming output simulation
 • ✅ Function calling (weather API)
 • ✅ Code interpreter tool
 • ✅ Mathematical calculator
