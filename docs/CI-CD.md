@@ -13,7 +13,7 @@ This package includes comprehensive CI/CD automation through GitHub Actions to e
 - Pull requests to `main` or `develop` branches
 
 **Jobs:**
-- **test-macos**: Tests on macOS with Xcode 15.4
+- **test-macos**: Tests on macOS with Swift 6.0.2 (Xcode 16.0)
 - **test-linux**: Tests on Ubuntu with Swift 6.0.2
 - **validate-package**: Validates package structure and dependencies
 - **code-quality**: Checks for warnings and code quality
@@ -28,8 +28,7 @@ This package includes comprehensive CI/CD automation through GitHub Actions to e
 ### 2. Release Approval Workflow (`.github/workflows/release-approval.yml`) - **New**
 
 **Triggers:**
-- Push to `main` branch
-- Manual workflow dispatch
+- Manual workflow dispatch (workflow_dispatch)
 
 **Jobs:**
 - **validate-for-release**: Comprehensive package validation
@@ -220,10 +219,23 @@ dependencies: [
 - Review failed builds promptly
 - Monitor test coverage and performance
 
+### Recent Improvements
+
+**Enhanced CI Efficiency (Issue #51 Fixes):**
+- **Single CI Run**: Removed duplicate CI triggers - `release-approval.yml` now only triggers manually
+- **Consistent Swift Versions**: Standardized on Swift 6.0.2 across all platforms (macOS and Linux)
+- **Improved Workflow**: Clear separation between CI validation and release processes
+
+**Workflow Triggers:**
+- **CI Workflow**: Runs on pushes/PRs to main/develop branches
+- **Release Approval**: Manual trigger only (workflow_dispatch)
+- **Release**: Triggered by version tags after approval
+
 ## Benefits
 
 1. **Automated Quality Assurance**: Every change is validated
-2. **Multi-Platform Support**: Tested on macOS and Linux
-3. **Zero-Downtime Releases**: Automated release process
-4. **Installation Validation**: Confirms packages work for end users
-5. **Comprehensive Testing**: 85+ tests ensure reliability
+2. **Multi-Platform Support**: Tested on macOS and Linux with consistent Swift 6.0.2
+3. **Efficient CI Process**: Single CI run per push, no duplicate workflows
+4. **Zero-Downtime Releases**: Automated release process with human approval
+5. **Installation Validation**: Confirms packages work for end users
+6. **Comprehensive Testing**: 85+ tests ensure reliability

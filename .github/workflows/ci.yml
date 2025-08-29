@@ -12,11 +12,19 @@ jobs:
     runs-on: macos-15
     strategy:
       matrix:
-        swift-version: ['6.0']
+        swift-version: ['6.0.2']
     
     steps:
     - name: Checkout
       uses: actions/checkout@v4
+    
+    - name: Select Xcode version
+      run: |
+        # Use Xcode 16.0 which includes Swift 6.0.2
+        sudo xcode-select -s /Applications/Xcode_16.0.app/Contents/Developer || {
+          echo "Xcode 16.0 not available, using default"
+          sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+        }
     
     - name: Show available Xcode versions
       run: ls /Applications/ | grep Xcode
