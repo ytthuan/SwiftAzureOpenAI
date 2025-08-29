@@ -1,7 +1,7 @@
 import Foundation
 
 /// Token usage statistics returned by the Responses API.
-public struct SAOAITokenUsage: Codable, Equatable {
+public struct SAOAITokenUsage: Codable, Equatable, Sendable {
     public let inputTokens: Int?
     public let outputTokens: Int?
     public let totalTokens: Int?
