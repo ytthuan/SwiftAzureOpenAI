@@ -7,13 +7,13 @@ import SwiftAzureOpenAI
 /// specified in the GitHub issue for multi-modal input support and response chaining.
 
 // MARK: - Configuration Setup
-let azureConfig = AzureOpenAIConfiguration(
+let azureConfig = SAOAIAzureConfiguration(
     endpoint: "https://your-resource.openai.azure.com",
     apiKey: "your-api-key",
     deploymentName: "gpt-4o"
 )
 
-let client = SwiftAzureOpenAI(configuration: azureConfig)
+let client = SAOAIClient(configuration: azureConfig)
 
 // MARK: - Example 1: Multi-modal input with image URL (as requested in the issue)
 func demonstrateMultiModalWithImageURL() async throws {
@@ -33,7 +33,7 @@ func demonstrateMultiModalWithImageURL() async throws {
     //     }
     // ]
     
-    let message = ResponseMessage(
+    let message = SAOAIMessage(
         role: .user,
         text: "what is in this image?",
         imageURL: "https://example.com/image.jpg"
@@ -61,7 +61,7 @@ func demonstrateMultiModalWithBase64Image() async throws {
     
     let base64Image = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
     
-    let message = ResponseMessage(
+    let message = SAOAIMessage(
         role: .user,
         text: "what is in this image?",
         base64Image: base64Image,
@@ -104,7 +104,7 @@ func demonstrateResponseChaining() async throws {
     // Second request chaining from the first
     let secondResponse = try await client.responses.create(
         model: "gpt-4o",
-        input: [ResponseMessage(role: .user, text: "Explain this at a level that could be understood by a college freshman")],
+        input: [SAOAIMessage(role: .user, text: "Explain this at a level that could be understood by a college freshman")],
         previousResponseId: firstResponse.id
     )
     
@@ -118,7 +118,7 @@ func demonstrateComplexMultiModal() async throws {
     print("\n=== Example 4: Complex multi-modal request ===")
     
     // For more complex scenarios, you can still manually create content arrays
-    let message = ResponseMessage(
+    let message = SAOAIMessage(
         role: .user,
         content: [
             .inputText(.init(text: "Please analyze these images and compare them:")),
@@ -144,7 +144,7 @@ func demonstrateCompleteWorkflow() async throws {
     // Step 1: Initial image analysis
     let analysisResponse = try await client.responses.create(
         model: "gpt-4o",
-        input: ResponseMessage(
+        input: SAOAIMessage(
             role: .user,
             text: "Analyze this architectural diagram",
             imageURL: "https://example.com/architecture.png"
@@ -162,7 +162,7 @@ func demonstrateCompleteWorkflow() async throws {
     let base64Image = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
     let comparisonResponse = try await client.responses.create(
         model: "gpt-4o",
-        input: [ResponseMessage(
+        input: [SAOAIMessage(
             role: .user,
             text: "Compare the previous architecture with this improved version",
             base64Image: base64Image,
