@@ -1,0 +1,149 @@
+{
+  "": {
+    "swift-dependencies": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/master.swiftdeps"
+  },
+  "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/Sources/SwiftAzureOpenAI/Core/Configuration.swift": {
+    "dependencies": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/Configuration.d",
+    "object": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/Configuration.swift.o",
+    "swiftmodule": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/Configuration~partial.swiftmodule",
+    "swift-dependencies": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/Configuration.swiftdeps"
+  },
+  "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/Sources/SwiftAzureOpenAI/Core/HTTPClient.swift": {
+    "dependencies": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/HTTPClient.d",
+    "object": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/HTTPClient.swift.o",
+    "swiftmodule": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/HTTPClient~partial.swiftmodule",
+    "swift-dependencies": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/HTTPClient.swiftdeps"
+  },
+  "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/Sources/SwiftAzureOpenAI/Core/ResponsesClient.swift": {
+    "dependencies": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/ResponsesClient.d",
+    "object": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/ResponsesClient.swift.o",
+    "swiftmodule": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/ResponsesClient~partial.swiftmodule",
+    "swift-dependencies": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/ResponsesClient.swiftdeps"
+  },
+  "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/Sources/SwiftAzureOpenAI/Core/SwiftAzureOpenAI.swift": {
+    "dependencies": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/SwiftAzureOpenAI.d",
+    "object": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/SwiftAzureOpenAI.swift.o",
+    "swiftmodule": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/SwiftAzureOpenAI~partial.swiftmodule",
+    "swift-dependencies": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/SwiftAzureOpenAI.swiftdeps"
+  },
+  "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/Sources/SwiftAzureOpenAI/Extensions/Foundation+Extensions.swift": {
+    "dependencies": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/Foundation+Extensions.d",
+    "object": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/Foundation+Extensions.swift.o",
+    "swiftmodule": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/Foundation+Extensions~partial.swiftmodule",
+    "swift-dependencies": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/Foundation+Extensions.swiftdeps"
+  },
+  "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/Sources/SwiftAzureOpenAI/Models/Common/APIResponse.swift": {
+    "dependencies": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/APIResponse.d",
+    "object": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/APIResponse.swift.o",
+    "swiftmodule": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/APIResponse~partial.swiftmodule",
+    "swift-dependencies": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/APIResponse.swiftdeps"
+  },
+  "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/Sources/SwiftAzureOpenAI/Models/Common/ErrorResponse.swift": {
+    "dependencies": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/ErrorResponse.d",
+    "object": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/ErrorResponse.swift.o",
+    "swiftmodule": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/ErrorResponse~partial.swiftmodule",
+    "swift-dependencies": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/ErrorResponse.swiftdeps"
+  },
+  "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/Sources/SwiftAzureOpenAI/Models/Common/JSONValue.swift": {
+    "dependencies": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/JSONValue.d",
+    "object": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/JSONValue.swift.o",
+    "swiftmodule": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/JSONValue~partial.swiftmodule",
+    "swift-dependencies": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/JSONValue.swiftdeps"
+  },
+  "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/Sources/SwiftAzureOpenAI/Models/Common/OpenAIError.swift": {
+    "dependencies": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/OpenAIError.d",
+    "object": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/OpenAIError.swift.o",
+    "swiftmodule": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/OpenAIError~partial.swiftmodule",
+    "swift-dependencies": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/OpenAIError.swiftdeps"
+  },
+  "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/Sources/SwiftAzureOpenAI/Models/Common/RateLimitInfo.swift": {
+    "dependencies": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/RateLimitInfo.d",
+    "object": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/RateLimitInfo.swift.o",
+    "swiftmodule": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/RateLimitInfo~partial.swiftmodule",
+    "swift-dependencies": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/RateLimitInfo.swiftdeps"
+  },
+  "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/Sources/SwiftAzureOpenAI/Models/Common/ResponseMetadata.swift": {
+    "dependencies": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/ResponseMetadata.d",
+    "object": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/ResponseMetadata.swift.o",
+    "swiftmodule": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/ResponseMetadata~partial.swiftmodule",
+    "swift-dependencies": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/ResponseMetadata.swiftdeps"
+  },
+  "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/Sources/SwiftAzureOpenAI/Models/Common/StreamingResponseChunk.swift": {
+    "dependencies": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/StreamingResponseChunk.d",
+    "object": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/StreamingResponseChunk.swift.o",
+    "swiftmodule": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/StreamingResponseChunk~partial.swiftmodule",
+    "swift-dependencies": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/StreamingResponseChunk.swiftdeps"
+  },
+  "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/Sources/SwiftAzureOpenAI/Models/Requests/InputContentPart.swift": {
+    "dependencies": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/InputContentPart.d",
+    "object": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/InputContentPart.swift.o",
+    "swiftmodule": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/InputContentPart~partial.swiftmodule",
+    "swift-dependencies": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/InputContentPart.swiftdeps"
+  },
+  "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/Sources/SwiftAzureOpenAI/Models/Requests/Reasoning.swift": {
+    "dependencies": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/Reasoning.d",
+    "object": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/Reasoning.swift.o",
+    "swiftmodule": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/Reasoning~partial.swiftmodule",
+    "swift-dependencies": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/Reasoning.swiftdeps"
+  },
+  "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/Sources/SwiftAzureOpenAI/Models/Requests/ResponseMessage.swift": {
+    "dependencies": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/ResponseMessage.d",
+    "object": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/ResponseMessage.swift.o",
+    "swiftmodule": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/ResponseMessage~partial.swiftmodule",
+    "swift-dependencies": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/ResponseMessage.swiftdeps"
+  },
+  "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/Sources/SwiftAzureOpenAI/Models/Requests/ResponsesRequest.swift": {
+    "dependencies": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/ResponsesRequest.d",
+    "object": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/ResponsesRequest.swift.o",
+    "swiftmodule": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/ResponsesRequest~partial.swiftmodule",
+    "swift-dependencies": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/ResponsesRequest.swiftdeps"
+  },
+  "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/Sources/SwiftAzureOpenAI/Models/Requests/ToolDefinition.swift": {
+    "dependencies": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/ToolDefinition.d",
+    "object": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/ToolDefinition.swift.o",
+    "swiftmodule": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/ToolDefinition~partial.swiftmodule",
+    "swift-dependencies": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/ToolDefinition.swiftdeps"
+  },
+  "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/Sources/SwiftAzureOpenAI/Models/Responses/OutputContentPart.swift": {
+    "dependencies": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/OutputContentPart.d",
+    "object": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/OutputContentPart.swift.o",
+    "swiftmodule": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/OutputContentPart~partial.swiftmodule",
+    "swift-dependencies": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/OutputContentPart.swiftdeps"
+  },
+  "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/Sources/SwiftAzureOpenAI/Models/Responses/ResponsesResponse.swift": {
+    "dependencies": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/ResponsesResponse.d",
+    "object": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/ResponsesResponse.swift.o",
+    "swiftmodule": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/ResponsesResponse~partial.swiftmodule",
+    "swift-dependencies": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/ResponsesResponse.swiftdeps"
+  },
+  "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/Sources/SwiftAzureOpenAI/Models/Responses/TokenUsage.swift": {
+    "dependencies": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/TokenUsage.d",
+    "object": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/TokenUsage.swift.o",
+    "swiftmodule": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/TokenUsage~partial.swiftmodule",
+    "swift-dependencies": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/TokenUsage.swiftdeps"
+  },
+  "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/Sources/SwiftAzureOpenAI/Services/ResponseCacheService.swift": {
+    "dependencies": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/ResponseCacheService.d",
+    "object": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/ResponseCacheService.swift.o",
+    "swiftmodule": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/ResponseCacheService~partial.swiftmodule",
+    "swift-dependencies": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/ResponseCacheService.swiftdeps"
+  },
+  "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/Sources/SwiftAzureOpenAI/Services/ResponseParsingService.swift": {
+    "dependencies": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/ResponseParsingService.d",
+    "object": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/ResponseParsingService.swift.o",
+    "swiftmodule": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/ResponseParsingService~partial.swiftmodule",
+    "swift-dependencies": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/ResponseParsingService.swiftdeps"
+  },
+  "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/Sources/SwiftAzureOpenAI/Services/ResponseService.swift": {
+    "dependencies": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/ResponseService.d",
+    "object": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/ResponseService.swift.o",
+    "swiftmodule": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/ResponseService~partial.swiftmodule",
+    "swift-dependencies": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/ResponseService.swiftdeps"
+  },
+  "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/Sources/SwiftAzureOpenAI/Services/StreamingResponseService.swift": {
+    "dependencies": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/StreamingResponseService.d",
+    "object": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/StreamingResponseService.swift.o",
+    "swiftmodule": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/StreamingResponseService~partial.swiftmodule",
+    "swift-dependencies": "/home/runner/work/SwiftAzureOpenAI/SwiftAzureOpenAI/examples/MultiModalAndChaining/.build/x86_64-unknown-linux-gnu/debug/SwiftAzureOpenAI.build/StreamingResponseService.swiftdeps"
+  }
+}
