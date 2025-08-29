@@ -42,6 +42,36 @@ public final class ResponsesClient {
         
         return try await sendRequest(request)
     }
+
+    /// Create a response with simple string input and tools (Python-style)
+    public func create(
+        model: String,
+        input: String,
+        tools: [SAOAITool],
+        maxOutputTokens: Int? = nil,
+        temperature: Double? = nil,
+        topP: Double? = nil,
+        previousResponseId: String? = nil,
+        reasoning: SAOAIReasoning? = nil
+    ) async throws -> SAOAIResponse {
+        let message = SAOAIMessage(
+            role: .user,
+            content: [.inputText(.init(text: input))]
+        )
+        
+        let request = SAOAIRequest(
+            model: model,
+            input: [message],
+            maxOutputTokens: maxOutputTokens,
+            temperature: temperature,
+            topP: topP,
+            tools: tools,
+            previousResponseId: previousResponseId,
+            reasoning: reasoning
+        )
+        
+        return try await sendRequest(request)
+    }
     
     /// Create a response with array of messages (for more complex conversations)
     public func create(
