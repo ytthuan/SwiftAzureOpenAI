@@ -58,6 +58,28 @@ cd FunctionCalling
 swift run
 ```
 
+### 5. [AdvancedConsoleChatbot](AdvancedConsoleChatbot/) ⭐ **NEW**
+A comprehensive interactive console chatbot demonstrating **all** SwiftAzureOpenAI features:
+- 🌊 **Streaming output simulation** with word-by-word display
+- 🔧 **Function calling** (weather API, calculator)
+- 🐍 **Code interpreter tool** with Python execution simulation
+- 🖼️ **Multi-modal support** (image URLs and base64)
+- 📚 **Conversation history** with response chaining
+- 🎮 **Interactive commands** and specialized syntax
+- 🛠️ **Complete tooling ecosystem** in one example
+
+**Usage:**
+```bash
+cd AdvancedConsoleChatbot
+swift run
+```
+
+**Example Commands:**
+- `weather:London` - Get weather information
+- `code:print('Hello, World!')` - Execute Python code
+- `calc:sqrt(64)` - Mathematical calculations
+- `image:https://example.com/photo.jpg` - Analyze images
+
 ## How These Examples Work
 
 Each example is a complete Swift Package that:
@@ -101,7 +123,18 @@ All examples demonstrate the latest SwiftAzureOpenAI v2.0+ features:
 - **Multi-modal support**: Text + images in single requests
 - **Response chaining**: Use `previousResponseId` for context
 - **Function calling**: Tool integration with AI responses
+- **Streaming support**: Real-time response processing
+- **Code interpreter tools**: Execute code within AI workflows
 - **Full backward compatibility**: Complex patterns still supported
+
+### ⭐ Featured Example: AdvancedConsoleChatbot
+
+The [AdvancedConsoleChatbot](AdvancedConsoleChatbot/) is a **comprehensive demonstration** of all SDK capabilities in a single, interactive application. It's perfect for:
+
+- **Learning**: See all features working together in realistic scenarios
+- **Testing**: Validate SDK functionality with live interactions
+- **Reference**: Use as a complete implementation guide
+- **Development**: Copy patterns for your own applications
 
 ## Requirements
 
