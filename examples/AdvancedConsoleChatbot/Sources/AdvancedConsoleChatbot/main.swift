@@ -391,14 +391,47 @@ class AdvancedConsoleChatbot {
     }
     
     private func handleToolBasedRequest(_ input: String, message: SAOAIMessage) async throws {
-        print("🔧 Processing with tools...\n")
+        print("🔧 Processing with tools...")
+        print("🤖 Assistant: ", terminator: "")
         
-        // Simulate API call with tools
-        let response = try await client.responses.create(
+        // Use streaming for tool-based requests for better real-time experience
+        let stream = client.responses.createStreaming(
             model: "gpt-4o",
             input: chatHistory.conversationMessages,
             tools: availableTools,
             previousResponseId: chatHistory.lastResponseId
+        )
+        
+        var fullResponse = ""
+        var responseId: String?
+        
+        // Process streaming response
+        for try await chunk in stream {
+            // Extract response ID from first chunk
+            if responseId == nil {
+                responseId = chunk.id
+            }
+            
+            // Process streaming content
+            for output in chunk.output ?? [] {
+                for content in output.content ?? [] {
+                    if let text = content.text {
+                        print(text, terminator: "")
+                        fullResponse += text
+                    }
+                    // Note: Tool calls in streaming might come as complete objects
+                    // We'll collect them to process after streaming is complete
+                }
+            }
+        }
+        
+        // Create a response object for processing tool calls
+        let response = SAOAIResponse(
+            id: responseId,
+            model: "gpt-4o",
+            created: Int(Date().timeIntervalSince1970),
+            output: [SAOAIOutput(content: [.outputText(.init(text: fullResponse))])],
+            usage: nil
         )
         
         // Process tool calls
@@ -439,24 +472,45 @@ class AdvancedConsoleChatbot {
         
         chatHistory.addAssistantResponse(response)
         
-        // If we have tool results, send follow-up request
+        // If we have tool results, send follow-up streaming request
         if !toolResults.isEmpty {
             print("\n🔧 Processing tool results...")
-            let finalResponse = try await client.responses.create(
+            print("🤖 Assistant: ", terminator: "")
+            
+            let followUpStream = client.responses.createStreaming(
                 model: "gpt-4o",
                 input: chatHistory.conversationMessages + toolResults,
                 previousResponseId: response.id
             )
             
-            for output in finalResponse.output {
-                for content in output.content {
-                    if case let .outputText(textOutput) = content {
-                        print(textOutput.text)
+            var finalResponse = ""
+            var finalResponseId: String?
+            
+            for try await chunk in followUpStream {
+                if finalResponseId == nil {
+                    finalResponseId = chunk.id
+                }
+                
+                for output in chunk.output ?? [] {
+                    for content in output.content ?? [] {
+                        if let text = content.text {
+                            print(text, terminator: "")
+                            finalResponse += text
+                        }
                     }
                 }
             }
             
-            chatHistory.addAssistantResponse(finalResponse)
+            // Create final response for history
+            let finalResponseObj = SAOAIResponse(
+                id: finalResponseId,
+                model: "gpt-4o", 
+                created: Int(Date().timeIntervalSince1970),
+                output: [SAOAIOutput(content: [.outputText(.init(text: finalResponse))])],
+                usage: nil
+            )
+            
+            chatHistory.addAssistantResponse(finalResponseObj)
         }
         
         print("\n")

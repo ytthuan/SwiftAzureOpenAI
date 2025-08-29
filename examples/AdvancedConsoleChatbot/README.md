@@ -6,8 +6,10 @@ This is a comprehensive, interactive console chatbot demonstrating all major fea
 
 ### 🚀 Real-Time Streaming
 - **Live Response Streaming**: See text appear word-by-word as the AI generates it
-- **Server-Sent Events**: Uses OpenAI/Azure OpenAI streaming API
+- **Server-Sent Events**: Uses OpenAI/Azure OpenAI streaming API with SSE parser
 - **Immediate Feedback**: Real-time user experience with streaming responses
+- **Universal Streaming**: Both regular conversations and tool-based interactions use streaming
+- **Optimized Output**: Buffer flushing ensures immediate text display
 
 ### 🔧 Function Calling
 - **Weather API**: Get current weather for any location
