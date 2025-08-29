@@ -463,19 +463,43 @@ class AdvancedConsoleChatbot {
     }
     
     private func handleRegularRequest(_ message: SAOAIMessage) async throws {
-        let response = try await client.responses.create(
+        print("🤖 Assistant: ", terminator: "")
+        
+        // Use streaming for better real-time experience
+        let stream = client.responses.createStreaming(
             model: "gpt-4o",
             input: chatHistory.conversationMessages,
             previousResponseId: chatHistory.lastResponseId
         )
         
-        for output in response.output {
-            for content in output.content {
-                if case let .outputText(textOutput) = content {
-                    print(textOutput.text)
+        var fullResponse = ""
+        var responseId: String?
+        
+        for try await chunk in stream {
+            // Extract response ID from first chunk
+            if responseId == nil {
+                responseId = chunk.id
+            }
+            
+            // Process streaming content
+            for output in chunk.output ?? [] {
+                for content in output.content ?? [] {
+                    if let text = content.text {
+                        print(text, terminator: "")
+                        fullResponse += text
+                    }
                 }
             }
         }
+        
+        // Create a response object for history tracking
+        let response = SAOAIResponse(
+            id: responseId,
+            model: "gpt-4o",
+            created: Int(Date().timeIntervalSince1970),
+            output: [SAOAIOutput(content: [.outputText(.init(text: fullResponse))])],
+            usage: nil
+        )
         
         chatHistory.addAssistantResponse(response)
         print("\n")

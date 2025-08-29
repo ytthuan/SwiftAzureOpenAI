@@ -232,7 +232,7 @@ public final class ResponsesClient {
         return result.data
     }
     
-    private nonisolated(unsafe) func sendStreamingRequest(_ request: SAOAIRequest) -> AsyncThrowingStream<SAOAIStreamingResponse, Error> {
+    private func sendStreamingRequest(_ request: SAOAIRequest) -> AsyncThrowingStream<SAOAIStreamingResponse, Error> {
         // Pre-encode the request to avoid capturing it in the closure
         let requestData: Data
         do {
@@ -243,10 +243,11 @@ public final class ResponsesClient {
             }
         }
         
+        // Capture needed values outside the stream
+        let baseURL = self.configuration.baseURL
+        let httpClient = self.httpClient
+        
         return AsyncThrowingStream { continuation in
-            // Capture needed values to avoid Sendable issues
-            let baseURL = self.configuration.baseURL
-            let httpClient = self.httpClient
             Task {
                 do {
                     let apiRequest = APIRequest(

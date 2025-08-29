@@ -17,7 +17,7 @@ public struct APIRequest: Sendable {
     }
 }
 
-public final class HTTPClient {
+public final class HTTPClient: @unchecked Sendable {
     private let configuration: SAOAIConfiguration
     private let urlSession: URLSession
     private let maxRetries: Int
@@ -52,11 +52,11 @@ public final class HTTPClient {
     }
     
     /// Send a streaming request that returns Server-Sent Events
-    public nonisolated(unsafe) func sendStreaming(_ request: APIRequest) -> AsyncThrowingStream<Data, Error> {
-        AsyncThrowingStream { continuation in
-            // Capture needed values to avoid Sendable issues
-            let configuration = self.configuration
-            let urlSession = self.urlSession
+    public func sendStreaming(_ request: APIRequest) -> AsyncThrowingStream<Data, Error> {
+        let configuration = self.configuration
+        let urlSession = self.urlSession
+        
+        return AsyncThrowingStream { continuation in
             Task {
                 do {
                     var urlRequest = URLRequest(url: request.url)

@@ -1,8 +1,13 @@
 # Advanced Console Chatbot Example
 
-This is a comprehensive, interactive console chatbot demonstrating all major features of SwiftAzureOpenAI, including function calling, code interpreter tools, and multimodal support.
+This is a comprehensive, interactive console chatbot demonstrating all major features of SwiftAzureOpenAI, including function calling, code interpreter tools, multimodal support, and real-time streaming.
 
 ## Features Demonstrated
+
+### 🚀 Real-Time Streaming
+- **Live Response Streaming**: See text appear word-by-word as the AI generates it
+- **Server-Sent Events**: Uses OpenAI/Azure OpenAI streaming API
+- **Immediate Feedback**: Real-time user experience with streaming responses
 
 ### 🔧 Function Calling
 - **Weather API**: Get current weather for any location
