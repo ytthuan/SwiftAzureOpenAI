@@ -42,6 +42,35 @@ public final class ResponsesClient {
         
         return try await sendRequest(request)
     }
+    
+    /// Create a streaming response with simple string input (Python-style)
+    public func createStreaming(
+        model: String,
+        input: String,
+        maxOutputTokens: Int? = nil,
+        temperature: Double? = nil,
+        topP: Double? = nil,
+        previousResponseId: String? = nil,
+        reasoning: SAOAIReasoning? = nil
+    ) -> AsyncThrowingStream<SAOAIStreamingResponse, Error> {
+        let message = SAOAIMessage(
+            role: .user,
+            content: [.inputText(.init(text: input))]
+        )
+        
+        let request = SAOAIRequest(
+            model: model,
+            input: [message],
+            maxOutputTokens: maxOutputTokens,
+            temperature: temperature,
+            topP: topP,
+            previousResponseId: previousResponseId,
+            reasoning: reasoning,
+            stream: true
+        )
+        
+        return sendStreamingRequest(request)
+    }
 
     /// Create a response with simple string input and tools (Python-style)
     public func create(
@@ -73,6 +102,37 @@ public final class ResponsesClient {
         return try await sendRequest(request)
     }
     
+    /// Create a streaming response with simple string input and tools (Python-style)
+    public func createStreaming(
+        model: String,
+        input: String,
+        tools: [SAOAITool],
+        maxOutputTokens: Int? = nil,
+        temperature: Double? = nil,
+        topP: Double? = nil,
+        previousResponseId: String? = nil,
+        reasoning: SAOAIReasoning? = nil
+    ) -> AsyncThrowingStream<SAOAIStreamingResponse, Error> {
+        let message = SAOAIMessage(
+            role: .user,
+            content: [.inputText(.init(text: input))]
+        )
+        
+        let request = SAOAIRequest(
+            model: model,
+            input: [message],
+            maxOutputTokens: maxOutputTokens,
+            temperature: temperature,
+            topP: topP,
+            tools: tools,
+            previousResponseId: previousResponseId,
+            reasoning: reasoning,
+            stream: true
+        )
+        
+        return sendStreamingRequest(request)
+    }
+    
     /// Create a response with array of messages (for more complex conversations)
     public func create(
         model: String,
@@ -96,6 +156,32 @@ public final class ResponsesClient {
         )
         
         return try await sendRequest(request)
+    }
+    
+    /// Create a streaming response with array of messages (for more complex conversations)
+    public func createStreaming(
+        model: String,
+        input: [SAOAIMessage],
+        maxOutputTokens: Int? = nil,
+        temperature: Double? = nil,
+        topP: Double? = nil,
+        tools: [SAOAITool]? = nil,
+        previousResponseId: String? = nil,
+        reasoning: SAOAIReasoning? = nil
+    ) -> AsyncThrowingStream<SAOAIStreamingResponse, Error> {
+        let request = SAOAIRequest(
+            model: model,
+            input: input,
+            maxOutputTokens: maxOutputTokens,
+            temperature: temperature,
+            topP: topP,
+            tools: tools,
+            previousResponseId: previousResponseId,
+            reasoning: reasoning,
+            stream: true
+        )
+        
+        return sendStreamingRequest(request)
     }
     
     /// Retrieve a response by ID
@@ -144,5 +230,50 @@ public final class ResponsesClient {
         let (data, httpResponse) = try await httpClient.send(apiRequest)
         let result: APIResponse<SAOAIResponse> = try await responseService.processResponse(data, response: httpResponse, type: SAOAIResponse.self)
         return result.data
+    }
+    
+    private nonisolated(unsafe) func sendStreamingRequest(_ request: SAOAIRequest) -> AsyncThrowingStream<SAOAIStreamingResponse, Error> {
+        // Pre-encode the request to avoid capturing it in the closure
+        let requestData: Data
+        do {
+            requestData = try JSONEncoder().encode(request)
+        } catch {
+            return AsyncThrowingStream { continuation in
+                continuation.finish(throwing: error)
+            }
+        }
+        
+        return AsyncThrowingStream { continuation in
+            // Capture needed values to avoid Sendable issues
+            let baseURL = self.configuration.baseURL
+            let httpClient = self.httpClient
+            Task {
+                do {
+                    let apiRequest = APIRequest(
+                        method: "POST",
+                        url: baseURL,
+                        headers: ["Accept": "text/event-stream", "Content-Type": "application/json"],
+                        body: requestData
+                    )
+                    
+                    let stream = httpClient.sendStreaming(apiRequest)
+                    
+                    for try await chunk in stream {
+                        if let response = try SSEParser.parseSSEChunk(chunk) {
+                            continuation.yield(response)
+                        }
+                        
+                        if SSEParser.isCompletionChunk(chunk) {
+                            continuation.finish()
+                            return
+                        }
+                    }
+                    
+                    continuation.finish()
+                } catch {
+                    continuation.finish(throwing: error)
+                }
+            }
+        }
     }
 }

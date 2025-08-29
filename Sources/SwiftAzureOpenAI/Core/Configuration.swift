@@ -1,11 +1,11 @@
 import Foundation
 
-public protocol SAOAIConfiguration {
+public protocol SAOAIConfiguration: Sendable {
     var baseURL: URL { get }
     var headers: [String: String] { get }
 }
 
-public struct SAOAIAzureConfiguration: SAOAIConfiguration {
+public struct SAOAIAzureConfiguration: SAOAIConfiguration, Sendable {
     public let endpoint: String
     public let apiKey: String
     public let deploymentName: String
@@ -34,7 +34,7 @@ public struct SAOAIAzureConfiguration: SAOAIConfiguration {
     }
 }
 
-public struct SAOAIOpenAIConfiguration: SAOAIConfiguration {
+public struct SAOAIOpenAIConfiguration: SAOAIConfiguration, Sendable {
     public let apiKey: String
     public let organization: String?
 

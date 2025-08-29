@@ -18,6 +18,8 @@ public struct SAOAIRequest: Codable, Equatable {
     public let previousResponseId: String?
     /// Reasoning configuration for reasoning models.
     public let reasoning: SAOAIReasoning?
+    /// Whether to stream the response using Server-Sent Events (SSE).
+    public let stream: Bool?
 
     public init(
         model: String? = nil,
@@ -27,7 +29,8 @@ public struct SAOAIRequest: Codable, Equatable {
         topP: Double? = nil,
         tools: [SAOAITool]? = nil,
         previousResponseId: String? = nil,
-        reasoning: SAOAIReasoning? = nil
+        reasoning: SAOAIReasoning? = nil,
+        stream: Bool? = nil
     ) {
         self.model = model
         self.input = input
@@ -37,6 +40,7 @@ public struct SAOAIRequest: Codable, Equatable {
         self.tools = tools
         self.previousResponseId = previousResponseId
         self.reasoning = reasoning
+        self.stream = stream
     }
 
     enum CodingKeys: String, CodingKey {
@@ -48,6 +52,7 @@ public struct SAOAIRequest: Codable, Equatable {
         case tools
         case previousResponseId = "previous_response_id"
         case reasoning
+        case stream
     }
 }
 
