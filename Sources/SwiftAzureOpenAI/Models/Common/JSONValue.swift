@@ -2,7 +2,7 @@ import Foundation
 
 // MARK: - Lightweight JSON value representation
 
-public enum SAOAIJSONValue: Codable, Equatable {
+public enum SAOAIJSONValue: Codable, Equatable, Sendable {
     case string(String)
     case number(Double)
     case bool(Bool)

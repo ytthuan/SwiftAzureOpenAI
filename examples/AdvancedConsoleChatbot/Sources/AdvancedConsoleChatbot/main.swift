@@ -12,19 +12,19 @@ import SwiftAzureOpenAI
 /// - Tool result processing and display
 
 // MARK: - Configuration
-nonisolated(unsafe) let azureConfig = SAOAIAzureConfiguration(
+let azureConfig = SAOAIAzureConfiguration(
     endpoint: ProcessInfo.processInfo.environment["AZURE_OPENAI_ENDPOINT"] ?? "https://your-resource.openai.azure.com",
     apiKey: ProcessInfo.processInfo.environment["AZURE_OPENAI_API_KEY"] ?? "your-api-key",
     deploymentName: ProcessInfo.processInfo.environment["AZURE_OPENAI_DEPLOYMENT"] ?? "gpt-4o",
     apiVersion: "preview"
 )
 
-nonisolated(unsafe) let client = SAOAIClient(configuration: azureConfig)
+let client = SAOAIClient(configuration: azureConfig)
 
 // MARK: - Tool Definitions
 
 /// Weather API function tool
-nonisolated(unsafe) let weatherTool = SAOAITool.function(
+let weatherTool = SAOAITool.function(
     name: "get_weather",
     description: "Get current weather information for a specified location",
     parameters: .object([
@@ -45,7 +45,7 @@ nonisolated(unsafe) let weatherTool = SAOAITool.function(
 )
 
 /// Code interpreter tool (custom implementation for demonstration)
-nonisolated(unsafe) let codeInterpreterTool = SAOAITool(
+let codeInterpreterTool = SAOAITool(
     type: "code_interpreter",
     name: "code_interpreter",
     description: "Execute Python code and return results",
@@ -62,7 +62,7 @@ nonisolated(unsafe) let codeInterpreterTool = SAOAITool(
 )
 
 /// Math calculator function tool
-nonisolated(unsafe) let calculatorTool = SAOAITool.function(
+let calculatorTool = SAOAITool.function(
     name: "calculate",
     description: "Perform mathematical calculations",
     parameters: .object([
@@ -396,7 +396,7 @@ class AdvancedConsoleChatbot {
         
         // Use streaming for tool-based requests for better real-time experience
         let stream = client.responses.createStreaming(
-            model: "gpt-4o",
+            model: azureConfig.deploymentName,
             input: chatHistory.conversationMessages,
             tools: availableTools,
             previousResponseId: chatHistory.lastResponseId
@@ -428,7 +428,7 @@ class AdvancedConsoleChatbot {
         // Create a response object for processing tool calls
         let response = SAOAIResponse(
             id: responseId,
-            model: "gpt-4o",
+            model: azureConfig.deploymentName,
             created: Int(Date().timeIntervalSince1970),
             output: [SAOAIOutput(content: [.outputText(.init(text: fullResponse))])],
             usage: nil
@@ -478,7 +478,7 @@ class AdvancedConsoleChatbot {
             print("🤖 Assistant: ", terminator: "")
             
             let followUpStream = client.responses.createStreaming(
-                model: "gpt-4o",
+                model: azureConfig.deploymentName,
                 input: chatHistory.conversationMessages + toolResults,
                 previousResponseId: response.id
             )
@@ -504,7 +504,7 @@ class AdvancedConsoleChatbot {
             // Create final response for history
             let finalResponseObj = SAOAIResponse(
                 id: finalResponseId,
-                model: "gpt-4o", 
+                model: azureConfig.deploymentName, 
                 created: Int(Date().timeIntervalSince1970),
                 output: [SAOAIOutput(content: [.outputText(.init(text: finalResponse))])],
                 usage: nil
@@ -521,7 +521,7 @@ class AdvancedConsoleChatbot {
         
         // Use streaming for better real-time experience
         let stream = client.responses.createStreaming(
-            model: "gpt-4o",
+            model: azureConfig.deploymentName,
             input: chatHistory.conversationMessages,
             previousResponseId: chatHistory.lastResponseId
         )
@@ -549,7 +549,7 @@ class AdvancedConsoleChatbot {
         // Create a response object for history tracking
         let response = SAOAIResponse(
             id: responseId,
-            model: "gpt-4o",
+            model: azureConfig.deploymentName,
             created: Int(Date().timeIntervalSince1970),
             output: [SAOAIOutput(content: [.outputText(.init(text: fullResponse))])],
             usage: nil

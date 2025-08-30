@@ -1,12 +1,12 @@
 import Foundation
 
 /// Output content parts produced by the Responses API.
-public enum SAOAIOutputContent: Codable, Equatable {
+public enum SAOAIOutputContent: Codable, Equatable, Sendable {
     case outputText(OutputText)
     case functionCall(FunctionCall)
 
     /// Text content output.
-    public struct OutputText: Codable, Equatable {
+    public struct OutputText: Codable, Equatable, Sendable {
         public let type: String = "output_text"
         public let text: String
 
@@ -21,7 +21,7 @@ public enum SAOAIOutputContent: Codable, Equatable {
     }
 
     /// Function call output.
-    public struct FunctionCall: Codable, Equatable {
+    public struct FunctionCall: Codable, Equatable, Sendable {
         public let type: String = "function_call"
         public let callId: String
         public let name: String

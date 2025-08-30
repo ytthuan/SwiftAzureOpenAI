@@ -3,7 +3,7 @@ import Foundation
 import FoundationNetworking
 #endif
 
-public final class SAOAIClient {
+public final class SAOAIClient: @unchecked Sendable {
     private let configuration: SAOAIConfiguration
     private let httpClient: HTTPClient
     private let responseService: ResponseService
