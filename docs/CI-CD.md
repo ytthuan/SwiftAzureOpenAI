@@ -25,23 +25,26 @@ This package includes comprehensive CI/CD automation through GitHub Actions to e
 - Zero external dependencies verification
 - Build warning detection
 
-### 2. Release Approval Workflow (`.github/workflows/release-approval.yml`) - **New**
+### 2. Release Approval Workflow (`.github/workflows/release-approval.yml`) - **Enhanced**
 
 **Triggers:**
+- CI workflow completion with success on main/develop branches
 - Manual workflow dispatch (workflow_dispatch)
 
 **Jobs:**
+- **check-ci-success**: Validates CI workflow completed successfully (for automated triggers)
 - **validate-for-release**: Comprehensive package validation
 - **await-release-approval**: Human approval gate with environment protection
 - **trigger-release**: Creates version tag after approval
 
 **Features:**
-- Automated package validation after CI success
-- Human approval requirement with GitHub Environments
+- Automatically triggers after CI workflow success
+- Human approval requirement with GitHub Environments (can approve/reject)
 - Version suggestion based on existing tags
 - Manual version override capability
 - Support for different release types (release/prerelease/beta/alpha)
 - Comprehensive validation summary and release checklist
+- Clear indication of trigger source (CI success vs manual)
 
 ### 3. Release Automation (`.github/workflows/release.yml`) - **Enhanced**
 
@@ -68,9 +71,10 @@ This package includes comprehensive CI/CD automation through GitHub Actions to e
 This is the **recommended approach** for production releases, providing automated validation with human oversight.
 
 #### Workflow:
-1. **Push to main branch** - Triggers automatic validation
-2. **Human approval required** - Review validation results and approve/reject
-3. **Automatic release creation** - Creates GitHub release once approved
+1. **Push to main branch** - Triggers CI workflow
+2. **CI workflow completes successfully** - Automatically triggers release approval workflow
+3. **Human approval required** - Review validation results and approve/reject
+4. **Automatic release creation** - Creates GitHub release once approved
 
 #### Steps:
 1. **Ensure main branch is ready:**
@@ -80,8 +84,9 @@ This is the **recommended approach** for production releases, providing automate
    git pull origin main
    ```
 
-2. **Push triggers validation:**
-   - The `release-approval.yml` workflow automatically runs
+2. **Push triggers CI, then release approval:**
+   - Push to main triggers the CI workflow first
+   - When CI completes successfully, `release-approval.yml` automatically runs
    - Validates package structure, tests, and quality
    - Suggests next version number
    - Waits for human approval
@@ -97,6 +102,11 @@ This is the **recommended approach** for production releases, providing automate
    - Once approved, creates and pushes version tag
    - Triggers the main release workflow
    - Creates GitHub release with changelog
+
+#### Important Notes:
+- **CI Must Pass**: The release approval workflow only triggers if CI completes successfully
+- **If CI Fails**: Fix issues in your code and push again - the workflow will retry after CI passes
+- **Manual Override**: You can still trigger releases manually if needed (see below)
 
 #### Manual Version Override:
 You can also trigger this workflow manually with a specific version:
@@ -221,14 +231,15 @@ dependencies: [
 
 ### Recent Improvements
 
-**Enhanced CI Efficiency (Issue #51 Fixes):**
-- **Single CI Run**: Removed duplicate CI triggers - `release-approval.yml` now only triggers manually
+**Enhanced CI Efficiency (Issue #53 Fixes):**
+- **CI-Triggered Release**: `release-approval.yml` now triggers automatically after CI success on main/develop
+- **Human Approval Gate**: Requires manual approval before release creation (can approve/reject)
 - **Consistent Swift Versions**: Standardized on Swift 6.0.2 across all platforms (macOS and Linux)
-- **Improved Workflow**: Clear separation between CI validation and release processes
+- **Improved Workflow**: Clear sequence: CI Success → Release Approval → Human Decision → Release Creation
 
 **Workflow Triggers:**
 - **CI Workflow**: Runs on pushes/PRs to main/develop branches
-- **Release Approval**: Manual trigger only (workflow_dispatch)
+- **Release Approval**: Triggers after CI success OR manual dispatch (workflow_dispatch)
 - **Release**: Triggered by version tags after approval
 
 ## Benefits
