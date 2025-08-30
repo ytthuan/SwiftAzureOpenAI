@@ -4,6 +4,27 @@
 
 SwiftAzureOpenAI is a Swift Package Manager library that provides seamless integration with Azure OpenAI and OpenAI APIs for iOS, macOS, watchOS, tvOS, and other Apple ecosystem applications.
 
+## Azure OpenAI API Requirements
+
+### **CRITICAL API VERSION REQUIREMENT**
+For Azure OpenAI Response API integration:
+- **API Version**: MUST be `"preview"` (not versioned like `"2024-08-01-preview"`)
+- **Endpoint Format**: `https://{resource}.openai.azure.com/openai/v1/responses?api-version=preview`
+- **Authentication**: Use `api-key` header (not Authorization Bearer token)
+
+### Default Configuration
+The package defaults to the correct configuration:
+```swift
+SAOAIAzureConfiguration(
+    endpoint: "https://your-resource.openai.azure.com",
+    apiKey: "your-api-key", 
+    deploymentName: "your-deployment-name",
+    apiVersion: "preview"  // ✅ REQUIRED - do not change
+)
+```
+
+**WARNING**: Do not use specific API versions like `"2024-08-01-preview"` - the Response API requires the generic `"preview"` version.
+
 ## Requirements
 
 - Swift 6.0+ (verified working with Swift 6.0.2)

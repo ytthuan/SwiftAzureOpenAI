@@ -16,7 +16,7 @@ let azureConfig = SAOAIAzureConfiguration(
     endpoint: ProcessInfo.processInfo.environment["AZURE_OPENAI_ENDPOINT"] ?? "https://your-resource.openai.azure.com",
     apiKey: ProcessInfo.processInfo.environment["AZURE_OPENAI_API_KEY"] ?? "your-api-key",
     deploymentName: ProcessInfo.processInfo.environment["AZURE_OPENAI_DEPLOYMENT"] ?? "gpt-4o",
-    apiVersion: "2024-08-01-preview"
+    apiVersion: "preview"
 )
 
 let client = SAOAIClient(configuration: azureConfig)
