@@ -1,7 +1,7 @@
 import Foundation
 
 /// Definition of a tool/function that the model can call.
-public struct SAOAITool: Codable, Equatable {
+public struct SAOAITool: Codable, Equatable, Sendable {
     public let type: String
     public let name: String?
     public let description: String?

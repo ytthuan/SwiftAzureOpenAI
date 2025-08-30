@@ -246,14 +246,19 @@ public final class ResponsesClient {
         // Capture needed values outside the stream
         let baseURL = self.configuration.baseURL
         let httpClient = self.httpClient
+        let configHeaders = self.configuration.headers
         
         return AsyncThrowingStream { continuation in
             Task {
                 do {
+                    // Merge configuration headers with streaming-specific headers
+                    var streamingHeaders = configHeaders
+                    streamingHeaders["Accept"] = "text/event-stream"
+                    
                     let apiRequest = APIRequest(
                         method: "POST",
                         url: baseURL,
-                        headers: ["Accept": "text/event-stream", "Content-Type": "application/json"],
+                        headers: streamingHeaders,
                         body: requestData
                     )
                     
