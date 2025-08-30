@@ -8,8 +8,8 @@ SwiftAzureOpenAI is a Swift Package Manager library that provides seamless integ
 
 ### **CRITICAL API VERSION REQUIREMENT**
 For Azure OpenAI Response API integration:
-- **API Version**: MUST be `"preview"` (not versioned like `"2024-08-01-preview"`)
-- **Endpoint Format**: `https://{resource}.openai.azure.com/openai/v1/responses?api-version=preview`
+- **API Version**: Uses `"preview"` version through the v1 endpoint path
+- **Endpoint Format**: `https://{resource}.openai.azure.com/openai/v1/responses` (NO api-version query parameter)
 - **Authentication**: Use `api-key` header (not Authorization Bearer token)
 
 ### Default Configuration
@@ -19,11 +19,11 @@ SAOAIAzureConfiguration(
     endpoint: "https://your-resource.openai.azure.com",
     apiKey: "your-api-key", 
     deploymentName: "your-deployment-name",
-    apiVersion: "preview"  // ✅ REQUIRED - do not change
+    apiVersion: "preview"  // ✅ Used for internal reference only
 )
 ```
 
-**WARNING**: Do not use specific API versions like `"2024-08-01-preview"` - the Response API requires the generic `"preview"` version.
+**IMPORTANT**: The v1 API endpoint does NOT include `api-version` as a query parameter. The "preview" version is accessed through the `/openai/v1/responses` path.
 
 ## Requirements
 
