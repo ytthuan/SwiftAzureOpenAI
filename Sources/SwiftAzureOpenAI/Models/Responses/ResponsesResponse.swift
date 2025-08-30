@@ -1,7 +1,7 @@
 import Foundation
 
 /// A single assistant output message with one or more content parts.
-public struct SAOAIOutput: Codable, Equatable {
+public struct SAOAIOutput: Codable, Equatable, Sendable {
     public let content: [SAOAIOutputContent]
     public let role: String?
 
@@ -12,7 +12,7 @@ public struct SAOAIOutput: Codable, Equatable {
 }
 
 /// Top-level Responses API result payload.
-public struct SAOAIResponse: Codable, Equatable {
+public struct SAOAIResponse: Codable, Equatable, Sendable {
     public let id: String?
     public let model: String?
     public let created: Int?

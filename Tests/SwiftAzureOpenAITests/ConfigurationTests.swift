@@ -15,10 +15,10 @@ final class ConfigurationTests: XCTestCase {
         XCTAssertEqual(baseURL.host, "myresource.openai.azure.com")
         XCTAssertEqual(baseURL.path, "/openai/v1/responses")
 
-        // Test that URL is constructed correctly (v1 API doesn't need api-version query parameter)
+        // Test that URL is constructed correctly (v1 API needs api-version=preview query parameter)
         let components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)
         let apiVersion = components?.queryItems?.first(where: { $0.name == "api-version" })?.value
-        XCTAssertNil(apiVersion, "v1 API should not include api-version query parameter")
+        XCTAssertEqual(apiVersion, "preview", "v1 Response API should include api-version=preview query parameter")
 
         XCTAssertEqual(config.headers["api-key"], "test-key")
         XCTAssertEqual(config.headers["Content-Type"], "application/json")
@@ -31,10 +31,10 @@ final class ConfigurationTests: XCTestCase {
             deploymentName: "gpt-4o-mini"
         )
 
-        // Test that default configuration doesn't include api-version query parameter in v1 API
+        // Test that default configuration includes api-version=preview query parameter in v1 API
         let components = URLComponents(url: config.baseURL, resolvingAgainstBaseURL: false)
         let apiVersion = components?.queryItems?.first(where: { $0.name == "api-version" })?.value
-        XCTAssertNil(apiVersion, "v1 API should not include api-version query parameter")
+        XCTAssertEqual(apiVersion, "preview", "v1 Response API should include api-version=preview query parameter")
     }
 
     func testSAOAIOpenAIConfigurationHeaders() {

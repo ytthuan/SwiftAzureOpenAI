@@ -19,10 +19,10 @@ public struct SAOAIAzureConfiguration: SAOAIConfiguration, Sendable {
     }
 
     public var baseURL: URL {
-        // https://{resource}.openai.azure.com/openai/v1/responses
-        // Based on Microsoft docs API Key examples, api-version is not included in URL
+        // https://{resource}.openai.azure.com/openai/v1/responses?api-version=preview
         var components = URLComponents(string: endpoint)!
         components.path = "/openai/v1/responses"
+        components.queryItems = [URLQueryItem(name: "api-version", value: apiVersion)]
         return components.url!
     }
 
