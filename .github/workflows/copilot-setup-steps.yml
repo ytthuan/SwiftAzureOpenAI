@@ -1,0 +1,123 @@
+name: "Copilot Setup Steps"
+
+# Automatically run the setup steps when they are changed to allow for easy validation, and
+# allow manual testing through the repository's "Actions" tab
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+  pull_request:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+
+jobs:
+  # The job MUST be called `copilot-setup-steps` or it will not be picked up by Copilot.
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+
+    # Set the permissions to the lowest permissions possible needed for your steps.
+    # Copilot will be given its own token for its operations.
+    permissions:
+      # If you want to clone the repository as part of your setup steps, for example to install dependencies, you'll need the `contents: read` permission. If you don't clone the repository in your setup steps, Copilot will do this for you automatically after the steps complete.
+      contents: read
+
+    # You can define any steps you want, and they will run before the agent starts.
+    # If you do not check out your code, Copilot will do this for you.
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Swift dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libc6-dev libicu-dev libcurl4-openssl-dev libssl-dev curl
+
+      - name: Install Swift 6.0+
+        run: |
+          # Download and install Swift 6.0.2 from Swift.org (compatible with project requirements)
+          SWIFT_VERSION="6.0.2"
+          SWIFT_URL="https://download.swift.org/swift-${SWIFT_VERSION}-release/ubuntu2204/swift-${SWIFT_VERSION}-RELEASE/swift-${SWIFT_VERSION}-RELEASE-ubuntu22.04.tar.gz"
+          
+          echo "Installing Swift ${SWIFT_VERSION} for SwiftAzureOpenAI development..."
+          
+          # Download Swift
+          curl -fsSL "${SWIFT_URL}" -o swift.tar.gz
+          
+          # Extract Swift
+          sudo tar -xzf swift.tar.gz -C /opt/
+          
+          # Add to PATH
+          echo "/opt/swift-${SWIFT_VERSION}-RELEASE-ubuntu22.04/usr/bin" >> $GITHUB_PATH
+          
+          # Verify installation
+          /opt/swift-${SWIFT_VERSION}-RELEASE-ubuntu22.04/usr/bin/swift --version
+          
+          echo "✅ Swift ${SWIFT_VERSION} installed successfully"
+
+      - name: Validate package structure
+        run: |
+          echo "Validating SwiftAzureOpenAI package structure..."
+          swift package describe
+
+      - name: Resolve package dependencies
+        run: |
+          echo "Resolving package dependencies..."
+          swift package resolve
+          echo "✅ Dependencies resolved"
+
+      - name: Build package (debug)
+        run: |
+          echo "Building SwiftAzureOpenAI package in debug mode..."
+          swift build
+          echo "✅ Debug build successful"
+
+      - name: Build package (release)
+        run: |
+          echo "Building SwiftAzureOpenAI package in release mode..."
+          swift build --configuration release
+          echo "✅ Release build successful"
+
+      - name: Verify no external dependencies
+        run: |
+          echo "Verifying zero external dependencies policy..."
+          DEPS=$(swift package show-dependencies 2>/dev/null || echo "No external dependencies found")
+          echo "Dependencies output: $DEPS"
+          if [[ "$DEPS" == "No external dependencies found" ]]; then
+            echo "✅ No external dependencies confirmed (as expected)"
+          else
+            echo "❌ Unexpected external dependencies found:"
+            echo "$DEPS"
+            exit 1
+          fi
+
+      - name: Run basic tests
+        run: |
+          echo "Running basic test suite to verify environment..."
+          swift test --parallel
+          echo "✅ Basic tests completed successfully"
+        env:
+          # Environment variables for Azure OpenAI testing (if available in Copilot environment)
+          AZURE_OPENAI_ENDPOINT: ${{ vars.AZURE_OPENAI_ENDPOINT }}
+          AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+          AZURE_OPENAI_DEPLOYMENT: ${{ vars.AZURE_OPENAI_DEPLOYMENT }}
+
+      - name: Environment setup summary
+        run: |
+          echo "🎉 SwiftAzureOpenAI development environment setup complete!"
+          echo ""
+          echo "Environment Summary:"
+          echo "  • Swift Version: $(swift --version | head -n1)"
+          echo "  • Package: SwiftAzureOpenAI"
+          echo "  • Tools Version: 6.0"
+          echo "  • Platforms: iOS 13.0+, macOS 10.15+, watchOS 6.0+, tvOS 13.0+"
+          echo "  • Dependencies: None (zero external dependencies)"
+          echo "  • Build Status: ✅ Ready"
+          echo "  • Test Status: ✅ Ready"
+          echo ""
+          echo "Copilot can now:"
+          echo "  • Build and compile Swift code"
+          echo "  • Run comprehensive test suites"
+          echo "  • Validate package structure"
+          echo "  • Test Azure OpenAI integrations (if credentials available)"
+          echo "  • Perform Swift package management operations"
