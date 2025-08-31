@@ -198,8 +198,8 @@ public final class SSEParser: Sendable {
     
     /// Handle done events indicating completion of streaming content
     private static func handleDoneEvent(event: AzureOpenAISSEEvent, contentType: String) -> SAOAIStreamingResponse? {
-        // For done events, use arguments if available, otherwise indicate completion
-        let finalContent = event.arguments ?? "[DONE]"
+        // For done events, use arguments if available, otherwise use empty text to avoid displaying "[DONE]" to users
+        let finalContent = event.arguments ?? ""
         
         let content = SAOAIStreamingContent(type: contentType, text: finalContent, index: event.outputIndex ?? 0)
         let output = SAOAIStreamingOutput(content: [content], role: "assistant")
