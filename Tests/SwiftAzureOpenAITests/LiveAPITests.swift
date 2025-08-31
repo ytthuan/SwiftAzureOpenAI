@@ -107,22 +107,35 @@ final class LiveAPITests: XCTestCase {
             
             // Validate first output
             let firstOutput = apiResponse.output[0]
-            XCTAssertFalse(firstOutput.content.isEmpty, "Output should have content")
             
-            print("✅ Non-streaming API call successful!")
-            print("Response ID: \(apiResponse.id ?? "N/A")")
-            print("Model: \(apiResponse.model ?? "N/A")")
-            
-            // Extract text content
-            let textContent = firstOutput.content.compactMap { content in
-                if case .outputText(let outputText) = content {
-                    return outputText.text
-                } else {
-                    return nil
-                }
-            }.joined(separator: " ")
-            
-            print("Content: \(textContent)")
+            // Check if it's a content output or reasoning output
+            if let content = firstOutput.content, !content.isEmpty {
+                // It's a content output
+                print("✅ Non-streaming API call successful!")
+                print("Response ID: \(apiResponse.id ?? "N/A")")
+                print("Model: \(apiResponse.model ?? "N/A")")
+                
+                // Extract text content
+                let textContent = content.compactMap { content in
+                    if case .outputText(let outputText) = content {
+                        return outputText.text
+                    } else {
+                        return nil
+                    }
+                }.joined(separator: " ")
+                
+                print("Content: \(textContent)")
+            } else if let type = firstOutput.type, type == "reasoning" {
+                // It's a reasoning output
+                print("✅ Non-streaming API call successful with reasoning output!")
+                print("Response ID: \(apiResponse.id ?? "N/A")")
+                print("Model: \(apiResponse.model ?? "N/A")")
+                print("Reasoning Output ID: \(firstOutput.id ?? "N/A")")
+                print("Reasoning Type: \(type)")
+                print("Reasoning Summary: \(firstOutput.summary ?? [])")
+            } else {
+                XCTFail("Output should have either content or be a reasoning output")
+            }
             
         } catch {
             print("Failed to decode response: \(error)")

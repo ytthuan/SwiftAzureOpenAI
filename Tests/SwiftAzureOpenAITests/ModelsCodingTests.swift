@@ -85,7 +85,9 @@ final class ModelsCodingTests: XCTestCase {
         XCTAssertEqual(decoded.id, "resp_123")
         XCTAssertEqual(decoded.model, "gpt-4o-mini")
         XCTAssertEqual(decoded.output.count, 1)
-        if case let .outputText(t) = decoded.output.first!.content.first! {
+        let firstOutput = decoded.output.first!
+        XCTAssertNotNil(firstOutput.content, "Content should not be nil for this response")
+        if case let .outputText(t) = firstOutput.content!.first! {
             XCTAssertEqual(t.text, "Hi there")
         } else {
             XCTFail("Expected output_text part")
