@@ -11,9 +11,11 @@ This package emphasizes strongly typed request/response models, response metadat
 ## Features
 
 - 🚀 **Azure OpenAI Responses API**: Unified request/response models aligned with the latest Azure OpenAI Responses API
-- 🔄 **Async/Await-ready**: Modern Swift concurrency-friendly data types
+- 🔄 **Full Async/Await Support**: Modern Swift concurrency with async response processing and streaming
+- 📡 **Real-time Streaming**: Built-in support for streaming responses with `StreamingResponseChunk` and SSE parsing
+- 🎯 **Python-style API**: Simple, intuitive API similar to OpenAI Python SDK for quick integration
 - 🛡️ **Typed errors**: Clear error modeling with `OpenAIError` and `ErrorResponse`
-- 🧩 **Structured content**: Input and output content parts (text, images)
+- 🧩 **Structured content**: Input and output content parts (text, images, multi-modal support)
 - 📊 **Metadata extraction**: Built-in support for response metadata and rate limits
 - 🌐 **Cross-platform**: Works with both Azure OpenAI and OpenAI services
 - 📦 **Swift Package Manager**: Easy integration with SPM
@@ -88,8 +90,9 @@ Then add it to your target dependencies:
 
 ## Quick Start
 
-SwiftAzureOpenAI now offers two APIs:
-- **🎉 Simple Python-style API** (Recommended) - For easy, quick usage
+SwiftAzureOpenAI provides modern async/await support with comprehensive streaming capabilities:
+- **🎉 Simple Python-style API** (Recommended) - For easy, quick async usage
+- **📡 Full Streaming Support** - Real-time response streaming with built-in SSE parsing
 - **Advanced API** - For complex scenarios requiring full control
 
 ### Import the Package
@@ -171,6 +174,29 @@ let response = try await client.responses.create(
     input: messages,
     maxOutputTokens: 300
 )
+```
+
+### 📡 Streaming Responses
+
+SwiftAzureOpenAI provides full support for real-time streaming responses:
+
+```swift
+// Enable streaming for real-time response processing
+let response = try await client.responses.create(
+    model: "gpt-4o-mini",
+    input: "Write a story about space exploration",
+    maxOutputTokens: 500,
+    stream: true  // Enable streaming
+)
+
+// Process streaming chunks as they arrive
+for try await chunk in response.stream {
+    if let content = chunk.chunk.output.first?.content.first,
+       case let .outputText(text) = content {
+        print(text.text, terminator: "")  // Print text as it streams
+        fflush(stdout)  // Flush output for real-time display
+    }
+}
 ```
 
 ### Reasoning Models Support
@@ -484,7 +510,9 @@ swift test
 
 ### Live API Testing
 
-For live testing with Azure OpenAI or OpenAI services, you can set environment variables and implement client code using this package:
+For comprehensive live testing with Azure OpenAI or OpenAI services, see the [Live API Testing Guide](docs/LIVE_API_TESTING.md).
+
+Quick setup for live testing:
 
 ```bash
 # Azure OpenAI
@@ -539,7 +567,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Support
 
-- 📖 Documentation: project README (this file)
+- 📖 Documentation: project README (this file) and [docs/](docs/) directory
+- 🧪 Live API Testing: [Live API Testing Guide](docs/LIVE_API_TESTING.md)
 - 🐛 Issues: [GitHub Issues](https://github.com/ytthuan/SwiftAzureOpenAI/issues)
 - 📚 Azure OpenAI Responses API: [Official Documentation](https://learn.microsoft.com/en-us/azure/ai-services/openai/reference-preview-latest#create-response)
 
