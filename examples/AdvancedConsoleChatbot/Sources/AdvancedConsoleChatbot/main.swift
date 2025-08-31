@@ -193,7 +193,7 @@ class AdvancedChatHistory {
     func addAssistantResponse(_ response: SAOAIResponse) {
         // Process response and extract content
         for output in response.output {
-            for content in output.content {
+            for content in output.content ?? [] {
                 switch content {
                 case .outputText(let textOutput):
                     let assistantMessage = SAOAIMessage(role: .assistant, text: textOutput.text)
@@ -449,26 +449,26 @@ class AdvancedConsoleChatbot {
         var toolResults: [SAOAIMessage] = []
         
         for output in response.output {
-            for content in output.content {
+            for content in output.content ?? [] {
                 switch content {
                 case .outputText(let textOutput):
                     print(textOutput.text)
-                    
+
                 case .functionCall(let functionCall):
                     print("🔧 Calling tool: \(functionCall.name)")
-                    
+
                     let result = await executeTool(
                         name: functionCall.name,
                         arguments: functionCall.arguments,
                         input: input
                     )
-                    
+
                     chatHistory.addToolCall(
                         callId: functionCall.callId,
                         function: functionCall.name,
                         result: result
                     )
-                    
+
                     // Add tool result to conversation
                     toolResults.append(SAOAIMessage(
                         role: .user,

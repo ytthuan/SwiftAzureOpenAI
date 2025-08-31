@@ -10,14 +10,14 @@ import SwiftAzureOpenAI
 /// - Latest SAOAI class names and API patterns
 
 // MARK: - Configuration
-nonisolated(unsafe) let azureConfig = SAOAIAzureConfiguration(
+let azureConfig = SAOAIAzureConfiguration(
     endpoint: ProcessInfo.processInfo.environment["AZURE_OPENAI_ENDPOINT"] ?? "https://your-resource.openai.azure.com",
     apiKey: ProcessInfo.processInfo.environment["AZURE_OPENAI_API_KEY"] ?? "your-api-key",
     deploymentName: ProcessInfo.processInfo.environment["AZURE_OPENAI_DEPLOYMENT"] ?? "gpt-4o",
     apiVersion: "preview"
 )
 
-nonisolated(unsafe) let client = SAOAIClient(configuration: azureConfig)
+let client = SAOAIClient(configuration: azureConfig)
 
 // MARK: - Chat History Management
 class ChatHistory {
@@ -31,7 +31,8 @@ class ChatHistory {
     func addAssistantResponse(_ response: SAOAIResponse) {
         // Extract assistant message from response
         for output in response.output {
-            for content in output.content {
+            guard let contentArray = output.content else { continue }
+            for content in contentArray {
                 if case let .outputText(textOutput) = content {
                     let assistantMessage = SAOAIMessage(role: .assistant, text: textOutput.text)
                     messages.append(assistantMessage)
@@ -206,9 +207,10 @@ class ConsoleChatbot {
     
     private func displayResponse(_ response: SAOAIResponse) {
         var hasContent = false
-        
+
         for output in response.output {
-            for content in output.content {
+            guard let contentArray = output.content else { continue }
+            for content in contentArray {
                 switch content {
                 case .outputText(let textOutput):
                     print(textOutput.text)
@@ -243,7 +245,7 @@ class ConsoleChatbot {
 }
 
 // MARK: - Extension for Content Display
-extension SAOAIInputContent: CustomStringConvertible {
+extension SAOAIInputContent: @retroactive CustomStringConvertible {
     public var description: String {
         switch self {
         case .inputText(let text):
