@@ -28,11 +28,8 @@ jobs:
     # You can define any steps you want, and they will run before the agent starts.
     # If you do not check out your code, Copilot will do this for you.
     steps:
-
-      - name: Add Environment secrets and variables
-        run: |
-          echo "Running basic test suite to verify environment..."
-          echo "✅ Basic tests completed successfully"
+      - name: Use Copilot Agent
+        uses: github/copilot-agent@v1  
         env:
           # Environment variables for Azure OpenAI testing (if available in Copilot environment)
           AZURE_OPENAI_ENDPOINT: ${{ vars.AZURE_OPENAI_ENDPOINT }}
