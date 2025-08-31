@@ -158,7 +158,9 @@ final class ComprehensiveSSEEventTests: XCTestCase {
             
             XCTAssertNotNil(response, "Event type '\(eventType)' should be parsed successfully")
             XCTAssertEqual(response?.id, "content_item_id", "Item ID should be extracted for '\(eventType)'")
-            XCTAssertNotNil(response?.output?.first?.content?.first?.text, "Content part text should be present for '\(eventType)'")
+            // Content part events now return empty text as they are status events
+            XCTAssertEqual(response?.output?.first?.content?.first?.text, "", "Content part text should be empty for status events")
+            XCTAssertEqual(response?.output?.first?.content?.first?.type, "status", "Content part should be marked as status type")
             
             print("✅ Event type '\(eventType)' parsed successfully")
         }

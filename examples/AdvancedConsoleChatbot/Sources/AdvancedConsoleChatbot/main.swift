@@ -348,8 +348,6 @@ class AdvancedConsoleChatbot {
         let (message, needsTools) = processInput(input)
         chatHistory.addUserMessage(message)
         
-        print("\n🤖 Assistant: ", terminator: "")
-        
         if needsTools {
             try await handleToolBasedRequest(input, message: message)
         } else {
@@ -391,7 +389,7 @@ class AdvancedConsoleChatbot {
     }
     
     private func handleToolBasedRequest(_ input: String, message: SAOAIMessage) async throws {
-        print("🔧 Processing with tools...")
+        print("\n🔧 Processing with tools...")
         print("🤖 Assistant: ", terminator: "")
         
         // Prepare messages for streaming - include system message for first conversation
@@ -426,7 +424,7 @@ class AdvancedConsoleChatbot {
             // Process streaming content
             for output in chunk.output ?? [] {
                 for content in output.content ?? [] {
-                    if let text = content.text {
+                    if let text = content.text, !text.isEmpty, content.type != "status" {
                         print(text, terminator: "")
                         fullResponse += text
                     }
@@ -451,8 +449,9 @@ class AdvancedConsoleChatbot {
         for output in response.output {
             for content in output.content ?? [] {
                 switch content {
-                case .outputText(let textOutput):
-                    print(textOutput.text)
+                case .outputText(_):
+                    // Text already printed during streaming above, no need to print again
+                    break
 
                 case .functionCall(let functionCall):
                     print("🔧 Calling tool: \(functionCall.name)")
@@ -504,7 +503,7 @@ class AdvancedConsoleChatbot {
                 
                 for output in chunk.output ?? [] {
                     for content in output.content ?? [] {
-                        if let text = content.text {
+                        if let text = content.text, !text.isEmpty, content.type != "status" {
                             print(text, terminator: "")
                             finalResponse += text
                         }
@@ -528,7 +527,7 @@ class AdvancedConsoleChatbot {
     }
     
     private func handleRegularRequest(_ message: SAOAIMessage) async throws {
-        print("🤖 Assistant: ", terminator: "")
+        print("\n🤖 Assistant: ", terminator: "")
         
         // Prepare messages for streaming - include system message for first conversation
         let messagesToSend: [SAOAIMessage]
@@ -560,7 +559,7 @@ class AdvancedConsoleChatbot {
             // Process streaming content
             for output in chunk.output ?? [] {
                 for content in output.content ?? [] {
-                    if let text = content.text {
+                    if let text = content.text, !text.isEmpty, content.type != "status" {
                         print(text, terminator: "")
                         fullResponse += text
                     }
