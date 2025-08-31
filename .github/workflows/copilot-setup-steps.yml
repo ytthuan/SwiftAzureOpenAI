@@ -28,10 +28,11 @@ jobs:
     # You can define any steps you want, and they will run before the agent starts.
     # If you do not check out your code, Copilot will do this for you.
     steps:
-      - name: Use Copilot Agent
-        uses: github/copilot-agent@v1  
+      - name: Setup Copilot Agent Variables
         env:
           # Environment variables for Azure OpenAI testing (if available in Copilot environment)
           AZURE_OPENAI_ENDPOINT: ${{ vars.AZURE_OPENAI_ENDPOINT }}
           AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
           AZURE_OPENAI_DEPLOYMENT: ${{ vars.AZURE_OPENAI_DEPLOYMENT }}
+        run: |
+          echo "✅ setup environment variables" 
