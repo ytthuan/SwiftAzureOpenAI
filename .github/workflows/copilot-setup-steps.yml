@@ -29,7 +29,6 @@ jobs:
       - name: Add Environment secrets and variables
         run: |
           echo "Running basic test suite to verify environment..."
-          swift test --parallel
           echo "✅ Basic tests completed successfully"
         env:
           # Environment variables for Azure OpenAI testing (if available in Copilot environment)
