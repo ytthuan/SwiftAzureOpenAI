@@ -107,6 +107,10 @@ jobs:
           echo "❌ Release validation failed"
           exit 1
         fi
+      env:
+        AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+        AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+        AZURE_OPENAI_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_DEPLOYMENT }}
     
     - name: Suggest next version
       id: version

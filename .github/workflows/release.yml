@@ -56,6 +56,10 @@ jobs:
         swift build --configuration release
         swift test --configuration release
         echo "✅ Package validation successful"
+      env:
+        AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+        AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+        AZURE_OPENAI_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_DEPLOYMENT }}
     
     - name: Extract version from tag
       id: version
@@ -133,6 +137,10 @@ jobs:
     
     - name: Test release
       run: swift test --configuration release
+      env:
+        AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+        AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+        AZURE_OPENAI_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_DEPLOYMENT }}
 
   create-release:
     name: Create GitHub Release
