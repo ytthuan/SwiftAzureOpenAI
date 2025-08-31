@@ -85,11 +85,48 @@ final class ModelsCodingTests: XCTestCase {
         XCTAssertEqual(decoded.id, "resp_123")
         XCTAssertEqual(decoded.model, "gpt-4o-mini")
         XCTAssertEqual(decoded.output.count, 1)
-        if case let .outputText(t) = decoded.output.first!.content.first! {
+        let firstOutput = decoded.output.first!
+        XCTAssertNotNil(firstOutput.content, "Content should not be nil for this response")
+        if case let .outputText(t) = firstOutput.content!.first! {
             XCTAssertEqual(t.text, "Hi there")
         } else {
             XCTFail("Expected output_text part")
         }
         XCTAssertEqual(decoded.usage?.totalTokens, 30)
+    }
+    
+    func testSAOAIResponseCreatedAtFieldMapping() throws {
+        // Test that API responses with "created_at" field are correctly mapped to "created"
+        let payload: [String: Any] = [
+            "id": "resp_test_created_at",
+            "model": "gpt-5-nano", 
+            "created_at": 1756613526,  // Note: using "created_at" as in real API response
+            "output": [
+                [
+                    "id": "rs_test",
+                    "type": "reasoning",
+                    "summary": []
+                ]
+            ],
+            "usage": [
+                "input_tokens": 20,
+                "output_tokens": 0,
+                "total_tokens": 20
+            ]
+        ]
+        
+        let data = try JSONSerialization.data(withJSONObject: payload)
+        let decoded = try JSONDecoder().decode(SAOAIResponse.self, from: data)
+        
+        XCTAssertEqual(decoded.id, "resp_test_created_at")
+        XCTAssertEqual(decoded.model, "gpt-5-nano")
+        XCTAssertEqual(decoded.created, 1756613526, "created_at field should be mapped to created property")
+        XCTAssertEqual(decoded.output.count, 1)
+        
+        let firstOutput = decoded.output.first!
+        XCTAssertEqual(firstOutput.id, "rs_test")
+        XCTAssertEqual(firstOutput.type, "reasoning")
+        XCTAssertEqual(firstOutput.summary, [])
+        XCTAssertNil(firstOutput.content, "Reasoning outputs should not have content")
     }
 }
