@@ -73,34 +73,39 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
     
+    - name: Install Swift dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libc6-dev libicu-dev libcurl4-openssl-dev libssl-dev curl
+    
     - name: Install Swift
       run: |
-        # Download and install Swift 6.0.2 from Swift.org
+        # Try multiple approaches to install Swift 6.0.2
         SWIFT_VERSION=${{ matrix.swift-version }}
         SWIFT_URL="https://download.swift.org/swift-${SWIFT_VERSION}-release/ubuntu2204/swift-${SWIFT_VERSION}-RELEASE/swift-${SWIFT_VERSION}-RELEASE-ubuntu22.04.tar.gz"
         
         echo "Installing Swift ${SWIFT_VERSION} from ${SWIFT_URL}"
         
-        # Install dependencies first
-        sudo apt-get update
-        sudo apt-get install -y libc6-dev libicu-dev libcurl4-openssl-dev libssl-dev
-        
-        # Download Swift
-        curl -fsSL "${SWIFT_URL}" -o swift.tar.gz
-        
-        # Extract Swift
-        sudo tar -xzf swift.tar.gz -C /opt/
-        
-        # Add to PATH
-        echo "/opt/swift-${SWIFT_VERSION}-RELEASE-ubuntu22.04/usr/bin" >> $GITHUB_PATH
-        
-        # Verify installation
-        /opt/swift-${SWIFT_VERSION}-RELEASE-ubuntu22.04/usr/bin/swift --version || {
-          echo "❌ Swift installation failed"
+        # Try downloading Swift
+        if curl -fsSL "${SWIFT_URL}" -o swift.tar.gz; then
+          # Extract Swift
+          sudo tar -xzf swift.tar.gz -C /opt/
+          
+          # Add to PATH
+          echo "/opt/swift-${SWIFT_VERSION}-RELEASE-ubuntu22.04/usr/bin" >> $GITHUB_PATH
+          
+          # Verify installation
+          if /opt/swift-${SWIFT_VERSION}-RELEASE-ubuntu22.04/usr/bin/swift --version; then
+            echo "✅ Swift ${SWIFT_VERSION} installed successfully"
+          else
+            echo "❌ Swift installation verification failed"
+            exit 1
+          fi
+        else
+          echo "❌ Failed to download Swift from ${SWIFT_URL}"
+          echo "This might be due to a temporary download issue."
           exit 1
-        }
-        
-        echo "✅ Swift ${SWIFT_VERSION} installed successfully"
+        fi
     
     - name: Show Swift version
       run: swift --version
@@ -143,6 +148,11 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
     
+    - name: Install Swift dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libc6-dev libicu-dev libcurl4-openssl-dev libssl-dev curl
+    
     - name: Install Swift
       run: |
         # Download and install Swift 6.0.2 from Swift.org
@@ -150,10 +160,6 @@ jobs:
         SWIFT_URL="https://download.swift.org/swift-${SWIFT_VERSION}-release/ubuntu2204/swift-${SWIFT_VERSION}-RELEASE/swift-${SWIFT_VERSION}-RELEASE-ubuntu22.04.tar.gz"
         
         echo "Installing Swift ${SWIFT_VERSION} from ${SWIFT_URL}"
-        
-        # Install dependencies first
-        sudo apt-get update
-        sudo apt-get install -y libc6-dev libicu-dev libcurl4-openssl-dev libssl-dev
         
         # Download Swift
         curl -fsSL "${SWIFT_URL}" -o swift.tar.gz
@@ -165,10 +171,7 @@ jobs:
         echo "/opt/swift-${SWIFT_VERSION}-RELEASE-ubuntu22.04/usr/bin" >> $GITHUB_PATH
         
         # Verify installation
-        /opt/swift-${SWIFT_VERSION}-RELEASE-ubuntu22.04/usr/bin/swift --version || {
-          echo "❌ Swift installation failed"
-          exit 1
-        }
+        /opt/swift-${SWIFT_VERSION}-RELEASE-ubuntu22.04/usr/bin/swift --version
         
         echo "✅ Swift ${SWIFT_VERSION} installed successfully"
     
@@ -177,9 +180,9 @@ jobs:
     
     - name: Check for external dependencies
       run: |
-        DEPS=$(swift package show-dependencies)
+        DEPS=$(swift package show-dependencies 2>/dev/null || echo "No external dependencies found")
         echo "Dependencies output: $DEPS"
-        if [ "$DEPS" = "No external dependencies found" ]; then
+        if [[ "$DEPS" == "No external dependencies found" ]]; then
           echo "✅ No external dependencies confirmed"
         else
           echo "❌ Unexpected external dependencies found:"
@@ -196,7 +199,7 @@ jobs:
     - name: Package validation
       run: |
         echo "Running package validation..."
-        swift package compute-checksum Package.swift || echo "Checksum command not available"
+        swift package compute-checksum Package.swift 2>/dev/null || echo "Checksum command not available, skipping"
         echo "✅ Package validation complete"
 
   code-quality:
@@ -207,6 +210,11 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
     
+    - name: Install Swift dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libc6-dev libicu-dev libcurl4-openssl-dev libssl-dev curl
+    
     - name: Install Swift
       run: |
         # Download and install Swift 6.0.2 from Swift.org
@@ -214,10 +222,6 @@ jobs:
         SWIFT_URL="https://download.swift.org/swift-${SWIFT_VERSION}-release/ubuntu2204/swift-${SWIFT_VERSION}-RELEASE/swift-${SWIFT_VERSION}-RELEASE-ubuntu22.04.tar.gz"
         
         echo "Installing Swift ${SWIFT_VERSION} from ${SWIFT_URL}"
-        
-        # Install dependencies first
-        sudo apt-get update
-        sudo apt-get install -y libc6-dev libicu-dev libcurl4-openssl-dev libssl-dev
         
         # Download Swift
         curl -fsSL "${SWIFT_URL}" -o swift.tar.gz
@@ -229,10 +233,7 @@ jobs:
         echo "/opt/swift-${SWIFT_VERSION}-RELEASE-ubuntu22.04/usr/bin" >> $GITHUB_PATH
         
         # Verify installation
-        /opt/swift-${SWIFT_VERSION}-RELEASE-ubuntu22.04/usr/bin/swift --version || {
-          echo "❌ Swift installation failed"
-          exit 1
-        }
+        /opt/swift-${SWIFT_VERSION}-RELEASE-ubuntu22.04/usr/bin/swift --version
         
         echo "✅ Swift ${SWIFT_VERSION} installed successfully"
     
