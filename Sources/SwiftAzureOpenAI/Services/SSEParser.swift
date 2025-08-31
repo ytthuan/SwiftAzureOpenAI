@@ -56,83 +56,320 @@ public final class SSEParser: Sendable {
     
     /// Convert Azure OpenAI SSE event to streaming response format
     private static func convertAzureEventToStreamingResponse(_ event: AzureOpenAISSEEvent) -> SAOAIStreamingResponse? {
-        // Handle different types of Azure OpenAI SSE events
+        // Handle different types of Azure OpenAI SSE events based on official OpenAI Response API documentation
         switch event.type {
+        
+        // MARK: - Delta Events (streaming content)
         case "response.function_call_arguments.delta":
-            // Handle delta events - these contain incremental text content
-            guard let delta = event.delta else { return nil }
+            return handleDeltaEvent(event: event, contentType: "function_call_arguments")
             
-            let content = SAOAIStreamingContent(type: "function_call_arguments", text: delta, index: event.outputIndex ?? 0)
-            let output = SAOAIStreamingOutput(content: [content], role: "assistant")
+        case "response.text.delta", "response.output_text.delta":
+            return handleDeltaEvent(event: event, contentType: "text")
             
-            return SAOAIStreamingResponse(
-                id: event.itemId, // Use item_id for delta events
-                model: nil,
-                created: nil,
-                output: [output],
-                usage: nil
-            )
+        case "response.audio.delta":
+            return handleDeltaEvent(event: event, contentType: "audio")
             
-        case "response.text.delta":
-            // Handle text delta events
-            guard let delta = event.delta else { return nil }
+        case "response.audio_transcript.delta":
+            return handleDeltaEvent(event: event, contentType: "audio_transcript")
             
-            let content = SAOAIStreamingContent(type: "text", text: delta, index: event.outputIndex ?? 0)
-            let output = SAOAIStreamingOutput(content: [content], role: "assistant")
+        case "response.code_interpreter_call_code.delta":
+            return handleDeltaEvent(event: event, contentType: "code_interpreter_code")
             
-            return SAOAIStreamingResponse(
-                id: event.itemId,
-                model: nil,
-                created: nil,
-                output: [output],
-                usage: nil
-            )
+        case "response.refusal.delta":
+            return handleDeltaEvent(event: event, contentType: "refusal")
             
+        case "response.reasoning.delta":
+            return handleDeltaEvent(event: event, contentType: "reasoning")
+            
+        case "response.reasoning_summary.delta":
+            return handleDeltaEvent(event: event, contentType: "reasoning_summary")
+            
+        case "response.reasoning_summary_text.delta":
+            return handleDeltaEvent(event: event, contentType: "reasoning_summary_text")
+            
+        case "response.mcp_call.arguments_delta":
+            return handleDeltaEvent(event: event, contentType: "mcp_call_arguments")
+            
+        // MARK: - Done Events (completion markers)
+        case "response.function_call_arguments.done":
+            return handleDoneEvent(event: event, contentType: "function_call_arguments")
+            
+        case "response.text.done", "response.output_text.done":
+            return handleDoneEvent(event: event, contentType: "text")
+            
+        case "response.audio.done":
+            return handleDoneEvent(event: event, contentType: "audio")
+            
+        case "response.audio_transcript.done":
+            return handleDoneEvent(event: event, contentType: "audio_transcript")
+            
+        case "response.code_interpreter_call_code.done":
+            return handleDoneEvent(event: event, contentType: "code_interpreter_code")
+            
+        case "response.refusal.done":
+            return handleDoneEvent(event: event, contentType: "refusal")
+            
+        case "response.reasoning.done":
+            return handleDoneEvent(event: event, contentType: "reasoning")
+            
+        case "response.reasoning_summary.done":
+            return handleDoneEvent(event: event, contentType: "reasoning_summary")
+            
+        case "response.reasoning_summary_text.done":
+            return handleDoneEvent(event: event, contentType: "reasoning_summary_text")
+            
+        case "response.mcp_call.arguments_done":
+            return handleDoneEvent(event: event, contentType: "mcp_call_arguments")
+            
+        // MARK: - Response Lifecycle Events
         case "response.created", "response.in_progress", "response.completed":
-            // Handle events that contain complete response data
-            guard let response = event.response else {
-                return nil
-            }
+            return handleResponseLifecycleEvent(event: event)
             
-            // Map Azure OpenAI event response to streaming response format
-            let streamingOutput = convertAzureOutputToStreamingOutput(response.output)
+        case "response.failed", "response.incomplete":
+            return handleResponseFailureEvent(event: event)
             
-            return SAOAIStreamingResponse(
-                id: response.id,
-                model: response.model,
-                created: response.createdAt,
-                output: streamingOutput,
-                usage: response.usage
-            )
+        case "response.queued":
+            return handleResponseQueuedEvent(event: event)
             
+        // MARK: - Content Part Events
+        case "response.content_part.added":
+            return handleContentPartAddedEvent(event: event)
+            
+        case "response.content_part.done":
+            return handleContentPartDoneEvent(event: event)
+            
+        // MARK: - Output Item Events
         case "response.output_item.added", "response.output_item.done":
-            // Handle item events
-            guard let item = event.item else { return nil }
+            return handleOutputItemEvent(event: event)
             
-            // Create content based on item type
-            let content: SAOAIStreamingContent
-            if item.type == "function_call", let name = item.name {
-                content = SAOAIStreamingContent(type: "function_call", text: "Function call: \(name)", index: 0)
-            } else if item.type == "reasoning" {
-                content = SAOAIStreamingContent(type: "reasoning", text: "Reasoning step", index: 0)
-            } else {
-                return nil
-            }
+        // MARK: - Tool Call Events
+        case "response.file_search_call.searching", "response.file_search_call.in_progress", "response.file_search_call.completed":
+            return handleToolCallEvent(event: event, toolType: "file_search")
             
-            let output = SAOAIStreamingOutput(content: [content], role: "assistant")
+        case "response.code_interpreter_call.interpreting", "response.code_interpreter_call.in_progress", "response.code_interpreter_call.completed":
+            return handleToolCallEvent(event: event, toolType: "code_interpreter")
             
-            return SAOAIStreamingResponse(
-                id: item.id,
-                model: nil,
-                created: nil,
-                output: [output],
-                usage: nil
-            )
+        case "response.web_search_call.searching", "response.web_search_call.in_progress", "response.web_search_call.completed":
+            return handleToolCallEvent(event: event, toolType: "web_search")
+            
+        case "response.image_generation_call.generating", "response.image_generation_call.in_progress", "response.image_generation_call.completed", "response.image_generation_call.partial_image":
+            return handleToolCallEvent(event: event, toolType: "image_generation")
+            
+        case "response.mcp_call.in_progress", "response.mcp_call.completed", "response.mcp_call.failed":
+            return handleToolCallEvent(event: event, toolType: "mcp_call")
+            
+        case "response.mcp_list_tools.in_progress", "response.mcp_list_tools.completed", "response.mcp_list_tools.failed":
+            return handleToolCallEvent(event: event, toolType: "mcp_list_tools")
+            
+        // MARK: - Annotation Events  
+        case "response.output_text.annotation.added":
+            return handleAnnotationEvent(event: event)
+            
+        case "response.reasoning_summary_part.added", "response.reasoning_summary_part.done":
+            return handleReasoningSummaryPartEvent(event: event)
+            
+        // MARK: - Error Events
+        case "error":
+            return handleErrorEvent(event: event)
             
         default:
-            // Skip unknown event types
+            // Skip unknown event types - log for debugging but don't fail
             return nil
         }
+    }
+    
+    // MARK: - Event Handler Methods
+    
+    /// Handle delta events containing incremental streaming content
+    private static func handleDeltaEvent(event: AzureOpenAISSEEvent, contentType: String) -> SAOAIStreamingResponse? {
+        guard let delta = event.delta else { return nil }
+        
+        let content = SAOAIStreamingContent(type: contentType, text: delta, index: event.outputIndex ?? 0)
+        let output = SAOAIStreamingOutput(content: [content], role: "assistant")
+        
+        return SAOAIStreamingResponse(
+            id: event.itemId, // Use item_id for delta events
+            model: nil,
+            created: nil,
+            output: [output],
+            usage: nil
+        )
+    }
+    
+    /// Handle done events indicating completion of streaming content
+    private static func handleDoneEvent(event: AzureOpenAISSEEvent, contentType: String) -> SAOAIStreamingResponse? {
+        // For done events, use arguments if available, otherwise indicate completion
+        let finalContent = event.arguments ?? "[DONE]"
+        
+        let content = SAOAIStreamingContent(type: contentType, text: finalContent, index: event.outputIndex ?? 0)
+        let output = SAOAIStreamingOutput(content: [content], role: "assistant")
+        
+        return SAOAIStreamingResponse(
+            id: event.itemId,
+            model: nil,
+            created: nil,
+            output: [output],
+            usage: nil
+        )
+    }
+    
+    /// Handle response lifecycle events (created, in_progress, completed)
+    private static func handleResponseLifecycleEvent(event: AzureOpenAISSEEvent) -> SAOAIStreamingResponse? {
+        guard let response = event.response else { return nil }
+        
+        let streamingOutput = convertAzureOutputToStreamingOutput(response.output)
+        
+        return SAOAIStreamingResponse(
+            id: response.id,
+            model: response.model,
+            created: response.createdAt,
+            output: streamingOutput,
+            usage: response.usage
+        )
+    }
+    
+    /// Handle response failure events
+    private static func handleResponseFailureEvent(event: AzureOpenAISSEEvent) -> SAOAIStreamingResponse? {
+        guard let response = event.response else { return nil }
+        
+        let content = SAOAIStreamingContent(type: "error", text: "Response \(event.type)", index: 0)
+        let output = SAOAIStreamingOutput(content: [content], role: "assistant")
+        
+        return SAOAIStreamingResponse(
+            id: response.id,
+            model: response.model,
+            created: response.createdAt,
+            output: [output],
+            usage: response.usage
+        )
+    }
+    
+    /// Handle response queued events
+    private static func handleResponseQueuedEvent(event: AzureOpenAISSEEvent) -> SAOAIStreamingResponse? {
+        guard let response = event.response else { return nil }
+        
+        let content = SAOAIStreamingContent(type: "status", text: "Response queued", index: 0)
+        let output = SAOAIStreamingOutput(content: [content], role: "assistant")
+        
+        return SAOAIStreamingResponse(
+            id: response.id,
+            model: response.model,
+            created: response.createdAt,
+            output: [output],
+            usage: response.usage
+        )
+    }
+    
+    /// Handle content part events
+    private static func handleContentPartAddedEvent(event: AzureOpenAISSEEvent) -> SAOAIStreamingResponse? {
+        let content = SAOAIStreamingContent(type: "content_part", text: "Content part added", index: event.outputIndex ?? 0)
+        let output = SAOAIStreamingOutput(content: [content], role: "assistant")
+        
+        return SAOAIStreamingResponse(
+            id: event.itemId,
+            model: nil,
+            created: nil,
+            output: [output],
+            usage: nil
+        )
+    }
+    
+    /// Handle content part done events
+    private static func handleContentPartDoneEvent(event: AzureOpenAISSEEvent) -> SAOAIStreamingResponse? {
+        let content = SAOAIStreamingContent(type: "content_part", text: "Content part done", index: event.outputIndex ?? 0)
+        let output = SAOAIStreamingOutput(content: [content], role: "assistant")
+        
+        return SAOAIStreamingResponse(
+            id: event.itemId,
+            model: nil,
+            created: nil,
+            output: [output],
+            usage: nil
+        )
+    }
+    
+    /// Handle output item events
+    private static func handleOutputItemEvent(event: AzureOpenAISSEEvent) -> SAOAIStreamingResponse? {
+        guard let item = event.item else { return nil }
+        
+        // Create content based on item type
+        let content: SAOAIStreamingContent
+        if item.type == "function_call", let name = item.name {
+            content = SAOAIStreamingContent(type: "function_call", text: "Function call: \(name)", index: 0)
+        } else if item.type == "reasoning" {
+            content = SAOAIStreamingContent(type: "reasoning", text: "Reasoning step", index: 0)
+        } else {
+            content = SAOAIStreamingContent(type: item.type ?? "output_item", text: "Output item: \(event.type)", index: 0)
+        }
+        
+        let output = SAOAIStreamingOutput(content: [content], role: "assistant")
+        
+        return SAOAIStreamingResponse(
+            id: item.id,
+            model: nil,
+            created: nil,
+            output: [output],
+            usage: nil
+        )
+    }
+    
+    /// Handle tool call events (file search, code interpreter, etc.)
+    private static func handleToolCallEvent(event: AzureOpenAISSEEvent, toolType: String) -> SAOAIStreamingResponse? {
+        let statusText = event.type.components(separatedBy: ".").last ?? "in_progress"
+        let content = SAOAIStreamingContent(type: toolType, text: "\(toolType.capitalized): \(statusText)", index: event.outputIndex ?? 0)
+        let output = SAOAIStreamingOutput(content: [content], role: "assistant")
+        
+        return SAOAIStreamingResponse(
+            id: event.itemId,
+            model: nil,
+            created: nil,
+            output: [output],
+            usage: nil
+        )
+    }
+    
+    /// Handle annotation events
+    private static func handleAnnotationEvent(event: AzureOpenAISSEEvent) -> SAOAIStreamingResponse? {
+        let content = SAOAIStreamingContent(type: "annotation", text: "Text annotation added", index: event.outputIndex ?? 0)
+        let output = SAOAIStreamingOutput(content: [content], role: "assistant")
+        
+        return SAOAIStreamingResponse(
+            id: event.itemId,
+            model: nil,
+            created: nil,
+            output: [output],
+            usage: nil
+        )
+    }
+    
+    /// Handle reasoning summary part events
+    private static func handleReasoningSummaryPartEvent(event: AzureOpenAISSEEvent) -> SAOAIStreamingResponse? {
+        let statusText = event.type.contains("added") ? "added" : "done"
+        let content = SAOAIStreamingContent(type: "reasoning_summary_part", text: "Reasoning summary part \(statusText)", index: event.outputIndex ?? 0)
+        let output = SAOAIStreamingOutput(content: [content], role: "assistant")
+        
+        return SAOAIStreamingResponse(
+            id: event.itemId,
+            model: nil,
+            created: nil,
+            output: [output],
+            usage: nil
+        )
+    }
+    
+    /// Handle error events
+    private static func handleErrorEvent(event: AzureOpenAISSEEvent) -> SAOAIStreamingResponse? {
+        // For error events, create an error response
+        let content = SAOAIStreamingContent(type: "error", text: "Error occurred", index: 0)
+        let output = SAOAIStreamingOutput(content: [content], role: "assistant")
+        
+        return SAOAIStreamingResponse(
+            id: event.itemId,
+            model: nil,
+            created: nil,
+            output: [output],
+            usage: nil
+        )
     }
     
     /// Convert Azure OpenAI output to streaming output format
