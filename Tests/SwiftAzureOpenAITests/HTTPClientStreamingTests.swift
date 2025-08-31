@@ -155,6 +155,60 @@ data: {"type":"response.completed","sequence_number":19,"response":{"id":"resp_6
         }
     }
 
+    /// Test comprehensive Azure OpenAI SSE event handling
+    func testComprehensiveAzureOpenAISSEEvents() async throws {
+        // Test various Azure OpenAI SSE event types
+        let comprehensiveSSEData = """
+event: response.created
+data: {"type":"response.created","sequence_number":0,"response":{"id":"resp_123","object":"response","created_at":1234567890,"status":"in_progress","model":"gpt-4o","output":[]}}
+
+event: response.output_item.added
+data: {"type":"response.output_item.added","sequence_number":1,"output_index":0,"item":{"id":"item_456","type":"reasoning","summary":[]}}
+
+event: response.function_call_arguments.delta
+data: {"type":"response.function_call_arguments.delta","sequence_number":2,"item_id":"fc_789","output_index":1,"delta":"hello"}
+
+event: response.completed
+data: {"type":"response.completed","sequence_number":3,"response":{"id":"resp_123","object":"response","created_at":1234567890,"status":"completed","model":"gpt-4o","output":[{"id":"fc_789","type":"function_call","name":"test_function","arguments":"{\\"param\\":\\"value\\"}"}],"usage":{"input_tokens":10,"output_tokens":20,"total_tokens":30}}}
+
+""".data(using: .utf8)!
+        
+        let lines = String(data: comprehensiveSSEData, encoding: .utf8)!.components(separatedBy: .newlines)
+        var parsedResponses: [SAOAIStreamingResponse] = []
+        
+        for line in lines {
+            if !line.isEmpty {
+                let lineData = line.data(using: .utf8)! + "\n\n".data(using: .utf8)!
+                
+                do {
+                    if let response = try SSEParser.parseSSEChunk(lineData) {
+                        parsedResponses.append(response)
+                    }
+                } catch {
+                    XCTFail("Should not fail to parse valid Azure OpenAI SSE events: \(error)")
+                }
+            }
+        }
+        
+        // Should parse the events that contain response data
+        XCTAssertEqual(parsedResponses.count, 2, "Should parse response.created and response.completed events")
+        
+        // Validate first response (response.created)
+        let firstResponse = parsedResponses[0]
+        XCTAssertEqual(firstResponse.id, "resp_123")
+        XCTAssertEqual(firstResponse.model, "gpt-4o")
+        XCTAssertEqual(firstResponse.created, 1234567890)
+        
+        // Validate second response (response.completed)  
+        let secondResponse = parsedResponses[1]
+        XCTAssertEqual(secondResponse.id, "resp_123")
+        XCTAssertNotNil(secondResponse.output, "Completed response should have output")
+        XCTAssertNotNil(secondResponse.usage, "Completed response should have usage")
+        XCTAssertEqual(secondResponse.usage?.totalTokens, 30)
+        
+        print("✅ Comprehensive Azure OpenAI SSE event parsing successful!")
+    }
+
     /// Test edge case with empty lines and malformed chunks
     func testHTTPClientStreamingEdgeCases() async throws {
         
