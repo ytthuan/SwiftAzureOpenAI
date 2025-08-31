@@ -40,5 +40,13 @@ public struct SAOAIResponse: Codable, Equatable, Sendable {
         self.output = output
         self.usage = usage
     }
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case model
+        case created = "created_at"
+        case output
+        case usage
+    }
 }
 
