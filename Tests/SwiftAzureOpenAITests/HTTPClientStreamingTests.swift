@@ -50,6 +50,111 @@ data: [DONE]
         XCTAssertEqual(secondResponse.output?.first?.content?.first?.text, " there!")
     }
     
+    /// Test that shows the fix for Azure OpenAI SSE format
+    func testRealAzureOpenAISSEFormatFixed() async throws {
+        // This is the actual SSE format from Azure OpenAI Response API (from CI logs)
+        let realSSEData = """
+event: response.created
+data: {"type":"response.created","sequence_number":0,"response":{"id":"resp_68b3ec7e57ec8192adc0cff6864bb47104fa46c87aca3c1e","object":"response","created_at":1756621950,"status":"in_progress","model":"gpt-5-nano","output":[]}}
+
+event: response.completed
+data: {"type":"response.completed","sequence_number":19,"response":{"id":"resp_68b3ec7e57ec8192adc0cff6864bb47104fa46c87aca3c1e","object":"response","created_at":1756621950,"status":"completed","model":"gpt-5-nano","output":[{"id":"fc_123","type":"function_call","status":"completed","arguments":"{\\"location\\":\\"London, UK\\"}","name":"get_weather"}],"usage":{"input_tokens":91,"output_tokens":219,"total_tokens":310}}}
+
+""".data(using: .utf8)!
+        
+        let lines = String(data: realSSEData, encoding: .utf8)!.components(separatedBy: .newlines)
+        var parsedResponses: [SAOAIStreamingResponse] = []
+        
+        print("✅ Testing Azure OpenAI SSE format (should now work correctly)...")
+        
+        for line in lines {
+            if !line.isEmpty {
+                // Format the line as HTTPClient would do
+                let lineData = line.data(using: .utf8)! + "\n\n".data(using: .utf8)!
+                
+                do {
+                    if let response = try SSEParser.parseSSEChunk(lineData) {
+                        parsedResponses.append(response)
+                        print("✅ Parsed response: id=\(response.id ?? "nil"), model=\(response.model ?? "nil")")
+                    } else {
+                        print("⚠️ No response parsed from line: \(line)")
+                    }
+                } catch {
+                    print("❌ Failed to parse line: \(line)")
+                    print("❌ Error: \(error)")
+                    XCTFail("Should not fail to parse valid Azure OpenAI SSE format")
+                }
+            }
+        }
+        
+        print("✅ Fix validated: Total parsed responses: \(parsedResponses.count)")
+        
+        // Validate the fix - responses should now have proper values
+        XCTAssertEqual(parsedResponses.count, 2, "Should parse 2 responses")
+        
+        // First response (response.created)
+        let firstResponse = parsedResponses[0]
+        XCTAssertEqual(firstResponse.id, "resp_68b3ec7e57ec8192adc0cff6864bb47104fa46c87aca3c1e", "Should parse response ID correctly")
+        XCTAssertEqual(firstResponse.model, "gpt-5-nano", "Should parse model correctly")
+        XCTAssertEqual(firstResponse.created, 1756621950, "Should parse created timestamp correctly")
+        
+        // Second response (response.completed)
+        let secondResponse = parsedResponses[1]
+        XCTAssertEqual(secondResponse.id, "resp_68b3ec7e57ec8192adc0cff6864bb47104fa46c87aca3c1e", "Should parse response ID correctly")
+        XCTAssertEqual(secondResponse.model, "gpt-5-nano", "Should parse model correctly")
+        XCTAssertNotNil(secondResponse.output, "Should have output for completed response")
+        XCTAssertNotNil(secondResponse.usage, "Should have usage data for completed response")
+        
+        print("✅ All Azure OpenAI SSE format parsing validations passed!")
+    }
+
+    /// Test that reproduces the issue with real Azure OpenAI SSE format
+    func testRealAzureOpenAISSEFormatIssue() async throws {
+        // This is the actual SSE format from Azure OpenAI Response API (from CI logs)
+        let realSSEData = """
+event: response.created
+data: {"type":"response.created","sequence_number":0,"response":{"id":"resp_68b3ec7e57ec8192adc0cff6864bb47104fa46c87aca3c1e","object":"response","created_at":1756621950,"status":"in_progress","model":"gpt-5-nano","output":[]}}
+
+event: response.completed
+data: {"type":"response.completed","sequence_number":19,"response":{"id":"resp_68b3ec7e57ec8192adc0cff6864bb47104fa46c87aca3c1e","object":"response","created_at":1756621950,"status":"completed","model":"gpt-5-nano","output":[{"id":"fc_123","type":"function_call","status":"completed","arguments":"{\\"location\\":\\"London, UK\\"}","name":"get_weather"}],"usage":{"input_tokens":91,"output_tokens":219,"total_tokens":310}}}
+
+""".data(using: .utf8)!
+        
+        let lines = String(data: realSSEData, encoding: .utf8)!.components(separatedBy: .newlines)
+        var parsedResponses: [SAOAIStreamingResponse] = []
+        
+        print("🐛 Testing real Azure OpenAI SSE format (this demonstrates the bug)...")
+        
+        for line in lines {
+            if !line.isEmpty {
+                // Format the line as HTTPClient would do
+                let lineData = line.data(using: .utf8)! + "\n\n".data(using: .utf8)!
+                
+                do {
+                    if let response = try SSEParser.parseSSEChunk(lineData) {
+                        parsedResponses.append(response)
+                        print("✅ Parsed response: id=\(response.id ?? "nil"), model=\(response.model ?? "nil")")
+                    } else {
+                        print("⚠️ No response parsed from line: \(line)")
+                    }
+                } catch {
+                    print("❌ Failed to parse line: \(line)")
+                    print("❌ Error: \(error)")
+                }
+            }
+        }
+        
+        print("🐛 Bug demonstrated: Total parsed responses: \(parsedResponses.count)")
+        print("🐛 Expected: Should parse 2 responses with valid data")
+        print("🐛 Actual: All parsed responses have nil values")
+        
+        // This demonstrates the bug - responses are parsed but with nil values
+        // because the SSEParser doesn't understand the event wrapper format
+        for (index, response) in parsedResponses.enumerated() {
+            print("🐛 Response \(index + 1): id=\(response.id ?? "nil"), model=\(response.model ?? "nil"), output=\(response.output?.isEmpty != false ? "empty/nil" : "has data")")
+        }
+    }
+
     /// Test edge case with empty lines and malformed chunks
     func testHTTPClientStreamingEdgeCases() async throws {
         
