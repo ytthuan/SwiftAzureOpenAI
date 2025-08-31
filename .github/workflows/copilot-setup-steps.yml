@@ -36,23 +36,3 @@ jobs:
           AZURE_OPENAI_ENDPOINT: ${{ vars.AZURE_OPENAI_ENDPOINT }}
           AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
           AZURE_OPENAI_DEPLOYMENT: ${{ vars.AZURE_OPENAI_DEPLOYMENT }}
-      
-      - name: Environment setup summary
-        run: |
-          echo "🎉 SwiftAzureOpenAI development environment setup complete!"
-          echo ""
-          echo "Environment Summary:"
-          echo "  • Swift Version: $(swift --version | head -n1)"
-          echo "  • Package: SwiftAzureOpenAI"
-          echo "  • Tools Version: 6.0"
-          echo "  • Platforms: iOS 13.0+, macOS 10.15+, watchOS 6.0+, tvOS 13.0+"
-          echo "  • Dependencies: None (zero external dependencies)"
-          echo "  • Build Status: ✅ Ready"
-          echo "  • Test Status: ✅ Ready"
-          echo ""
-          echo "Copilot can now:"
-          echo "  • Build and compile Swift code"
-          echo "  • Run comprehensive test suites"
-          echo "  • Validate package structure"
-          echo "  • Test Azure OpenAI integrations (if credentials available)"
-          echo "  • Perform Swift package management operations"
