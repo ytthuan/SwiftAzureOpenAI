@@ -56,21 +56,83 @@ public final class SSEParser: Sendable {
     
     /// Convert Azure OpenAI SSE event to streaming response format
     private static func convertAzureEventToStreamingResponse(_ event: AzureOpenAISSEEvent) -> SAOAIStreamingResponse? {
-        // Only convert events that contain meaningful response data
-        guard let response = event.response else {
+        // Handle different types of Azure OpenAI SSE events
+        switch event.type {
+        case "response.function_call_arguments.delta":
+            // Handle delta events - these contain incremental text content
+            guard let delta = event.delta else { return nil }
+            
+            let content = SAOAIStreamingContent(type: "function_call_arguments", text: delta, index: event.outputIndex ?? 0)
+            let output = SAOAIStreamingOutput(content: [content], role: "assistant")
+            
+            return SAOAIStreamingResponse(
+                id: event.itemId, // Use item_id for delta events
+                model: nil,
+                created: nil,
+                output: [output],
+                usage: nil
+            )
+            
+        case "response.text.delta":
+            // Handle text delta events
+            guard let delta = event.delta else { return nil }
+            
+            let content = SAOAIStreamingContent(type: "text", text: delta, index: event.outputIndex ?? 0)
+            let output = SAOAIStreamingOutput(content: [content], role: "assistant")
+            
+            return SAOAIStreamingResponse(
+                id: event.itemId,
+                model: nil,
+                created: nil,
+                output: [output],
+                usage: nil
+            )
+            
+        case "response.created", "response.in_progress", "response.completed":
+            // Handle events that contain complete response data
+            guard let response = event.response else {
+                return nil
+            }
+            
+            // Map Azure OpenAI event response to streaming response format
+            let streamingOutput = convertAzureOutputToStreamingOutput(response.output)
+            
+            return SAOAIStreamingResponse(
+                id: response.id,
+                model: response.model,
+                created: response.createdAt,
+                output: streamingOutput,
+                usage: response.usage
+            )
+            
+        case "response.output_item.added", "response.output_item.done":
+            // Handle item events
+            guard let item = event.item else { return nil }
+            
+            // Create content based on item type
+            let content: SAOAIStreamingContent
+            if item.type == "function_call", let name = item.name {
+                content = SAOAIStreamingContent(type: "function_call", text: "Function call: \(name)", index: 0)
+            } else if item.type == "reasoning" {
+                content = SAOAIStreamingContent(type: "reasoning", text: "Reasoning step", index: 0)
+            } else {
+                return nil
+            }
+            
+            let output = SAOAIStreamingOutput(content: [content], role: "assistant")
+            
+            return SAOAIStreamingResponse(
+                id: item.id,
+                model: nil,
+                created: nil,
+                output: [output],
+                usage: nil
+            )
+            
+        default:
+            // Skip unknown event types
             return nil
         }
-        
-        // Map Azure OpenAI event response to streaming response format
-        let streamingOutput = convertAzureOutputToStreamingOutput(response.output)
-        
-        return SAOAIStreamingResponse(
-            id: response.id,
-            model: response.model,
-            created: response.createdAt,
-            output: streamingOutput,
-            usage: response.usage
-        )
     }
     
     /// Convert Azure OpenAI output to streaming output format
