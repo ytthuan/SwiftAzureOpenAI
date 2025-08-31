@@ -87,8 +87,25 @@ public final class HTTPClient: @unchecked Sendable {
                         return
                     }
                     
-                    // Simulate streaming by chunking the response
-                    continuation.yield(data)
+                    // Simulate streaming by processing line-by-line
+                    if let responseString = String(data: data, encoding: .utf8) {
+                        let lines = responseString.components(separatedBy: .newlines)
+                        for line in lines {
+                            if !line.isEmpty {
+                                // Format each line as a complete SSE chunk for SSEParser
+                                let lineData = line.data(using: .utf8)! + "\n\n".data(using: .utf8)!
+                                continuation.yield(lineData)
+                                
+                                // Check for completion signal
+                                if SSEParser.isCompletionChunk(lineData) {
+                                    continuation.finish()
+                                    return
+                                }
+                            }
+                        }
+                    } else {
+                        continuation.yield(data)
+                    }
                     continuation.finish()
                     #else
                     // For newer platforms with streaming support
@@ -115,16 +132,18 @@ public final class HTTPClient: @unchecked Sendable {
                         for try await byte in asyncBytes {
                             buffer.append(byte)
                             
-                            // Process complete SSE chunks (ending with double newline)
-                            while let range = buffer.range(of: "\n\n".data(using: .utf8)!) {
-                                let chunk = buffer[..<range.upperBound]
+                            // Process complete lines (ending with newline)
+                            while let range = buffer.range(of: "\n".data(using: .utf8)!) {
+                                let lineData = buffer[..<range.lowerBound]
                                 buffer.removeSubrange(..<range.upperBound)
                                 
-                                if !chunk.isEmpty {
-                                    continuation.yield(chunk)
+                                if !lineData.isEmpty {
+                                    // Format each line as a complete SSE chunk for SSEParser
+                                    let lineWithNewline = lineData + "\n\n".data(using: .utf8)!
+                                    continuation.yield(lineWithNewline)
                                     
                                     // Check for completion signal
-                                    if SSEParser.isCompletionChunk(chunk) {
+                                    if SSEParser.isCompletionChunk(lineWithNewline) {
                                         continuation.finish()
                                         return
                                     }
@@ -132,9 +151,10 @@ public final class HTTPClient: @unchecked Sendable {
                             }
                         }
                         
-                        // Process any remaining data in buffer
+                        // Process any remaining data in buffer as a line
                         if !buffer.isEmpty {
-                            continuation.yield(buffer)
+                            let lineWithNewline = buffer + "\n\n".data(using: .utf8)!
+                            continuation.yield(lineWithNewline)
                         }
                         
                         continuation.finish()
@@ -152,8 +172,25 @@ public final class HTTPClient: @unchecked Sendable {
                             return
                         }
                         
-                        // Simulate streaming by yielding the entire response
-                        continuation.yield(data)
+                        // Simulate streaming by processing line-by-line
+                        if let responseString = String(data: data, encoding: .utf8) {
+                            let lines = responseString.components(separatedBy: .newlines)
+                            for line in lines {
+                                if !line.isEmpty {
+                                    // Format each line as a complete SSE chunk for SSEParser
+                                    let lineData = line.data(using: .utf8)! + "\n\n".data(using: .utf8)!
+                                    continuation.yield(lineData)
+                                    
+                                    // Check for completion signal
+                                    if SSEParser.isCompletionChunk(lineData) {
+                                        continuation.finish()
+                                        return
+                                    }
+                                }
+                            }
+                        } else {
+                            continuation.yield(data)
+                        }
                         continuation.finish()
                     }
                     #endif
