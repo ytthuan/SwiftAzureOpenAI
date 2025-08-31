@@ -394,10 +394,20 @@ class AdvancedConsoleChatbot {
         print("🔧 Processing with tools...")
         print("🤖 Assistant: ", terminator: "")
         
+        // Prepare messages for streaming - include system message for first conversation
+        let messagesToSend: [SAOAIMessage]
+        if chatHistory.lastResponseId == nil {
+            // First message in conversation - include system message
+            let systemMessage = SAOAIMessage(role: .system, text: "You are a helpful AI assistant with vision capabilities. You can analyze images and have detailed conversations about them. You have access to tools for weather, calculations, and code execution.")
+            messagesToSend = [systemMessage] + chatHistory.conversationMessages
+        } else {
+            messagesToSend = chatHistory.conversationMessages
+        }
+        
         // Use streaming for tool-based requests for better real-time experience
         let stream = client.responses.createStreaming(
             model: azureConfig.deploymentName,
-            input: chatHistory.conversationMessages,
+            input: messagesToSend,
             tools: availableTools,
             previousResponseId: chatHistory.lastResponseId
         )
@@ -479,7 +489,7 @@ class AdvancedConsoleChatbot {
             
             let followUpStream = client.responses.createStreaming(
                 model: azureConfig.deploymentName,
-                input: chatHistory.conversationMessages + toolResults,
+                input: messagesToSend + toolResults,
                 previousResponseId: response.id
             )
             
@@ -519,10 +529,20 @@ class AdvancedConsoleChatbot {
     private func handleRegularRequest(_ message: SAOAIMessage) async throws {
         print("🤖 Assistant: ", terminator: "")
         
+        // Prepare messages for streaming - include system message for first conversation
+        let messagesToSend: [SAOAIMessage]
+        if chatHistory.lastResponseId == nil {
+            // First message in conversation - include system message
+            let systemMessage = SAOAIMessage(role: .system, text: "You are a helpful AI assistant with vision capabilities. You can analyze images and have detailed conversations about them.")
+            messagesToSend = [systemMessage] + chatHistory.conversationMessages
+        } else {
+            messagesToSend = chatHistory.conversationMessages
+        }
+        
         // Use streaming for better real-time experience
         let stream = client.responses.createStreaming(
             model: azureConfig.deploymentName,
-            input: chatHistory.conversationMessages,
+            input: messagesToSend,
             previousResponseId: chatHistory.lastResponseId
         )
         
