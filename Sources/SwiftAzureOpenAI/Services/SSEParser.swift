@@ -262,7 +262,8 @@ public final class SSEParser: Sendable {
     
     /// Handle content part events
     private static func handleContentPartAddedEvent(event: AzureOpenAISSEEvent) -> SAOAIStreamingResponse? {
-        let content = SAOAIStreamingContent(type: "content_part", text: "Content part added", index: event.outputIndex ?? 0)
+        // Content part added is a status event - create response without user-visible text
+        let content = SAOAIStreamingContent(type: "status", text: "", index: event.outputIndex ?? 0)
         let output = SAOAIStreamingOutput(content: [content], role: "assistant")
         
         return SAOAIStreamingResponse(
@@ -276,7 +277,8 @@ public final class SSEParser: Sendable {
     
     /// Handle content part done events
     private static func handleContentPartDoneEvent(event: AzureOpenAISSEEvent) -> SAOAIStreamingResponse? {
-        let content = SAOAIStreamingContent(type: "content_part", text: "Content part done", index: event.outputIndex ?? 0)
+        // Content part done is a status event - create response without user-visible text
+        let content = SAOAIStreamingContent(type: "status", text: "", index: event.outputIndex ?? 0)
         let output = SAOAIStreamingOutput(content: [content], role: "assistant")
         
         return SAOAIStreamingResponse(
@@ -297,9 +299,14 @@ public final class SSEParser: Sendable {
         if item.type == "function_call", let name = item.name {
             content = SAOAIStreamingContent(type: "function_call", text: "Function call: \(name)", index: 0)
         } else if item.type == "reasoning" {
-            content = SAOAIStreamingContent(type: "reasoning", text: "Reasoning step", index: 0)
+            // Keep reasoning content but without debug text
+            content = SAOAIStreamingContent(type: "reasoning", text: "", index: 0)
+        } else if event.type == "response.output_item.added" || event.type == "response.output_item.done" {
+            // For pure status events like added/done, create status content with empty text
+            content = SAOAIStreamingContent(type: "status", text: "", index: 0)
         } else {
-            content = SAOAIStreamingContent(type: item.type ?? "output_item", text: "Output item: \(event.type)", index: 0)
+            // For other item types, preserve the type but with empty text
+            content = SAOAIStreamingContent(type: item.type ?? "output_item", text: "", index: 0)
         }
         
         let output = SAOAIStreamingOutput(content: [content], role: "assistant")
