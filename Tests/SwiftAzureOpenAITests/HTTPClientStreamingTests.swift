@@ -190,8 +190,8 @@ data: {"type":"response.completed","sequence_number":3,"response":{"id":"resp_12
             }
         }
         
-        // Should parse the events that contain response data
-        XCTAssertEqual(parsedResponses.count, 2, "Should parse response.created and response.completed events")
+        // Should parse all events that contain meaningful data (this is the fix!)
+        XCTAssertEqual(parsedResponses.count, 4, "Should parse all Azure OpenAI SSE events including deltas")
         
         // Validate first response (response.created)
         let firstResponse = parsedResponses[0]
@@ -199,12 +199,25 @@ data: {"type":"response.completed","sequence_number":3,"response":{"id":"resp_12
         XCTAssertEqual(firstResponse.model, "gpt-4o")
         XCTAssertEqual(firstResponse.created, 1234567890)
         
-        // Validate second response (response.completed)  
+        // Validate second response (response.output_item.added)
         let secondResponse = parsedResponses[1]
-        XCTAssertEqual(secondResponse.id, "resp_123")
-        XCTAssertNotNil(secondResponse.output, "Completed response should have output")
-        XCTAssertNotNil(secondResponse.usage, "Completed response should have usage")
-        XCTAssertEqual(secondResponse.usage?.totalTokens, 30)
+        XCTAssertEqual(secondResponse.id, "item_456")
+        XCTAssertNotNil(secondResponse.output, "Item added response should have output")
+        XCTAssertEqual(secondResponse.output?.first?.content?.first?.type, "reasoning")
+        
+        // Validate third response (response.function_call_arguments.delta)
+        let thirdResponse = parsedResponses[2]
+        XCTAssertEqual(thirdResponse.id, "fc_789")
+        XCTAssertNotNil(thirdResponse.output, "Delta response should have output")
+        XCTAssertEqual(thirdResponse.output?.first?.content?.first?.text, "hello")
+        XCTAssertEqual(thirdResponse.output?.first?.content?.first?.type, "function_call_arguments")
+        
+        // Validate fourth response (response.completed)
+        let fourthResponse = parsedResponses[3]
+        XCTAssertEqual(fourthResponse.id, "resp_123")
+        XCTAssertNotNil(fourthResponse.output, "Completed response should have output")
+        XCTAssertNotNil(fourthResponse.usage, "Completed response should have usage")
+        XCTAssertEqual(fourthResponse.usage?.totalTokens, 30)
         
         print("✅ Comprehensive Azure OpenAI SSE event parsing successful!")
     }
