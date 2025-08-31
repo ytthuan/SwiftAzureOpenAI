@@ -25,75 +25,8 @@ jobs:
     # You can define any steps you want, and they will run before the agent starts.
     # If you do not check out your code, Copilot will do this for you.
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          lfs: true
 
-      - name: Install Swift dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libc6-dev libicu-dev libcurl4-openssl-dev libssl-dev curl
-
-      - name: Install Swift 6.0+
-        run: |
-          # Download and install Swift 6.0.2 from Swift.org (compatible with project requirements)
-          SWIFT_VERSION="6.0.2"
-          SWIFT_URL="https://download.swift.org/swift-${SWIFT_VERSION}-release/ubuntu2204/swift-${SWIFT_VERSION}-RELEASE/swift-${SWIFT_VERSION}-RELEASE-ubuntu22.04.tar.gz"
-          
-          echo "Installing Swift ${SWIFT_VERSION} for SwiftAzureOpenAI development..."
-          
-          # Download Swift
-          curl -fsSL "${SWIFT_URL}" -o swift.tar.gz
-          
-          # Extract Swift
-          sudo tar -xzf swift.tar.gz -C /opt/
-          
-          # Add to PATH
-          echo "/opt/swift-${SWIFT_VERSION}-RELEASE-ubuntu22.04/usr/bin" >> $GITHUB_PATH
-          
-          # Verify installation
-          /opt/swift-${SWIFT_VERSION}-RELEASE-ubuntu22.04/usr/bin/swift --version
-          
-          echo "✅ Swift ${SWIFT_VERSION} installed successfully"
-
-      - name: Validate package structure
-        run: |
-          echo "Validating SwiftAzureOpenAI package structure..."
-          swift package describe
-
-      - name: Resolve package dependencies
-        run: |
-          echo "Resolving package dependencies..."
-          swift package resolve
-          echo "✅ Dependencies resolved"
-
-      - name: Build package (debug)
-        run: |
-          echo "Building SwiftAzureOpenAI package in debug mode..."
-          swift build
-          echo "✅ Debug build successful"
-
-      - name: Build package (release)
-        run: |
-          echo "Building SwiftAzureOpenAI package in release mode..."
-          swift build --configuration release
-          echo "✅ Release build successful"
-
-      - name: Verify no external dependencies
-        run: |
-          echo "Verifying zero external dependencies policy..."
-          DEPS=$(swift package show-dependencies 2>/dev/null || echo "No external dependencies found")
-          echo "Dependencies output: $DEPS"
-          if [[ "$DEPS" == "No external dependencies found" ]]; then
-            echo "✅ No external dependencies confirmed (as expected)"
-          else
-            echo "❌ Unexpected external dependencies found:"
-            echo "$DEPS"
-            exit 1
-          fi
-
-      - name: Run basic tests
+      - name: Add Environment secrets and variables
         run: |
           echo "Running basic test suite to verify environment..."
           swift test --parallel
