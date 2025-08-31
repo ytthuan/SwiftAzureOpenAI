@@ -399,9 +399,10 @@ class AdvancedConsoleChatbot {
         if chatHistory.lastResponseId == nil {
             // First message in conversation - include system message
             let systemMessage = SAOAIMessage(role: .system, text: "You are a helpful AI assistant with vision capabilities. You can analyze images and have detailed conversations about them. You have access to tools for weather, calculations, and code execution.")
-            messagesToSend = [systemMessage] + chatHistory.conversationMessages
+            messagesToSend = [systemMessage, message]
         } else {
-            messagesToSend = chatHistory.conversationMessages
+            // Subsequent messages - send only current message with previousResponseId
+            messagesToSend = [message]
         }
         
         // Use streaming for tool-based requests for better real-time experience
@@ -534,9 +535,10 @@ class AdvancedConsoleChatbot {
         if chatHistory.lastResponseId == nil {
             // First message in conversation - include system message
             let systemMessage = SAOAIMessage(role: .system, text: "You are a helpful AI assistant with vision capabilities. You can analyze images and have detailed conversations about them.")
-            messagesToSend = [systemMessage] + chatHistory.conversationMessages
+            messagesToSend = [systemMessage, message]
         } else {
-            messagesToSend = chatHistory.conversationMessages
+            // Subsequent messages - send only current message with previousResponseId
+            messagesToSend = [message]
         }
         
         // Use streaming for better real-time experience

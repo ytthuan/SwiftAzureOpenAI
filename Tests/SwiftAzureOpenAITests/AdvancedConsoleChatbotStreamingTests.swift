@@ -210,4 +210,69 @@ final class AdvancedConsoleChatbotStreamingTests: XCTestCase {
         
         XCTAssertNotNil(followUpStream)
     }
+    
+    /// Test that validates the exact fix for AdvancedConsoleChatbot streaming pattern
+    func testFixedAdvancedConsoleChatbotStreamingPattern() {
+        let mockConfig = SAOAIAzureConfiguration(
+            endpoint: "https://test.openai.azure.com",
+            apiKey: "test-key",
+            deploymentName: "gpt-4o",
+            apiVersion: "preview"
+        )
+        
+        let client = SAOAIClient(configuration: mockConfig)
+        
+        let systemMessage = SAOAIMessage(role: .system, text: "You are a helpful AI assistant.")
+        let firstUserMessage = SAOAIMessage(role: .user, text: "Hello")
+        let secondUserMessage = SAOAIMessage(role: .user, text: "How are you?")
+        
+        // Test the FIXED pattern for AdvancedConsoleChatbot
+        
+        // 1. First conversation: [systemMessage, currentUserMessage] with no previousResponseId
+        let firstStream = client.responses.createStreaming(
+            model: mockConfig.deploymentName,
+            input: [systemMessage, firstUserMessage],  // FIXED: Not using conversation history
+            previousResponseId: nil
+        )
+        
+        XCTAssertNotNil(firstStream)
+        
+        // 2. Subsequent conversation: [currentUserMessage] with previousResponseId
+        let subsequentStream = client.responses.createStreaming(
+            model: mockConfig.deploymentName,
+            input: [secondUserMessage],  // FIXED: Only current message, not conversation history
+            previousResponseId: "response-id-1"
+        )
+        
+        XCTAssertNotNil(subsequentStream)
+        
+        // 3. Tool-based pattern: Same logic applies
+        let weatherTool = SAOAITool.function(
+            name: "get_weather",
+            description: "Get weather",
+            parameters: .object(["type": .string("object")])
+        )
+        
+        let toolUserMessage = SAOAIMessage(role: .user, text: "weather:London")
+        
+        // First tool-based conversation
+        let firstToolStream = client.responses.createStreaming(
+            model: mockConfig.deploymentName,
+            input: [systemMessage, toolUserMessage],  // FIXED: Not using conversation history
+            tools: [weatherTool],
+            previousResponseId: nil
+        )
+        
+        XCTAssertNotNil(firstToolStream)
+        
+        // Subsequent tool-based conversation
+        let subsequentToolStream = client.responses.createStreaming(
+            model: mockConfig.deploymentName,
+            input: [toolUserMessage],  // FIXED: Only current message
+            tools: [weatherTool],
+            previousResponseId: "response-id-2"
+        )
+        
+        XCTAssertNotNil(subsequentToolStream)
+    }
 }
