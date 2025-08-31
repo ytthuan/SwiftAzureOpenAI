@@ -167,6 +167,68 @@ If you get a "Bad Request" error like in the console chatbot example:
 - The debug test redacts API keys in output
 - Consider using different API keys for testing vs production
 
+## GitHub Copilot Agent Environment
+
+### Copilot Environment Setup
+
+GitHub Copilot coding agent has its own ephemeral development environment that can be configured to access Azure OpenAI services for live testing. The environment is configured via `.github/workflows/copilot-setup-steps.yml`.
+
+#### Setting up Copilot Environment Variables
+
+1. **Navigate to GitHub Repository Settings**:
+   - Go to your repository on GitHub
+   - Click **Settings** > **Environments**
+   - Select or create the `copilot` environment
+
+2. **Add Environment Variables**:
+   - **Environment Variables** (non-sensitive):
+     - `AZURE_OPENAI_ENDPOINT`: `https://your-resource.openai.azure.com`
+     - `AZURE_OPENAI_DEPLOYMENT`: `your-deployment-name`
+   - **Environment Secrets** (sensitive):
+     - `AZURE_OPENAI_API_KEY`: `your-azure-api-key`
+
+#### Copilot Environment Features
+
+- **Pre-configured Swift 6.0.2**: Ready for immediate development
+- **Pre-built Package**: Dependencies resolved and package compiled
+- **Live API Access**: Environment variables available for testing
+- **Automatic Setup**: Runs before each Copilot session
+
+#### Validating Copilot Environment
+
+Use the validation script to check the environment:
+
+```bash
+# Run validation script
+./scripts/validate-copilot-environment.sh
+```
+
+This script checks:
+- Swift installation and version
+- Package structure and build capability
+- Environment variable configuration
+- Test framework accessibility
+
+#### Copilot-Specific Testing
+
+When Copilot runs tests, it has access to the configured environment variables:
+
+```bash
+# Copilot can run live API tests directly
+swift test --filter LiveAPITests
+
+# Or run individual tests
+swift test --filter LiveAPITests.testDebugRequestStructure
+```
+
+#### Troubleshooting Copilot Environment
+
+If Copilot can't access environment variables:
+1. Verify variables are set in the `copilot` environment (not just repository variables)
+2. Check variable names exactly match: `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_DEPLOYMENT`
+3. Run the setup workflow manually to validate configuration
+4. Check that the copilot-setup-steps.yml file is on the main branch
+
 ## Integration with CI/CD
 
 These tests are designed to work in CI/CD pipelines:
@@ -175,3 +237,4 @@ These tests are designed to work in CI/CD pipelines:
 - No failures occur in environments without secrets
 - Detailed logging helps with debugging in automated environments
 - Tests can be run selectively based on environment availability
+- Compatible with both GitHub Actions CI and Copilot agent environments
