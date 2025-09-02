@@ -39,17 +39,23 @@ public final class StreamingResponseService: Sendable {
                 var sequenceNumber = 0
                 do {
                     for try await chunk in stream {
-                        let parsed = try parser.parseChunk(chunk, as: type)
-                        let responseChunk = StreamingResponseChunk(
-                            chunk: parsed,
-                            isComplete: parser.isComplete(chunk),
-                            sequenceNumber: sequenceNumber
-                        )
-                        continuation.yield(responseChunk)
-                        sequenceNumber += 1
-                        if responseChunk.isComplete {
+                        // Check for completion first
+                        let isComplete = parser.isComplete(chunk)
+                        
+                        if isComplete {
+                            // This is a completion marker, finish the stream
                             continuation.finish()
                             break
+                        } else {
+                            // Parse non-completion chunks
+                            let parsed = try parser.parseChunk(chunk, as: type)
+                            let responseChunk = StreamingResponseChunk(
+                                chunk: parsed,
+                                isComplete: false,
+                                sequenceNumber: sequenceNumber
+                            )
+                            continuation.yield(responseChunk)
+                            sequenceNumber += 1
                         }
                     }
                     continuation.finish()

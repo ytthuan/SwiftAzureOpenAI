@@ -118,26 +118,29 @@ public final class OptimizedStreamingResponseService: Sendable {
             // Skip empty chunks
             guard !chunkData.isEmpty else { continue }
             
-            // Parse chunk using optimized parser
-            do {
-                let parsed = try parser.parseChunk(chunkData, as: type)
-                let isComplete = parser.isComplete(chunkData)
-                
-                let responseChunk = StreamingResponseChunk(
-                    chunk: parsed,
-                    isComplete: isComplete,
-                    sequenceNumber: sequenceNumber
-                )
-                
-                chunks.append(responseChunk)
-                sequenceNumber += 1
-                
-                if isComplete {
-                    break
+            // Check for completion first
+            let isComplete = parser.isComplete(chunkData)
+            
+            if isComplete {
+                // This is a completion marker, stop processing
+                break
+            } else {
+                // Parse non-completion chunks using optimized parser
+                do {
+                    let parsed = try parser.parseChunk(chunkData, as: type)
+                    
+                    let responseChunk = StreamingResponseChunk(
+                        chunk: parsed,
+                        isComplete: false,
+                        sequenceNumber: sequenceNumber
+                    )
+                    
+                    chunks.append(responseChunk)
+                    sequenceNumber += 1
+                } catch {
+                    // Log error but continue processing for resilience
+                    continue
                 }
-            } catch {
-                // Log error but continue processing for resilience
-                continue
             }
         }
         
@@ -202,6 +205,14 @@ public final class OptimizedStreamingResponseParser: StreamingResponseParser, Se
             if let fallbackResponse = try SSEParser.parseSSEChunk(data) {
                 return fallbackResponse as! T
             }
+            // If both SSE parsers return nil, check if this is a completion marker
+            let dataString = String(data: data, encoding: .utf8) ?? ""
+            if dataString.contains("data: [DONE]") {
+                // This is a completion marker - the streaming service should handle this appropriately
+                throw SAOAIError.decodingError(NSError(domain: "SSEParser", code: -999, userInfo: [NSLocalizedDescriptionKey: "Completion marker"]))
+            }
+            // For other cases where SSE parsers return nil, throw a more informative error
+            throw SAOAIError.decodingError(NSError(domain: "SSEParser", code: -998, userInfo: [NSLocalizedDescriptionKey: "Unable to parse SSE data"]))
         }
         
         // Fallback to standard JSON decoding for non-SSE types
