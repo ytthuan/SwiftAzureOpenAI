@@ -25,7 +25,7 @@ public final class SAOAIClient: @unchecked Sendable {
     }
 
     public func processStreamingResponse<T: Codable>(from stream: AsyncThrowingStream<Data, Error>, type: T.Type) -> AsyncThrowingStream<StreamingResponseChunk<T>, Error> {
-        StreamingResponseService().processStream(stream, type: type)
+        OptimizedStreamingResponseService().processStreamOptimized(stream, type: type)
     }
 
     public func handleResponse<T: Codable>(data: Data, response: URLResponse) async throws -> APIResponse<T> {
