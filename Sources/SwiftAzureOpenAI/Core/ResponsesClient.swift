@@ -265,11 +265,11 @@ public final class ResponsesClient {
                     let stream = httpClient.sendStreaming(apiRequest)
                     
                     for try await chunk in stream {
-                        if let response = try SSEParser.parseSSEChunk(chunk) {
+                        if let response = try OptimizedSSEParser.parseSSEChunkOptimized(chunk) {
                             continuation.yield(response)
                         }
                         
-                        if SSEParser.isCompletionChunk(chunk) {
+                        if OptimizedSSEParser.isCompletionChunkOptimized(chunk) {
                             continuation.finish()
                             return
                         }

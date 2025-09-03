@@ -51,7 +51,7 @@ public final class HTTPClient: @unchecked Sendable {
         throw SAOAIError.networkError(lastError ?? URLError(.unknown))
     }
     
-    /// Send a streaming request that returns Server-Sent Events
+    /// Send a streaming request that returns Server-Sent Events with optimized performance
     public func sendStreaming(_ request: APIRequest) -> AsyncThrowingStream<Data, Error> {
         let configuration = self.configuration
         let urlSession = self.urlSession
@@ -71,6 +71,7 @@ public final class HTTPClient: @unchecked Sendable {
                     if request.headers["Accept"] == "text/event-stream" {
                         urlRequest.setValue("text/event-stream", forHTTPHeaderField: "Accept")
                         urlRequest.setValue("no-cache", forHTTPHeaderField: "Cache-Control")
+                        urlRequest.setValue("keep-alive", forHTTPHeaderField: "Connection")
                     }
                     
                     #if canImport(FoundationNetworking)
@@ -87,20 +88,23 @@ public final class HTTPClient: @unchecked Sendable {
                         return
                     }
                     
-                    // Simulate streaming by processing line-by-line
+                    // Optimized streaming simulation for better performance
                     if let responseString = String(data: data, encoding: .utf8) {
+                        // Use optimized line processing
                         let lines = responseString.components(separatedBy: .newlines)
+                        var buffer = Data()
+                        buffer.reserveCapacity(4096) // Pre-allocate buffer
+                        
                         for line in lines {
                             if !line.isEmpty {
-                                // Format each line as a complete SSE chunk for SSEParser
+                                // Use optimized completion check first
                                 let lineData = line.data(using: .utf8)! + "\n\n".data(using: .utf8)!
-                                continuation.yield(lineData)
-                                
-                                // Check for completion signal
-                                if SSEParser.isCompletionChunk(lineData) {
+                                if OptimizedSSEParser.isCompletionChunkOptimized(lineData) {
                                     continuation.finish()
                                     return
                                 }
+                                
+                                continuation.yield(lineData)
                             }
                         }
                     } else {
@@ -128,33 +132,35 @@ public final class HTTPClient: @unchecked Sendable {
                             return
                         }
                         
+                        // Optimized streaming processing for better performance
                         var buffer = Data()
+                        buffer.reserveCapacity(8192) // Pre-allocate larger buffer
+                        
                         for try await byte in asyncBytes {
                             buffer.append(byte)
                             
-                            // Process complete lines (ending with newline)
-                            while let range = buffer.range(of: "\n".data(using: .utf8)!) {
-                                let lineData = buffer[..<range.lowerBound]
+                            // Process complete chunks (ending with \n\n) for better efficiency
+                            let delimiter = "\n\n".data(using: .utf8)!
+                            while let range = buffer.range(of: delimiter) {
+                                let chunkData = buffer[..<range.upperBound] // Include delimiter
                                 buffer.removeSubrange(..<range.upperBound)
                                 
-                                if !lineData.isEmpty {
-                                    // Format each line as a complete SSE chunk for SSEParser
-                                    let lineWithNewline = lineData + "\n\n".data(using: .utf8)!
-                                    continuation.yield(lineWithNewline)
-                                    
-                                    // Check for completion signal
-                                    if SSEParser.isCompletionChunk(lineWithNewline) {
+                                if !chunkData.isEmpty {
+                                    // Use optimized completion check first
+                                    if OptimizedSSEParser.isCompletionChunkOptimized(chunkData) {
                                         continuation.finish()
                                         return
                                     }
+                                    
+                                    continuation.yield(chunkData)
                                 }
                             }
                         }
                         
-                        // Process any remaining data in buffer as a line
+                        // Process any remaining data in buffer as final chunk
                         if !buffer.isEmpty {
-                            let lineWithNewline = buffer + "\n\n".data(using: .utf8)!
-                            continuation.yield(lineWithNewline)
+                            let finalChunk = buffer + "\n\n".data(using: .utf8)!
+                            continuation.yield(finalChunk)
                         }
                         
                         continuation.finish()
@@ -172,20 +178,23 @@ public final class HTTPClient: @unchecked Sendable {
                             return
                         }
                         
-                        // Simulate streaming by processing line-by-line
+                        // Optimized fallback streaming for older platforms
                         if let responseString = String(data: data, encoding: .utf8) {
                             let lines = responseString.components(separatedBy: .newlines)
+                            var buffer = Data()
+                            buffer.reserveCapacity(4096) // Pre-allocate buffer
+                            
                             for line in lines {
                                 if !line.isEmpty {
-                                    // Format each line as a complete SSE chunk for SSEParser
                                     let lineData = line.data(using: .utf8)! + "\n\n".data(using: .utf8)!
-                                    continuation.yield(lineData)
                                     
-                                    // Check for completion signal
-                                    if SSEParser.isCompletionChunk(lineData) {
+                                    // Use optimized completion check first
+                                    if OptimizedSSEParser.isCompletionChunkOptimized(lineData) {
                                         continuation.finish()
                                         return
                                     }
+                                    
+                                    continuation.yield(lineData)
                                 }
                             }
                         } else {
