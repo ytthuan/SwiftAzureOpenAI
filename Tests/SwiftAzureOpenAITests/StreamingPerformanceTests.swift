@@ -15,7 +15,6 @@ import Darwin.Mach
 /// with mach_task_self_ in memory measurement code. Since these are performance tests 
 /// specifically for validating streaming improvements rather than core functionality,
 /// disabling them allows the CI to pass while preserving all essential functionality tests.
-#if !os(macOS)
 final class StreamingPerformanceTests: XCTestCase {
     
     // MARK: - Test Configuration
@@ -62,6 +61,10 @@ final class StreamingPerformanceTests: XCTestCase {
     // MARK: - SSE Parser Performance Tests
     
     func testSSEParserThroughputComparison() async throws {
+        #if os(macOS)
+        throw XCTSkip("Performance tests disabled on macOS due to Swift 6.0 concurrency safety issues with mach_task_self_")
+        #endif
+        
         let testChunks = generateSSETestData(chunkCount: 1000)
         
         // Warm up
@@ -115,6 +118,10 @@ final class StreamingPerformanceTests: XCTestCase {
     }
     
     func testSSEParserMemoryEfficiency() async throws {
+        #if os(macOS)
+        throw XCTSkip("Performance tests disabled on macOS due to Swift 6.0 concurrency safety issues with mach_task_self_")
+        #endif
+        
         let testChunks = generateLargeSSETestData(chunkCount: 100, chunkSizeKB: 8)
         
         // Measure memory usage with original parser
@@ -164,6 +171,10 @@ final class StreamingPerformanceTests: XCTestCase {
     // MARK: - Streaming Service Performance Tests
     
     func testStreamingServiceThroughput() async throws {
+        #if os(macOS)
+        throw XCTSkip("Performance tests disabled on macOS due to Swift 6.0 concurrency safety issues with mach_task_self_")
+        #endif
+        
         let chunkCount = 500  // Restored original count
         let testChunks = generateSSETestData(chunkCount: chunkCount)
         
@@ -211,6 +222,10 @@ final class StreamingPerformanceTests: XCTestCase {
     }
     
     func testStreamingLatency() async throws {
+        #if os(macOS)
+        throw XCTSkip("Performance tests disabled on macOS due to Swift 6.0 concurrency safety issues with mach_task_self_")
+        #endif
+        
         let chunkCount = 100
         let testChunks = generateSSETestData(chunkCount: chunkCount)
         
@@ -248,6 +263,10 @@ final class StreamingPerformanceTests: XCTestCase {
     }
     
     func testHighFrequencyStreaming() async throws {
+        #if os(macOS)
+        throw XCTSkip("Performance tests disabled on macOS due to Swift 6.0 concurrency safety issues with mach_task_self_")
+        #endif
+        
         // Test with very high frequency, small chunks
         let chunkCount = 2000
         let smallChunks = (0..<chunkCount).map { i in
@@ -452,6 +471,10 @@ final class StreamingPerformanceRegressionTests: XCTestCase {
     }
     
     func testSSEParserPerformanceRegression() async throws {
+        #if os(macOS)
+        throw XCTSkip("Performance tests disabled on macOS due to Swift 6.0 concurrency safety issues with mach_task_self_")
+        #endif
+        
         let testChunks = generateSSETestData(chunkCount: 100)
         
         let startTime = getCurrentTime()
@@ -492,17 +515,3 @@ final class StreamingPerformanceRegressionTests: XCTestCase {
         #endif
     }
 }
-
-#else
-// Performance tests are disabled on macOS due to concurrency safety issues
-// with mach_task_self_ in memory measurement code. These tests validate streaming 
-// improvements rather than core functionality, so disabling them preserves CI stability.
-final class StreamingPerformanceTests: XCTestCase {
-    func testPerformanceTestsDisabledOnMacOS() {
-        // This test serves as a placeholder to indicate that performance tests
-        // are intentionally disabled on this platform due to Swift 6.0 concurrency issues
-        print("ℹ️ Performance tests disabled on macOS due to concurrency safety issues")
-        XCTAssertTrue(true, "Performance tests intentionally disabled")
-    }
-}
-#endif
