@@ -13,7 +13,7 @@ This package includes comprehensive CI/CD automation through GitHub Actions to e
 - Pull requests to `main` or `develop` branches
 
 **Jobs:**
-- **test-macos**: Tests on macOS with Swift 6.0.2 (Xcode 16.0)
+- **test-macos**: Tests on macOS with Swift 6.0.2 (Xcode 15.4)
 - **test-linux**: Tests on Ubuntu with Swift 6.0.2
 - **validate-package**: Validates package structure and dependencies
 - **code-quality**: Checks for warnings and code quality
