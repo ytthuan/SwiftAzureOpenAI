@@ -4,6 +4,9 @@ import Foundation
 #if canImport(CoreFoundation)
 import CoreFoundation
 #endif
+#if canImport(Darwin)
+import Darwin.Mach
+#endif
 
 /// Performance evaluation tests for streaming functionality
 /// These tests measure throughput, latency, and memory usage to validate optimizations
@@ -362,7 +365,7 @@ final class StreamingPerformanceTests: XCTestCase {
     
     // MARK: - Memory Measurement Utilities
     
-    private func getMemoryUsage() -> Int64 {
+    private nonisolated func getMemoryUsage() -> Int64 {
         #if os(Linux)
         // For Linux, read from /proc/self/status
         do {
@@ -379,18 +382,27 @@ final class StreamingPerformanceTests: XCTestCase {
             // Fallback to 0 if we can't read memory usage
         }
         return 0
-        #else
-        // Use mach_task_self() function instead of mach_task_self_ global variable for concurrency safety
-        var info = mach_task_basic_info()
-        var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size) / 4
-        
-        let result = withUnsafeMutablePointer(to: &info) {
-            $0.withMemoryRebound(to: integer_t.self, capacity: 1) {
-                task_info(mach_task_self(), task_flavor_t(MACH_TASK_BASIC_INFO), $0, &count)
+        #elseif canImport(Darwin)
+        // For macOS/Darwin, use task_info with proper concurrency handling
+        do {
+            var info = mach_task_basic_info()
+            var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size) / 4
+            
+            let result = withUnsafeMutablePointer(to: &info) {
+                $0.withMemoryRebound(to: integer_t.self, capacity: 1) {
+                    // Use mach_task_self_ directly in a nonisolated context
+                    task_info(mach_task_self_, task_flavor_t(MACH_TASK_BASIC_INFO), $0, &count)
+                }
             }
+            
+            return result == KERN_SUCCESS ? Int64(info.resident_size) : 0
+        } catch {
+            // Gracefully handle any memory measurement errors
+            return 0
         }
-        
-        return result == KERN_SUCCESS ? Int64(info.resident_size) : 0
+        #else
+        // For other platforms, memory measurement is not available
+        return 0
         #endif
     }
     
