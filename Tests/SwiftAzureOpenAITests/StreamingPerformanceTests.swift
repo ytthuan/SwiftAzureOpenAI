@@ -65,6 +65,7 @@ final class StreamingPerformanceTests: XCTestCase {
         throw XCTSkip("Performance tests disabled on macOS due to Swift 6.0 concurrency safety issues with mach_task_self_")
         #endif
         
+        #if !os(macOS)
         let testChunks = generateSSETestData(chunkCount: 1000)
         
         // Warm up
@@ -115,6 +116,7 @@ final class StreamingPerformanceTests: XCTestCase {
         // Assert meaningful improvement (target: at least 20% better)
         XCTAssertGreaterThan(improvement, 20.0, "Optimized parser should be at least 20% faster")
         XCTAssertEqual(originalParsedCount, optimizedParsedCount, "Both parsers should process same number of chunks")
+        #endif
     }
     
     func testSSEParserMemoryEfficiency() async throws {
@@ -122,6 +124,7 @@ final class StreamingPerformanceTests: XCTestCase {
         throw XCTSkip("Performance tests disabled on macOS due to Swift 6.0 concurrency safety issues with mach_task_self_")
         #endif
         
+        #if !os(macOS)
         let testChunks = generateLargeSSETestData(chunkCount: 100, chunkSizeKB: 8)
         
         // Measure memory usage with original parser
@@ -166,6 +169,7 @@ final class StreamingPerformanceTests: XCTestCase {
         } else {
             print("   Memory measurement not available on this platform - skipping memory assertion")
         }
+        #endif
     }
     
     // MARK: - Streaming Service Performance Tests
@@ -175,6 +179,7 @@ final class StreamingPerformanceTests: XCTestCase {
         throw XCTSkip("Performance tests disabled on macOS due to Swift 6.0 concurrency safety issues with mach_task_self_")
         #endif
         
+        #if !os(macOS)
         let chunkCount = 500  // Restored original count
         let testChunks = generateSSETestData(chunkCount: chunkCount)
         
@@ -219,6 +224,7 @@ final class StreamingPerformanceTests: XCTestCase {
         } else {
             print("ℹ️  Optimized service was \(String(format: "%.1f", -throughputImprovement))% slower in this environment")
         }
+        #endif
     }
     
     func testStreamingLatency() async throws {
@@ -226,6 +232,7 @@ final class StreamingPerformanceTests: XCTestCase {
         throw XCTSkip("Performance tests disabled on macOS due to Swift 6.0 concurrency safety issues with mach_task_self_")
         #endif
         
+        #if !os(macOS)
         let chunkCount = 100
         let testChunks = generateSSETestData(chunkCount: chunkCount)
         
@@ -260,6 +267,7 @@ final class StreamingPerformanceTests: XCTestCase {
         
         // Assert latency improvement (target: at least 30% reduction, allowing CI environment variations)
         XCTAssertGreaterThan(latencyImprovement, 30.0, "Optimized parser should reduce latency by at least 30%")
+        #endif
     }
     
     func testHighFrequencyStreaming() async throws {
@@ -267,6 +275,7 @@ final class StreamingPerformanceTests: XCTestCase {
         throw XCTSkip("Performance tests disabled on macOS due to Swift 6.0 concurrency safety issues with mach_task_self_")
         #endif
         
+        #if !os(macOS)
         // Test with very high frequency, small chunks
         let chunkCount = 2000
         let smallChunks = (0..<chunkCount).map { i in
@@ -310,6 +319,7 @@ final class StreamingPerformanceTests: XCTestCase {
         // Assert high-frequency performance (target: > 1000 chunks/sec)
         XCTAssertGreaterThan(frequency, 1000.0, "Should handle high frequency streaming > 1000 chunks/sec")
         XCTAssertEqual(processedCount, chunkCount, "Should process all chunks")
+        #endif
     }
     
     // MARK: - Benchmark Utilities
@@ -475,6 +485,7 @@ final class StreamingPerformanceRegressionTests: XCTestCase {
         throw XCTSkip("Performance tests disabled on macOS due to Swift 6.0 concurrency safety issues with mach_task_self_")
         #endif
         
+        #if !os(macOS)
         let testChunks = generateSSETestData(chunkCount: 100)
         
         let startTime = getCurrentTime()
@@ -497,6 +508,7 @@ final class StreamingPerformanceRegressionTests: XCTestCase {
         let tolerance = PerformanceBaselines.sseParserThroughput * 0.1
         XCTAssertGreaterThan(throughput, PerformanceBaselines.sseParserThroughput - tolerance,
                            "SSE parser performance regression detected!")
+        #endif
     }
     
     private func generateSSETestData(chunkCount: Int) -> [Data] {
