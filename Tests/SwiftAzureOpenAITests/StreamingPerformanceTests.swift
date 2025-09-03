@@ -380,12 +380,13 @@ final class StreamingPerformanceTests: XCTestCase {
         }
         return 0
         #else
+        // Use mach_task_self() function instead of mach_task_self_ global variable for concurrency safety
         var info = mach_task_basic_info()
         var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size) / 4
         
         let result = withUnsafeMutablePointer(to: &info) {
             $0.withMemoryRebound(to: integer_t.self, capacity: 1) {
-                task_info(mach_task_self_, task_flavor_t(MACH_TASK_BASIC_INFO), $0, &count)
+                task_info(mach_task_self(), task_flavor_t(MACH_TASK_BASIC_INFO), $0, &count)
             }
         }
         
