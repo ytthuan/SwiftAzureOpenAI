@@ -407,16 +407,16 @@ final class StreamingPerformanceTests: XCTestCase {
             // Fallback to 0 if we can't read memory usage
         }
         return 0
-        #elseif canImport(Darwin)
-        // For macOS/Darwin, use task_info with Swift 6.0 compatibility
+        #elseif !os(macOS) && canImport(Darwin)
+        // For Darwin platforms other than macOS, use task_info
         #if canImport(Darwin.Mach)
         var info = mach_task_basic_info()
         var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size / 4)
         
         let result = withUnsafeMutablePointer(to: &info) { infoPtr in
             infoPtr.withMemoryRebound(to: integer_t.self, capacity: 1) { intPtr in
-                // Use mach_task_self() function instead of mach_task_self_ variable for Swift 6.0 concurrency safety
-                task_info(mach_task_self(), task_flavor_t(MACH_TASK_BASIC_INFO), intPtr, &count)
+                // Use mach_task_self_ directly - this works on non-macOS Darwin platforms
+                task_info(mach_task_self_, task_flavor_t(MACH_TASK_BASIC_INFO), intPtr, &count)
             }
         }
         
@@ -426,7 +426,7 @@ final class StreamingPerformanceTests: XCTestCase {
         return 0
         #endif
         #else
-        // For other platforms, memory measurement is not available
+        // For macOS and other platforms, memory measurement is not available due to Swift 6.0 concurrency issues
         return 0
         #endif
     }
