@@ -9,7 +9,7 @@ on:
 jobs:
   test-macos:
     name: Test on macOS
-    runs-on: macos-14
+    runs-on: macos-15
     strategy:
       matrix:
         swift-version: ['6.0.2']
@@ -20,9 +20,9 @@ jobs:
     
     - name: Select Xcode version
       run: |
-        # Use Xcode 15.4 which includes Swift 6.0.2 but without Swift Testing runner
-        sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer || {
-          echo "Xcode 15.4 not available, using default"
+        # Use Xcode 16.0 which includes Swift 6.0.2
+        sudo xcode-select -s /Applications/Xcode_16.0.app/Contents/Developer || {
+          echo "Xcode 16.0 not available, using default"
           sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
         }
     
@@ -42,21 +42,21 @@ jobs:
       run: swift build --configuration release
     
     - name: Run tests
-      run: swift test
+      run: swift test --disable-swift-testing
       env:
         AZURE_OPENAI_ENDPOINT: ${{ vars.AZURE_OPENAI_ENDPOINT }}
         AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
         AZURE_OPENAI_DEPLOYMENT: ${{ vars.AZURE_OPENAI_DEPLOYMENT }}
     
     - name: Run tests (release)
-      run: swift test --configuration release
+      run: swift test --configuration release --disable-swift-testing
       env:
         AZURE_OPENAI_ENDPOINT: ${{ vars.AZURE_OPENAI_ENDPOINT }}
         AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
         AZURE_OPENAI_DEPLOYMENT: ${{ vars.AZURE_OPENAI_DEPLOYMENT }}
     
     - name: Run tests (parallel)
-      run: swift test --parallel
+      run: swift test --parallel --disable-swift-testing
       env:
         AZURE_OPENAI_ENDPOINT: ${{ vars.AZURE_OPENAI_ENDPOINT }}
         AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
