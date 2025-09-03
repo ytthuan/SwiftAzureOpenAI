@@ -390,8 +390,8 @@ final class StreamingPerformanceTests: XCTestCase {
         
         let result = withUnsafeMutablePointer(to: &info) { infoPtr in
             infoPtr.withMemoryRebound(to: integer_t.self, capacity: 1) { intPtr in
-                // Use mach_task_self_ directly - compatible with Swift 6.0/Xcode 16
-                task_info(mach_task_self_, task_flavor_t(MACH_TASK_BASIC_INFO), intPtr, &count)
+                // Use mach_task_self() function instead of mach_task_self_ variable for Swift 6.0 concurrency safety
+                task_info(mach_task_self(), task_flavor_t(MACH_TASK_BASIC_INFO), intPtr, &count)
             }
         }
         
