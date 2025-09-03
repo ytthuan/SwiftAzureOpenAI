@@ -365,7 +365,7 @@ final class StreamingPerformanceTests: XCTestCase {
     
     // MARK: - Memory Measurement Utilities
     
-    private nonisolated func getMemoryUsage() -> Int64 {
+    private func getMemoryUsage() -> Int64 {
         #if os(Linux)
         // For Linux, read from /proc/self/status
         do {
@@ -383,23 +383,23 @@ final class StreamingPerformanceTests: XCTestCase {
         }
         return 0
         #elseif canImport(Darwin)
-        // For macOS/Darwin, use task_info with proper concurrency handling
-        do {
-            var info = mach_task_basic_info()
-            var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size) / 4
-            
-            let result = withUnsafeMutablePointer(to: &info) {
-                $0.withMemoryRebound(to: integer_t.self, capacity: 1) {
-                    // Use mach_task_self_ directly in a nonisolated context
-                    task_info(mach_task_self_, task_flavor_t(MACH_TASK_BASIC_INFO), $0, &count)
-                }
+        // For macOS/Darwin, use task_info with Swift 6.0 compatibility
+        #if canImport(Darwin.Mach)
+        var info = mach_task_basic_info()
+        var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size / 4)
+        
+        let result = withUnsafeMutablePointer(to: &info) { infoPtr in
+            infoPtr.withMemoryRebound(to: integer_t.self, capacity: 1) { intPtr in
+                // Use mach_task_self_ directly - compatible with Swift 6.0/Xcode 16
+                task_info(mach_task_self_, task_flavor_t(MACH_TASK_BASIC_INFO), intPtr, &count)
             }
-            
-            return result == KERN_SUCCESS ? Int64(info.resident_size) : 0
-        } catch {
-            // Gracefully handle any memory measurement errors
-            return 0
         }
+        
+        return result == KERN_SUCCESS ? Int64(info.resident_size) : 0
+        #else
+        // Fallback if Darwin.Mach is not available
+        return 0
+        #endif
         #else
         // For other platforms, memory measurement is not available
         return 0
