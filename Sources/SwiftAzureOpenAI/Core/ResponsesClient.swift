@@ -6,10 +6,10 @@ import FoundationNetworking
 /// A simplified client for the Responses API that mimics the Python OpenAI SDK
 public final class ResponsesClient {
     private let httpClient: HTTPClient
-    private let responseService: ResponseService
+    private let responseService: ResponseServiceProtocol
     private let configuration: SAOAIConfiguration
     
-    internal init(httpClient: HTTPClient, responseService: ResponseService, configuration: SAOAIConfiguration) {
+    internal init(httpClient: HTTPClient, responseService: ResponseServiceProtocol, configuration: SAOAIConfiguration) {
         self.httpClient = httpClient
         self.responseService = responseService
         self.configuration = configuration

@@ -6,17 +6,23 @@ import FoundationNetworking
 public final class SAOAIClient: @unchecked Sendable {
     private let configuration: SAOAIConfiguration
     private let httpClient: HTTPClient
-    private let responseService: ResponseService
+    private let responseService: ResponseServiceProtocol
     
     /// Python-style responses client for simplified API access
     public lazy var responses: ResponsesClient = {
         ResponsesClient(httpClient: httpClient, responseService: responseService, configuration: configuration)
     }()
 
-    public init(configuration: SAOAIConfiguration, cache: ResponseCache? = nil) {
+    public init(configuration: SAOAIConfiguration, cache: ResponseCache? = nil, useOptimizedService: Bool = true) {
         self.configuration = configuration
         self.httpClient = HTTPClient(configuration: configuration)
-        self.responseService = ResponseService(cache: cache)
+        
+        // Use optimized service by default for better performance
+        if useOptimizedService {
+            self.responseService = OptimizedResponseService(cache: cache)
+        } else {
+            self.responseService = ResponseService(cache: cache)
+        }
     }
 
     public func processResponse<T: Codable>(from request: APIRequest) async throws -> APIResponse<T> {
