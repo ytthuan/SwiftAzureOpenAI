@@ -9,12 +9,7 @@ public final class OptimizedResponseParsingService: ResponseParser, @unchecked S
     
     // MARK: - Shared Decoder Instance
     
-    private static let sharedDecoder: JSONDecoder = {
-        let decoder = JSONDecoder()
-        // Use the most efficient settings for JSON parsing
-        decoder.dateDecodingStrategy = .secondsSince1970
-        return decoder
-    }()
+    private static let sharedDecoder = JSONDecoder()
     
     private let decoder: JSONDecoder
     
@@ -46,17 +41,14 @@ public final class OptimizedResponseValidator: ResponseValidator, @unchecked Sen
     public func validate(_ response: HTTPURLResponse, data: Data) throws {
         let statusCode = response.statusCode
         
-        // Fastest path: successful responses
+        // Fast path for successful responses (most common case)
         if (200..<300).contains(statusCode) { return }
         
-        // Fast error handling with minimal allocations
-        if data.count > 10 {  // Only parse if there's meaningful content
-            if let error = try? Self.sharedErrorDecoder.decode(ErrorResponse.self, from: data) {
-                throw SAOAIError.apiError(error)
-            }
+        // Error handling - same as original but with shared decoder
+        if let error = try? Self.sharedErrorDecoder.decode(ErrorResponse.self, from: data) {
+            throw SAOAIError.apiError(error)
         }
         
-        // Pre-computed error handling
         if let specific = SAOAIError.from(statusCode: statusCode) { 
             throw specific 
         }
