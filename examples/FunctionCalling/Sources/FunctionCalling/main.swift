@@ -61,7 +61,7 @@ func demonstrateFunctionCalling() async throws {
     var input: [SAOAIMessage] = []
     
     for output in response.output {
-        for content in output.content {
+        for content in output.content ?? [] {
             switch content {
             case .outputText(let textOutput):
                 print("Text output: \(textOutput.text)")
@@ -80,9 +80,8 @@ func demonstrateFunctionCalling() async throws {
                     // Create function call output (Python-style)
                     input.append(SAOAIMessage(
                         role: .user,
-                        content: [.functionCallOutput(.init(
-                            callId: functionCall.callId,
-                            output: functionResult
+                        content: [.inputText(.init(
+                            text: "Function get_weather (call_id: \(functionCall.callId)) result: \(functionResult)"
                         ))]
                     ))
                     
@@ -107,7 +106,7 @@ func demonstrateFunctionCalling() async throws {
         
         // Process final response
         for output in secondResponse.output {
-            for content in output.content {
+            for content in output.content ?? [] {
                 if case let .outputText(textOutput) = content {
                     print("Final response: \(textOutput.text)")
                 }
@@ -169,7 +168,7 @@ func demonstrateMultipleFunctions() async throws {
     var functionResults: [SAOAIMessage] = []
     
     for output in response.output {
-        for content in output.content {
+        for content in output.content ?? [] {
             if case let .functionCall(functionCall) = content {
                 print("- Function: \(functionCall.name), Call ID: \(functionCall.callId)")
                 
@@ -185,9 +184,8 @@ func demonstrateMultipleFunctions() async throws {
                 
                 functionResults.append(SAOAIMessage(
                     role: .user,
-                    content: [.functionCallOutput(.init(
-                        callId: functionCall.callId,
-                        output: result
+                    content: [.inputText(.init(
+                        text: "Function \(functionCall.name) (call_id: \(functionCall.callId)) result: \(result)"
                     ))]
                 ))
             }
@@ -204,7 +202,7 @@ func demonstrateMultipleFunctions() async throws {
         
         print("Final synthesized response:")
         for output in finalResponse.output {
-            for content in output.content {
+            for content in output.content ?? [] {
                 if case let .outputText(textOutput) = content {
                     print(textOutput.text)
                 }

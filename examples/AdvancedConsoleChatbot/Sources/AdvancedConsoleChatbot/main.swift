@@ -471,9 +471,8 @@ class AdvancedConsoleChatbot {
                     // Add tool result to conversation
                     toolResults.append(SAOAIMessage(
                         role: .user,
-                        content: [.functionCallOutput(.init(
-                            callId: functionCall.callId,
-                            output: result
+                        content: [.inputText(.init(
+                            text: "Function \(functionCall.name) (call_id: \(functionCall.callId)) result: \(result)"
                         ))]
                     ))
                 }
