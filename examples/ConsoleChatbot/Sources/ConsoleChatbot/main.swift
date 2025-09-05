@@ -697,16 +697,13 @@ struct ConsoleChatbotApp {
         print("🚀 SwiftAzureOpenAI Enhanced Console Chatbot with Tools")
         print("======================================================")
 
-        // Check if we have real credentials (basic check)
-        let hasCredentials = ProcessInfo.processInfo.environment["AZURE_OPENAI_ENDPOINT"] != nil && 
-                            ProcessInfo.processInfo.environment["AZURE_OPENAI_API_KEY"] != nil
-
-        if hasCredentials {
-            print("✅ Found environment variables - Starting live chatbot...")
-            // Uncomment the next line to run with real API calls:
-            // await ConsoleChatbot().start()
-            print("⚠️  Live mode disabled for this demo. Uncomment the await line to enable.")
-            runDemoMode()
+        // Check if we have endpoint (API key might be injected as secret)
+        let hasEndpoint = ProcessInfo.processInfo.environment["AZURE_OPENAI_ENDPOINT"] != nil
+        
+        if hasEndpoint {
+            print("✅ Found Azure OpenAI endpoint - Starting live chatbot...")
+            print("🔑 API key will be used from environment/secrets")
+            await ConsoleChatbot().start()
         } else {
             print("ℹ️  No API credentials detected - Running in demo mode...")
             runDemoMode()
