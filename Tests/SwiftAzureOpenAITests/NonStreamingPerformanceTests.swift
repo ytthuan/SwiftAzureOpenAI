@@ -15,7 +15,7 @@ import FoundationNetworking
 /// For more realistic performance measurements, consider testing with actual
 /// Azure OpenAI endpoints using environment variables:
 /// - AZURE_OPENAI_ENDPOINT
-/// - AZURE_OPENAI_API_KEY  
+/// - AZURE_OPENAI_API_KEY or COPILOT_AGENT_AZURE_OPENAI_API_KEY  
 /// - AZURE_OPENAI_DEPLOYMENT
 final class NonStreamingPerformanceTests: XCTestCase {
     
