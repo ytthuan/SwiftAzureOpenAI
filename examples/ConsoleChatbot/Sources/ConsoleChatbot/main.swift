@@ -553,40 +553,47 @@ class ConsoleChatbot {
         print("🔍 Debug - Response ID: \(response.id ?? "nil")")
         print("🔍 Debug - Response output count: \(response.output.count)")
         
-        // First, try to serialize the entire response to see what we're getting
-        do {
-            let jsonData = try JSONEncoder().encode(response)
-            if let jsonString = String(data: jsonData, encoding: .utf8) {
-                print("🔍 Debug - Full response JSON: \(jsonString)")
-            }
-        } catch {
-            print("🔍 Debug - Failed to encode response: \(error)")
-        }
-        
         // Check for function calls in response output
         for (outputIndex, output) in response.output.enumerated() {
-            print("🔍 Debug - Output \(outputIndex):")
-            print("  - type: \(output.type ?? "nil")")
-            print("  - role: \(output.role ?? "nil")")
-            print("  - id: \(output.id ?? "nil")")
-            print("  - content count: \(output.content?.count ?? 0)")
+            print("🔍 Debug - Output \(outputIndex): type = \(output.type ?? "nil")")
             
-            // Also check content for function calls (current SDK structure)
-            if let contentArray = output.content {
-                for (contentIndex, content) in contentArray.enumerated() {
-                    print("🔍 Debug - Content \(contentIndex): \(type(of: content))")
-                    switch content {
-                    case .outputText(let textOutput):
-                        print("🔍 Debug - Text content: \(textOutput.text)")
-                        print(textOutput.text)
-                    case .functionCall(let functionCall):
-                        print("🔍 Debug - Function call in content: \(functionCall.name)")
-                        functionCalls.append((functionCall.name, functionCall.callId, functionCall.arguments))
-                        print("🔧 Calling function: \(functionCall.name)")
+            // For Azure OpenAI Responses API, function calls appear at output level with type: "function_call"
+            if output.type == "function_call" {
+                // Since the SDK model doesn't have the function call fields, parse the JSON directly
+                do {
+                    let jsonData = try JSONEncoder().encode(output)
+                    if let jsonObject = try JSONSerialization.jsonObject(with: jsonData) as? [String: Any] {
+                        if let name = jsonObject["name"] as? String,
+                           let callId = jsonObject["call_id"] as? String,
+                           let arguments = jsonObject["arguments"] as? String {
+                            print("🔍 Debug - Function call found: \(name)")
+                            functionCalls.append((name, callId, arguments))
+                            print("🔧 Calling function: \(name)")
+                        } else {
+                            print("🔍 Debug - Function call missing required fields in JSON")
+                        }
                     }
+                } catch {
+                    print("🔍 Debug - Failed to parse function call JSON: \(error)")
                 }
             } else {
-                print("🔍 Debug - Output \(outputIndex) has no content")
+                // Also check content for function calls (fallback for Chat Completions API or other versions)
+                if let contentArray = output.content {
+                    for (contentIndex, content) in contentArray.enumerated() {
+                        print("🔍 Debug - Content \(contentIndex): \(type(of: content))")
+                        switch content {
+                        case .outputText(let textOutput):
+                            print("🔍 Debug - Text content: \(textOutput.text)")
+                            print(textOutput.text)
+                        case .functionCall(let functionCall):
+                            print("🔍 Debug - Function call in content: \(functionCall.name)")
+                            functionCalls.append((functionCall.name, functionCall.callId, functionCall.arguments))
+                            print("🔧 Calling function: \(functionCall.name)")
+                        }
+                    }
+                } else {
+                    print("🔍 Debug - Output \(outputIndex) has no content")
+                }
             }
         }
         
