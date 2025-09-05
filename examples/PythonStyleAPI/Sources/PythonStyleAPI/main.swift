@@ -38,7 +38,7 @@ func demonstrateSimpleAPI() async {
         
         // Extract the text from the response
         if let firstOutput = response.output.first,
-           let firstContent = firstOutput.content.first,
+           let firstContent = firstOutput.content?.first,
            case let .outputText(textOutput) = firstContent {
             print("Response:", textOutput.text)
         }

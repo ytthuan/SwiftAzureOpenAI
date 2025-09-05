@@ -548,9 +548,8 @@ class ConsoleChatbot {
             
             functionResults.append(SAOAIMessage(
                 role: .user,
-                content: [.functionCallOutput(.init(
-                    callId: callId,
-                    output: result
+                content: [.inputText(.init(
+                    text: "Function \(name) (call_id: \(callId)) result: \(result)"
                 ))]
             ))
         }
