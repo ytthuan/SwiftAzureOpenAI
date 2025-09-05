@@ -14,7 +14,7 @@ import SwiftAzureOpenAI
 // MARK: - Configuration
 let azureConfig = SAOAIAzureConfiguration(
     endpoint: ProcessInfo.processInfo.environment["AZURE_OPENAI_ENDPOINT"] ?? "https://your-resource.openai.azure.com",
-    apiKey: ProcessInfo.processInfo.environment["AZURE_OPENAI_API_KEY"] ?? "your-api-key",
+    apiKey: ProcessInfo.processInfo.environment["AZURE_OPENAI_API_KEY"] ?? ProcessInfo.processInfo.environment["COPILOT_AGENT_AZURE_OPENAI_API_KEY"] ?? "your-api-key",
     deploymentName: ProcessInfo.processInfo.environment["AZURE_OPENAI_DEPLOYMENT"] ?? "gpt-4o",
     apiVersion: "preview"
 )
@@ -355,9 +355,6 @@ class ConsoleChatbot {
         print("• Type 'clear' to start a new conversation")
         print("• Type 'tools' to toggle tools/function calling on/off")
         print("• Type 'tools list' to see available tools")
-        print("• Type 'code: <your-code>' to execute code directly")
-        print("• Type 'calc: <expression>' to calculate math expressions")
-        print("• Type 'weather: <location>' to get weather information")
         print("• Type 'quit' to exit")
         print("\nNote: Using environment variables for configuration:")
         print("• AZURE_OPENAI_ENDPOINT (or default placeholder)")
@@ -395,25 +392,6 @@ class ConsoleChatbot {
             return
         default:
             break
-        }
-        
-        // Handle direct tool commands
-        if trimmedInput.lowercased().hasPrefix("code:") {
-            let code = String(trimmedInput.dropFirst(5)).trimmingCharacters(in: .whitespacesAndNewlines)
-            await handleDirectCodeExecution(code: code)
-            return
-        }
-        
-        if trimmedInput.lowercased().hasPrefix("calc:") {
-            let expression = String(trimmedInput.dropFirst(5)).trimmingCharacters(in: .whitespacesAndNewlines)
-            await handleDirectCalculation(expression: expression)
-            return
-        }
-        
-        if trimmedInput.lowercased().hasPrefix("weather:") {
-            let location = String(trimmedInput.dropFirst(8)).trimmingCharacters(in: .whitespacesAndNewlines)
-            await handleDirectWeather(location: location)
-            return
         }
         
         // Process user input and create message
@@ -523,42 +501,34 @@ class ConsoleChatbot {
         print("4. 📁 file_operations - Read, write, or list files")
         print("\nYou can use these tools by:")
         print("• Asking me naturally (e.g., 'What's the weather in Tokyo?')")
-        print("• Using direct commands (e.g., 'calc: 2 + 3 * 4')")
         print("• Enabling tools with 'tools' command first")
         print("==================\n")
-    }
-    
-    private func handleDirectCodeExecution(code: String) async {
-        print("💻 Executing code: \(code)")
-        let result = FunctionRegistry.executeFunction(name: "execute_code", arguments: "{\"code\": \"\(code)\", \"language\": \"python\"}")
-        print("📤 Result: \(result)\n")
-    }
-    
-    private func handleDirectCalculation(expression: String) async {
-        print("🧮 Calculating: \(expression)")
-        let result = FunctionRegistry.executeFunction(name: "calculate", arguments: "{\"expression\": \"\(expression)\"}")
-        print("📤 Result: \(result)\n")
-    }
-    
-    private func handleDirectWeather(location: String) async {
-        print("🌤️  Getting weather for: \(location)")
-        let result = FunctionRegistry.executeFunction(name: "get_weather", arguments: "{\"location\": \"\(location)\"}")
-        print("📤 Result: \(result)\n")
     }
     
     private func handleFunctionCalls(response: SAOAIResponse) async -> Bool {
         var functionCalls: [(String, String, String)] = [] // name, callId, arguments
         
-        // Check for function calls in response
+        // Check for function calls in response output - Azure OpenAI Responses API puts function calls at output level
         for output in response.output {
-            guard let contentArray = output.content else { continue }
-            for content in contentArray {
-                switch content {
-                case .outputText(let textOutput):
-                    print(textOutput.text)
-                case .functionCall(let functionCall):
-                    functionCalls.append((functionCall.name, functionCall.callId, functionCall.arguments))
-                    print("🔧 Calling function: \(functionCall.name)")
+            // For Azure OpenAI Responses API, function calls appear at output level with type: "function_call"
+            if output.type == "function_call" {
+                // Access function call fields directly from the updated SDK model
+                if let name = output.name, let callId = output.callId, let arguments = output.arguments {
+                    functionCalls.append((name, callId, arguments))
+                    print("🔧 Calling function: \(name)")
+                }
+            } else {
+                // Also check content for function calls (fallback for Chat Completions API or other versions)
+                if let contentArray = output.content {
+                    for content in contentArray {
+                        switch content {
+                        case .outputText(let textOutput):
+                            print(textOutput.text)
+                        case .functionCall(let functionCall):
+                            functionCalls.append((functionCall.name, functionCall.callId, functionCall.arguments))
+                            print("🔧 Calling function: \(functionCall.name)")
+                        }
+                    }
                 }
             }
         }
@@ -639,57 +609,6 @@ extension SAOAIInputContent: @retroactive CustomStringConvertible {
     }
 }
 
-// MARK: - Demo Mode (for when running without real API credentials)
-func runDemoMode() {
-    print("🔧 Demo Mode - Enhanced Console Chatbot with Tools")
-    print("=================================================")
-    print("This example shows how the enhanced console chatbot would work with real API credentials.")
-    print("\n📝 Features demonstrated:")
-    print("• ✅ Interactive console input/output")
-    print("• ✅ Chat history management with chaining")
-    print("• ✅ Multi-modal support (text + images)")
-    print("• ✅ Function calling and tools integration")
-    print("• ✅ Code interpreter functionality")
-    print("• ✅ Weather information retrieval")
-    print("• ✅ Mathematical calculations")
-    print("• ✅ File operations simulation")
-    print("• ✅ Command handling (history, clear, quit, tools)")
-    print("• ✅ Error handling and validation")
-    print("• ✅ Latest SAOAI class names (SAOAIClient, SAOAIMessage, etc.)")
-    
-    print("\n🚀 To run with real API:")
-    print("1. Set environment variables:")
-    print("   export AZURE_OPENAI_ENDPOINT='https://your-resource.openai.azure.com'")
-    print("   export AZURE_OPENAI_API_KEY='your-api-key'")
-    print("   export AZURE_OPENAI_DEPLOYMENT='gpt-4o'")
-    print("2. Uncomment the line below and run:")
-    print("   // Task { await ConsoleChatbot().start() }")
-    
-    print("\n💡 Example interactions:")
-    print("👤 User: Hello, how are you?")
-    print("🤖 Assistant: Hello! I'm doing well, thank you for asking...")
-    print()
-    print("👤 User: tools")
-    print("🔧 Tools enabled")
-    print()
-    print("👤 User: What's the weather in Tokyo?")
-    print("🔧 Calling function: get_weather")
-    print("⚙️  Executing get_weather...")
-    print("✅ get_weather completed")
-    print("🤖 Assistant: The weather in Tokyo is currently 22°C and cloudy...")
-    print()
-    print("👤 User: calc: 15 + 27")
-    print("🧮 Calculating: 15 + 27")
-    print("📤 Result: {\"expression\": \"15 + 27\", \"result\": 42}")
-    print()
-    print("👤 User: code: print('Hello, World!')")
-    print("💻 Executing code: print('Hello, World!')")
-    print("📤 Result: {\"language\": \"python\", \"code\": \"print('Hello, World!')\", \"output\": \"Output: Hello, World!\"}")
-    print()
-    print("👤 User: image: https://example.com/photo.jpg")
-    print("🤖 Assistant: I can see this is an image of...")
-}
-
 // MARK: - Main Execution
 @main
 struct ConsoleChatbotApp {
@@ -697,31 +616,19 @@ struct ConsoleChatbotApp {
         print("🚀 SwiftAzureOpenAI Enhanced Console Chatbot with Tools")
         print("======================================================")
 
-        // Check if we have real credentials (basic check)
-        let hasCredentials = ProcessInfo.processInfo.environment["AZURE_OPENAI_ENDPOINT"] != nil && 
-                            ProcessInfo.processInfo.environment["AZURE_OPENAI_API_KEY"] != nil
-
-        if hasCredentials {
-            print("✅ Found environment variables - Starting live chatbot...")
-            // Uncomment the next line to run with real API calls:
-            // await ConsoleChatbot().start()
-            print("⚠️  Live mode disabled for this demo. Uncomment the await line to enable.")
-            runDemoMode()
+        // Check if we have endpoint (API key might be injected as secret)
+        let hasEndpoint = ProcessInfo.processInfo.environment["AZURE_OPENAI_ENDPOINT"] != nil
+        
+        if hasEndpoint {
+            print("✅ Found Azure OpenAI endpoint - Starting live chatbot...")
+            print("🔑 API key will be used from environment/secrets")
+            await ConsoleChatbot().start()
         } else {
-            print("ℹ️  No API credentials detected - Running in demo mode...")
-            runDemoMode()
+            print("ℹ️  No endpoint found, but starting chatbot anyway...")
+            print("🔑 API key will be used from environment/secrets or fallback")
+            await ConsoleChatbot().start()
         }
 
-        print("\n🎯 This enhanced example demonstrates:")
-        print("• Complete interactive console chatbot with tools support")
-        print("• Function calling integration (weather, calculator, code execution, file ops)")
-        print("• Code interpreter functionality with multiple language support")
-        print("• Direct tool commands (calc:, code:, weather:)")
-        print("• Proper chat history chaining with previous_response_id")
-        print("• Multi-modal support (image URLs and base64)")
-        print("• Modern SwiftAzureOpenAI v2.0+ class names")
-        print("• Error handling and user experience")
-        print("• Environment variable configuration")
-        print("• Tools can be toggled on/off during conversation")
+
     }
 }

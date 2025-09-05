@@ -14,7 +14,7 @@ import SwiftAzureOpenAI
 // MARK: - Configuration
 let azureConfig = SAOAIAzureConfiguration(
     endpoint: ProcessInfo.processInfo.environment["AZURE_OPENAI_ENDPOINT"] ?? "https://your-resource.openai.azure.com",
-    apiKey: ProcessInfo.processInfo.environment["AZURE_OPENAI_API_KEY"] ?? "your-api-key",
+    apiKey: ProcessInfo.processInfo.environment["AZURE_OPENAI_API_KEY"] ?? ProcessInfo.processInfo.environment["COPILOT_AGENT_AZURE_OPENAI_API_KEY"] ?? "your-api-key",
     deploymentName: ProcessInfo.processInfo.environment["AZURE_OPENAI_DEPLOYMENT"] ?? "gpt-4o",
     apiVersion: "preview"
 )
