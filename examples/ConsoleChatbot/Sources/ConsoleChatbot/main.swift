@@ -549,19 +549,48 @@ class ConsoleChatbot {
     private func handleFunctionCalls(response: SAOAIResponse) async -> Bool {
         var functionCalls: [(String, String, String)] = [] // name, callId, arguments
         
-        // Check for function calls in response
-        for output in response.output {
-            guard let contentArray = output.content else { continue }
-            for content in contentArray {
-                switch content {
-                case .outputText(let textOutput):
-                    print(textOutput.text)
-                case .functionCall(let functionCall):
-                    functionCalls.append((functionCall.name, functionCall.callId, functionCall.arguments))
-                    print("🔧 Calling function: \(functionCall.name)")
+        // Debug: Print detailed response structure
+        print("🔍 Debug - Response ID: \(response.id ?? "nil")")
+        print("🔍 Debug - Response output count: \(response.output.count)")
+        
+        // First, try to serialize the entire response to see what we're getting
+        do {
+            let jsonData = try JSONEncoder().encode(response)
+            if let jsonString = String(data: jsonData, encoding: .utf8) {
+                print("🔍 Debug - Full response JSON: \(jsonString)")
+            }
+        } catch {
+            print("🔍 Debug - Failed to encode response: \(error)")
+        }
+        
+        // Check for function calls in response output
+        for (outputIndex, output) in response.output.enumerated() {
+            print("🔍 Debug - Output \(outputIndex):")
+            print("  - type: \(output.type ?? "nil")")
+            print("  - role: \(output.role ?? "nil")")
+            print("  - id: \(output.id ?? "nil")")
+            print("  - content count: \(output.content?.count ?? 0)")
+            
+            // Also check content for function calls (current SDK structure)
+            if let contentArray = output.content {
+                for (contentIndex, content) in contentArray.enumerated() {
+                    print("🔍 Debug - Content \(contentIndex): \(type(of: content))")
+                    switch content {
+                    case .outputText(let textOutput):
+                        print("🔍 Debug - Text content: \(textOutput.text)")
+                        print(textOutput.text)
+                    case .functionCall(let functionCall):
+                        print("🔍 Debug - Function call in content: \(functionCall.name)")
+                        functionCalls.append((functionCall.name, functionCall.callId, functionCall.arguments))
+                        print("🔧 Calling function: \(functionCall.name)")
+                    }
                 }
+            } else {
+                print("🔍 Debug - Output \(outputIndex) has no content")
             }
         }
+        
+        print("🔍 Debug - Total function calls found: \(functionCalls.count)")
         
         // If no function calls, return false to continue with normal flow
         if functionCalls.isEmpty {
@@ -639,57 +668,6 @@ extension SAOAIInputContent: @retroactive CustomStringConvertible {
     }
 }
 
-// MARK: - Demo Mode (for when running without real API credentials)
-func runDemoMode() {
-    print("🔧 Demo Mode - Enhanced Console Chatbot with Tools")
-    print("=================================================")
-    print("This example shows how the enhanced console chatbot would work with real API credentials.")
-    print("\n📝 Features demonstrated:")
-    print("• ✅ Interactive console input/output")
-    print("• ✅ Chat history management with chaining")
-    print("• ✅ Multi-modal support (text + images)")
-    print("• ✅ Function calling and tools integration")
-    print("• ✅ Code interpreter functionality")
-    print("• ✅ Weather information retrieval")
-    print("• ✅ Mathematical calculations")
-    print("• ✅ File operations simulation")
-    print("• ✅ Command handling (history, clear, quit, tools)")
-    print("• ✅ Error handling and validation")
-    print("• ✅ Latest SAOAI class names (SAOAIClient, SAOAIMessage, etc.)")
-    
-    print("\n🚀 To run with real API:")
-    print("1. Set environment variables:")
-    print("   export AZURE_OPENAI_ENDPOINT='https://your-resource.openai.azure.com'")
-    print("   export AZURE_OPENAI_API_KEY='your-api-key'")
-    print("   export AZURE_OPENAI_DEPLOYMENT='gpt-4o'")
-    print("2. Uncomment the line below and run:")
-    print("   // Task { await ConsoleChatbot().start() }")
-    
-    print("\n💡 Example interactions:")
-    print("👤 User: Hello, how are you?")
-    print("🤖 Assistant: Hello! I'm doing well, thank you for asking...")
-    print()
-    print("👤 User: tools")
-    print("🔧 Tools enabled")
-    print()
-    print("👤 User: What's the weather in Tokyo?")
-    print("🔧 Calling function: get_weather")
-    print("⚙️  Executing get_weather...")
-    print("✅ get_weather completed")
-    print("🤖 Assistant: The weather in Tokyo is currently 22°C and cloudy...")
-    print()
-    print("👤 User: calc: 15 + 27")
-    print("🧮 Calculating: 15 + 27")
-    print("📤 Result: {\"expression\": \"15 + 27\", \"result\": 42}")
-    print()
-    print("👤 User: code: print('Hello, World!')")
-    print("💻 Executing code: print('Hello, World!')")
-    print("📤 Result: {\"language\": \"python\", \"code\": \"print('Hello, World!')\", \"output\": \"Output: Hello, World!\"}")
-    print()
-    print("👤 User: image: https://example.com/photo.jpg")
-    print("🤖 Assistant: I can see this is an image of...")
-}
-
 // MARK: - Main Execution
 @main
 struct ConsoleChatbotApp {
@@ -705,20 +683,11 @@ struct ConsoleChatbotApp {
             print("🔑 API key will be used from environment/secrets")
             await ConsoleChatbot().start()
         } else {
-            print("ℹ️  No API credentials detected - Running in demo mode...")
-            runDemoMode()
+            print("ℹ️  No endpoint found, but starting chatbot anyway...")
+            print("🔑 API key will be used from environment/secrets or fallback")
+            await ConsoleChatbot().start()
         }
 
-        print("\n🎯 This enhanced example demonstrates:")
-        print("• Complete interactive console chatbot with tools support")
-        print("• Function calling integration (weather, calculator, code execution, file ops)")
-        print("• Code interpreter functionality with multiple language support")
-        print("• Direct tool commands (calc:, code:, weather:)")
-        print("• Proper chat history chaining with previous_response_id")
-        print("• Multi-modal support (image URLs and base64)")
-        print("• Modern SwiftAzureOpenAI v2.0+ class names")
-        print("• Error handling and user experience")
-        print("• Environment variable configuration")
-        print("• Tools can be toggled on/off during conversation")
+
     }
 }
