@@ -355,9 +355,6 @@ class ConsoleChatbot {
         print("• Type 'clear' to start a new conversation")
         print("• Type 'tools' to toggle tools/function calling on/off")
         print("• Type 'tools list' to see available tools")
-        print("• Type 'code: <your-code>' to execute code directly")
-        print("• Type 'calc: <expression>' to calculate math expressions")
-        print("• Type 'weather: <location>' to get weather information")
         print("• Type 'quit' to exit")
         print("\nNote: Using environment variables for configuration:")
         print("• AZURE_OPENAI_ENDPOINT (or default placeholder)")
@@ -395,25 +392,6 @@ class ConsoleChatbot {
             return
         default:
             break
-        }
-        
-        // Handle direct tool commands
-        if trimmedInput.lowercased().hasPrefix("code:") {
-            let code = String(trimmedInput.dropFirst(5)).trimmingCharacters(in: .whitespacesAndNewlines)
-            await handleDirectCodeExecution(code: code)
-            return
-        }
-        
-        if trimmedInput.lowercased().hasPrefix("calc:") {
-            let expression = String(trimmedInput.dropFirst(5)).trimmingCharacters(in: .whitespacesAndNewlines)
-            await handleDirectCalculation(expression: expression)
-            return
-        }
-        
-        if trimmedInput.lowercased().hasPrefix("weather:") {
-            let location = String(trimmedInput.dropFirst(8)).trimmingCharacters(in: .whitespacesAndNewlines)
-            await handleDirectWeather(location: location)
-            return
         }
         
         // Process user input and create message
@@ -523,27 +501,8 @@ class ConsoleChatbot {
         print("4. 📁 file_operations - Read, write, or list files")
         print("\nYou can use these tools by:")
         print("• Asking me naturally (e.g., 'What's the weather in Tokyo?')")
-        print("• Using direct commands (e.g., 'calc: 2 + 3 * 4')")
         print("• Enabling tools with 'tools' command first")
         print("==================\n")
-    }
-    
-    private func handleDirectCodeExecution(code: String) async {
-        print("💻 Executing code: \(code)")
-        let result = FunctionRegistry.executeFunction(name: "execute_code", arguments: "{\"code\": \"\(code)\", \"language\": \"python\"}")
-        print("📤 Result: \(result)\n")
-    }
-    
-    private func handleDirectCalculation(expression: String) async {
-        print("🧮 Calculating: \(expression)")
-        let result = FunctionRegistry.executeFunction(name: "calculate", arguments: "{\"expression\": \"\(expression)\"}")
-        print("📤 Result: \(result)\n")
-    }
-    
-    private func handleDirectWeather(location: String) async {
-        print("🌤️  Getting weather for: \(location)")
-        let result = FunctionRegistry.executeFunction(name: "get_weather", arguments: "{\"location\": \"\(location)\"}")
-        print("📤 Result: \(result)\n")
     }
     
     private func handleFunctionCalls(response: SAOAIResponse) async -> Bool {
