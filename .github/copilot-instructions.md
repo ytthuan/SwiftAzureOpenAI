@@ -25,6 +25,27 @@ SAOAIAzureConfiguration(
 
 **IMPORTANT**: The v1 API endpoint includes `api-version=preview` as a query parameter. The URL format is `https://{resource}.openai.azure.com/openai/v1/responses?api-version=preview`.
 
+## Raw API Integration Testing
+
+### RawApiTesting.swift
+The repository includes `RawApiTesting.swift`, a standalone testing tool that verifies Azure OpenAI endpoint integration without using any SwiftAzureOpenAI SDK components. This tool:
+
+- **Purpose**: Direct inspection of Azure OpenAI endpoint responses to ensure SDK adaptation
+- **Dependencies**: None - uses only Foundation URLSession for raw HTTP calls
+- **Usage**: Run after every bug fix or feature enhancement to validate integration
+
+```bash
+# Set environment variables
+export AZURE_OPENAI_ENDPOINT="https://your-resource.openai.azure.com"
+export AZURE_OPENAI_API_KEY="your-api-key"
+export AZURE_OPENAI_DEPLOYMENT="your-deployment-name"
+
+# Run raw API testing
+swift RawApiTesting.swift
+```
+
+**CRITICAL**: After every bug fix or feature enhancement, ALWAYS run `swift RawApiTesting.swift` to verify correct integration with the Azure OpenAI endpoint. This ensures the SDK adapts correctly to raw API outputs.
+
 ## Requirements
 
 - Swift 6.0+ (verified working with Swift 6.0.2)
@@ -185,6 +206,11 @@ SwiftAzureOpenAI/
    swift package describe         # Verify package structure
    ```
 
+4. **Raw API integration validation**:
+   ```bash
+   swift RawApiTesting.swift      # Direct Azure OpenAI endpoint testing
+   ```
+
 ### Manual Testing Scenarios
 Since this is a fully-featured library package:
 
@@ -196,6 +222,7 @@ Since this is a fully-featured library package:
 6. **Error handling**: Test API error parsing and mapping
 7. **Caching**: Test response caching functionality
 8. **Streaming**: Test streaming response processing
+9. **Raw API integration**: Run `RawApiTesting.swift` to verify direct Azure OpenAI endpoint communication
 
 **Note**: Full functional validation possible with real Azure OpenAI/OpenAI endpoints.
 
@@ -257,6 +284,7 @@ Before committing changes, ALWAYS:
 - [ ] Run `swift test` with all tests passing
 - [ ] Verify package structure with `swift package describe`
 - [ ] Test with environment variables if making API-related changes
+- [ ] Run `swift RawApiTesting.swift` to verify Azure OpenAI endpoint integration
 
 ## Quick Reference
 
@@ -277,6 +305,9 @@ swift package describe             # Package information
 swift build                        # Debug build (~25s)
 swift build --configuration release # Release build (~1s)
 swift test                         # Run tests (~15s)
+
+# Raw API integration testing
+swift RawApiTesting.swift          # Direct Azure OpenAI endpoint validation
 
 # Maintenance  
 swift package clean               # Clean build artifacts
