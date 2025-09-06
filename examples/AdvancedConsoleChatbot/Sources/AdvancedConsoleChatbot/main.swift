@@ -302,17 +302,13 @@ class AdvancedConsoleChatbot {
         print("• 🖼️  Multi-modal support (images)")
         print("• 📚 Conversation history chaining")
         print("")
-        print("Commands:")
-        print("• 'weather:[location]' - Get weather for a location")
-        print("• 'code:[python code]' - Execute Python code")
-        print("• 'calc:[expression]' - Calculate mathematical expression")
-        print("• 'image:[url]' - Analyze an image from URL")
-        print("• 'base64:[data]' - Analyze base64 image data")
+        print("Available commands:")
         print("• 'history' - Show conversation history")
         print("• 'clear' - Clear conversation history")
         print("• 'help' - Show this help message")
         print("• 'quit' - Exit the chatbot")
-        print("\n💡 Example: 'weather:London' or 'code:print(2+2)'")
+        print("")
+        print("Just ask naturally and I'll use tools when needed!")
         print("===================================================\n")
     }
     
@@ -356,12 +352,6 @@ class AdvancedConsoleChatbot {
     }
     
     private func processInput(_ input: String) -> (SAOAIMessage, Bool) {
-        // Check for tool-specific commands
-        if input.hasPrefix("weather:") || input.hasPrefix("code:") || input.hasPrefix("calc:") {
-            let message = SAOAIMessage(role: .user, text: input)
-            return (message, true)
-        }
-        
         // Check for image inputs
         if input.hasPrefix("image:") {
             let imageURL = String(input.dropFirst(6)).trimmingCharacters(in: .whitespaces)
@@ -383,9 +373,9 @@ class AdvancedConsoleChatbot {
             }
         }
         
-        // Regular text message
+        // All text messages (including natural language requests for tools) should use tools
         let message = SAOAIMessage(role: .user, text: input)
-        return (message, false)
+        return (message, true)
     }
     
     private func handleToolBasedRequest(_ input: String, message: SAOAIMessage) async throws {
@@ -396,7 +386,7 @@ class AdvancedConsoleChatbot {
         let messagesToSend: [SAOAIMessage]
         if chatHistory.lastResponseId == nil {
             // First message in conversation - include system message
-            let systemMessage = SAOAIMessage(role: .system, text: "You are a helpful AI assistant with vision capabilities. You can analyze images and have detailed conversations about them. You have access to tools for weather, calculations, and code execution.")
+            let systemMessage = SAOAIMessage(role: .system, text: "You are a helpful AI assistant with access to tools for weather information, code execution, and mathematical calculations. Use these tools when users ask relevant questions. You also have vision capabilities to analyze images.")
             messagesToSend = [systemMessage, message]
         } else {
             // Subsequent messages - send only current message with previousResponseId
@@ -413,6 +403,7 @@ class AdvancedConsoleChatbot {
         
         var fullResponse = ""
         var responseId: String?
+        var hasFunctionCall = false
         
         // Process streaming response
         for try await chunk in stream {
@@ -428,53 +419,107 @@ class AdvancedConsoleChatbot {
                         print(text, terminator: "")
                         fullResponse += text
                     }
-                    // Note: Tool calls in streaming might come as complete objects
-                    // We'll collect them to process after streaming is complete
+                    
+                    // Detect function calls in streaming
+                    if content.type == "function_call" {
+                        hasFunctionCall = true
+                        print("🔧 Function call detected - switching to non-streaming mode for proper handling")
+                    }
                 }
             }
         }
         
-        // Create a response object for processing tool calls
-        let response = SAOAIResponse(
-            id: responseId,
-            model: azureConfig.deploymentName,
-            created: Int(Date().timeIntervalSince1970),
-            output: [SAOAIOutput(content: [.outputText(.init(text: fullResponse))])],
-            usage: nil
-        )
-        
-        // Process tool calls
+        // If function calls were detected, make a non-streaming follow-up request
+        // to get the proper function call structure (this is a workaround for the
+        // current limitation where streaming responses don't preserve full function call data)
+        if hasFunctionCall {
+            print("\n🔧 Making non-streaming request for function call handling...")
+            
+            let nonStreamingResponse = try await client.responses.create(
+                model: azureConfig.deploymentName,
+                input: messagesToSend,
+                tools: availableTools,
+                previousResponseId: chatHistory.lastResponseId
+            )
+            
+            // Process function calls from the non-streaming response
+            await processFunctionCalls(response: nonStreamingResponse, input: input)
+        } else {
+            // No function calls - create regular text response
+            let response = SAOAIResponse(
+                id: responseId,
+                model: azureConfig.deploymentName,
+                created: Int(Date().timeIntervalSince1970),
+                output: [SAOAIOutput(content: [.outputText(.init(text: fullResponse))])],
+                usage: nil
+            )
+            
+            chatHistory.addAssistantResponse(response)
+            print("\n")
+        }
+    }
+    
+    private func processFunctionCalls(response: SAOAIResponse, input: String) async {
         var toolResults: [SAOAIMessage] = []
         
+        // Process function calls from response
         for output in response.output {
-            for content in output.content ?? [] {
-                switch content {
-                case .outputText(_):
-                    // Text already printed during streaming above, no need to print again
-                    break
-
-                case .functionCall(let functionCall):
-                    print("🔧 Calling tool: \(functionCall.name)")
-
+            // Check for function calls at output level (Azure OpenAI Responses API format)
+            if output.type == "function_call" {
+                if let name = output.name, let callId = output.callId, let arguments = output.arguments {
+                    print("🔧 Calling tool: \(name)")
+                    
                     let result = await executeTool(
-                        name: functionCall.name,
-                        arguments: functionCall.arguments,
+                        name: name,
+                        arguments: arguments,
                         input: input
                     )
-
+                    
                     chatHistory.addToolCall(
-                        callId: functionCall.callId,
-                        function: functionCall.name,
+                        callId: callId,
+                        function: name,
                         result: result
                     )
-
+                    
                     // Add tool result to conversation
                     toolResults.append(SAOAIMessage(
                         role: .user,
                         content: [.inputText(.init(
-                            text: "Function \(functionCall.name) (call_id: \(functionCall.callId)) result: \(result)"
+                            text: "Function \(name) (call_id: \(callId)) result: \(result)"
                         ))]
                     ))
+                }
+            } else {
+                // Also check content for function calls (fallback)
+                if let contentArray = output.content {
+                    for content in contentArray {
+                        switch content {
+                        case .outputText(_):
+                            break // Text already handled above
+                        case .functionCall(let functionCall):
+                            print("🔧 Calling tool: \(functionCall.name)")
+                            
+                            let result = await executeTool(
+                                name: functionCall.name,
+                                arguments: functionCall.arguments,
+                                input: input
+                            )
+                            
+                            chatHistory.addToolCall(
+                                callId: functionCall.callId,
+                                function: functionCall.name,
+                                result: result
+                            )
+                            
+                            // Add tool result to conversation
+                            toolResults.append(SAOAIMessage(
+                                role: .user,
+                                content: [.inputText(.init(
+                                    text: "Function \(functionCall.name) (call_id: \(functionCall.callId)) result: \(result)"
+                                ))]
+                            ))
+                        }
+                    }
                 }
             }
         }
@@ -486,40 +531,52 @@ class AdvancedConsoleChatbot {
             print("\n🔧 Processing tool results...")
             print("🤖 Assistant: ", terminator: "")
             
-            let followUpStream = client.responses.createStreaming(
-                model: azureConfig.deploymentName,
-                input: messagesToSend + toolResults,
-                previousResponseId: response.id
-            )
+            let messagesToSend: [SAOAIMessage]
+            if chatHistory.lastResponseId == nil {
+                let systemMessage = SAOAIMessage(role: .system, text: "You are a helpful AI assistant with access to tools for weather information, code execution, and mathematical calculations. Use these tools when users ask relevant questions. You also have vision capabilities to analyze images.")
+                messagesToSend = [systemMessage] + toolResults
+            } else {
+                messagesToSend = toolResults
+            }
             
-            var finalResponse = ""
-            var finalResponseId: String?
-            
-            for try await chunk in followUpStream {
-                if finalResponseId == nil {
-                    finalResponseId = chunk.id
-                }
+            do {
+                let followUpStream = client.responses.createStreaming(
+                    model: azureConfig.deploymentName,
+                    input: messagesToSend,
+                    previousResponseId: response.id
+                )
                 
-                for output in chunk.output ?? [] {
-                    for content in output.content ?? [] {
-                        if let text = content.text, !text.isEmpty, content.type != "status" {
-                            print(text, terminator: "")
-                            finalResponse += text
+                var finalResponse = ""
+                var finalResponseId: String?
+                
+                for try await chunk in followUpStream {
+                    if finalResponseId == nil {
+                        finalResponseId = chunk.id
+                    }
+                    
+                    for output in chunk.output ?? [] {
+                        for content in output.content ?? [] {
+                            if let text = content.text, !text.isEmpty, content.type != "status" {
+                                print(text, terminator: "")
+                                finalResponse += text
+                            }
                         }
                     }
                 }
+                
+                // Create final response for history
+                let finalResponseObj = SAOAIResponse(
+                    id: finalResponseId,
+                    model: azureConfig.deploymentName,
+                    created: Int(Date().timeIntervalSince1970),
+                    output: [SAOAIOutput(content: [.outputText(.init(text: finalResponse))])],
+                    usage: nil
+                )
+                
+                chatHistory.addAssistantResponse(finalResponseObj)
+            } catch {
+                print("❌ Error processing tool results: \(error.localizedDescription)")
             }
-            
-            // Create final response for history
-            let finalResponseObj = SAOAIResponse(
-                id: finalResponseId,
-                model: azureConfig.deploymentName, 
-                created: Int(Date().timeIntervalSince1970),
-                output: [SAOAIOutput(content: [.outputText(.init(text: finalResponse))])],
-                usage: nil
-            )
-            
-            chatHistory.addAssistantResponse(finalResponseObj)
         }
         
         print("\n")
@@ -532,7 +589,7 @@ class AdvancedConsoleChatbot {
         let messagesToSend: [SAOAIMessage]
         if chatHistory.lastResponseId == nil {
             // First message in conversation - include system message
-            let systemMessage = SAOAIMessage(role: .system, text: "You are a helpful AI assistant with vision capabilities. You can analyze images and have detailed conversations about them.")
+            let systemMessage = SAOAIMessage(role: .system, text: "You are a helpful AI assistant with access to tools for weather information, code execution, and mathematical calculations. Use these tools when users ask relevant questions. You also have vision capabilities to analyze images.")
             messagesToSend = [systemMessage, message]
         } else {
             // Subsequent messages - send only current message with previousResponseId
@@ -580,31 +637,31 @@ class AdvancedConsoleChatbot {
     }
     
     private func executeTool(name: String, arguments: String, input: String) async -> String {
+        // Parse the JSON arguments from the function call
+        guard let data = arguments.data(using: .utf8),
+              let argumentsDict = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return "{\"error\": \"Invalid arguments format\"}"
+        }
+        
         switch name {
         case "get_weather":
-            let location = extractValue(from: input, prefix: "weather:")
-            return ToolExecutor.getWeather(location: location)
+            let location = argumentsDict["location"] as? String ?? "Unknown location"
+            let unit = argumentsDict["unit"] as? String ?? "celsius"
+            return ToolExecutor.getWeather(location: location, unit: unit)
             
         case "code_interpreter":
-            let code = extractValue(from: input, prefix: "code:")
+            let code = argumentsDict["code"] as? String ?? ""
             print("🐍 Executing: \(code)")
             return ToolExecutor.executeCode(code)
             
         case "calculate":
-            let expression = extractValue(from: input, prefix: "calc:")
+            let expression = argumentsDict["expression"] as? String ?? ""
             print("🧮 Calculating: \(expression)")
             return ToolExecutor.calculate(expression)
             
         default:
             return "{\"error\": \"Unknown tool: \(name)\"}"
         }
-    }
-    
-    private func extractValue(from input: String, prefix: String) -> String {
-        if input.hasPrefix(prefix) {
-            return String(input.dropFirst(prefix.count)).trimmingCharacters(in: .whitespaces)
-        }
-        return input
     }
 }
 
@@ -628,24 +685,9 @@ func runDemoMode() {
     print("   export AZURE_OPENAI_ENDPOINT='https://your-resource.openai.azure.com'")
     print("   export AZURE_OPENAI_API_KEY='your-api-key'")
     print("   export AZURE_OPENAI_DEPLOYMENT='gpt-4o'")
-    print("2. Uncomment the line below and run:")
-    print("   // Task { await AdvancedConsoleChatbot().start() }")
+    print("2. Run the chatbot and chat naturally!")
     print("")
-    print("💡 Example interactions:")
-    print("👤 User: weather:Tokyo")
-    print("🤖 Assistant: 🔧 Calling tool: get_weather")
-    print("             The current weather in Tokyo is 22°C and sunny...")
-    print("")
-    print("👤 User: code:print('Hello, World!')")
-    print("🤖 Assistant: 🐍 Executing: print('Hello, World!')")
-    print("             I've executed your Python code. Output: Hello, World!")
-    print("")
-    print("👤 User: calc:sqrt(64)")
-    print("🤖 Assistant: 🧮 Calculating: sqrt(64)")
-    print("             The square root of 64 is 8.")
-    print("")
-    print("👤 User: image:https://example.com/photo.jpg")
-    print("🤖 Assistant: I can see this is an image showing...")
+    print("The AI will automatically use tools when appropriate.")
 }
 
 // MARK: - Main Execution
@@ -653,9 +695,12 @@ func runDemoMode() {
 struct AdvancedConsoleChatbotApp {
     static func main() async {
         // Check if we have valid API credentials
-        let hasCredentials = ProcessInfo.processInfo.environment["AZURE_OPENAI_ENDPOINT"] != nil &&
-                           ProcessInfo.processInfo.environment["AZURE_OPENAI_API_KEY"] != nil &&
-                           ProcessInfo.processInfo.environment["AZURE_OPENAI_ENDPOINT"] != "https://your-resource.openai.azure.com"
+        let endpoint = ProcessInfo.processInfo.environment["AZURE_OPENAI_ENDPOINT"]
+        let apiKey = ProcessInfo.processInfo.environment["AZURE_OPENAI_API_KEY"] ?? ProcessInfo.processInfo.environment["COPILOT_AGENT_AZURE_OPENAI_API_KEY"]
+        
+        let hasCredentials = endpoint != nil &&
+                           apiKey != nil &&
+                           endpoint != "https://your-resource.openai.azure.com"
         
         if hasCredentials {
             // Run with real API
