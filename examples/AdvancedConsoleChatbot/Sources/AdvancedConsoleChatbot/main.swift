@@ -413,6 +413,7 @@ class AdvancedConsoleChatbot {
         
         var fullResponse = ""
         var responseId: String?
+        var hasFunctionCall = false
         
         // Process streaming response
         for try await chunk in stream {
@@ -428,53 +429,107 @@ class AdvancedConsoleChatbot {
                         print(text, terminator: "")
                         fullResponse += text
                     }
-                    // Note: Tool calls in streaming might come as complete objects
-                    // We'll collect them to process after streaming is complete
+                    
+                    // Detect function calls in streaming
+                    if content.type == "function_call" {
+                        hasFunctionCall = true
+                        print("🔧 Function call detected - switching to non-streaming mode for proper handling")
+                    }
                 }
             }
         }
         
-        // Create a response object for processing tool calls
-        let response = SAOAIResponse(
-            id: responseId,
-            model: azureConfig.deploymentName,
-            created: Int(Date().timeIntervalSince1970),
-            output: [SAOAIOutput(content: [.outputText(.init(text: fullResponse))])],
-            usage: nil
-        )
-        
-        // Process tool calls
+        // If function calls were detected, make a non-streaming follow-up request
+        // to get the proper function call structure (this is a workaround for the
+        // current limitation where streaming responses don't preserve full function call data)
+        if hasFunctionCall {
+            print("\n🔧 Making non-streaming request for function call handling...")
+            
+            let nonStreamingResponse = try await client.responses.create(
+                model: azureConfig.deploymentName,
+                input: messagesToSend,
+                tools: availableTools,
+                previousResponseId: chatHistory.lastResponseId
+            )
+            
+            // Process function calls from the non-streaming response
+            await processFunctionCalls(response: nonStreamingResponse, input: input)
+        } else {
+            // No function calls - create regular text response
+            let response = SAOAIResponse(
+                id: responseId,
+                model: azureConfig.deploymentName,
+                created: Int(Date().timeIntervalSince1970),
+                output: [SAOAIOutput(content: [.outputText(.init(text: fullResponse))])],
+                usage: nil
+            )
+            
+            chatHistory.addAssistantResponse(response)
+            print("\n")
+        }
+    }
+    
+    private func processFunctionCalls(response: SAOAIResponse, input: String) async {
         var toolResults: [SAOAIMessage] = []
         
+        // Process function calls from response
         for output in response.output {
-            for content in output.content ?? [] {
-                switch content {
-                case .outputText(_):
-                    // Text already printed during streaming above, no need to print again
-                    break
-
-                case .functionCall(let functionCall):
-                    print("🔧 Calling tool: \(functionCall.name)")
-
+            // Check for function calls at output level (Azure OpenAI Responses API format)
+            if output.type == "function_call" {
+                if let name = output.name, let callId = output.callId, let arguments = output.arguments {
+                    print("🔧 Calling tool: \(name)")
+                    
                     let result = await executeTool(
-                        name: functionCall.name,
-                        arguments: functionCall.arguments,
+                        name: name,
+                        arguments: arguments,
                         input: input
                     )
-
+                    
                     chatHistory.addToolCall(
-                        callId: functionCall.callId,
-                        function: functionCall.name,
+                        callId: callId,
+                        function: name,
                         result: result
                     )
-
+                    
                     // Add tool result to conversation
                     toolResults.append(SAOAIMessage(
                         role: .user,
                         content: [.inputText(.init(
-                            text: "Function \(functionCall.name) (call_id: \(functionCall.callId)) result: \(result)"
+                            text: "Function \(name) (call_id: \(callId)) result: \(result)"
                         ))]
                     ))
+                }
+            } else {
+                // Also check content for function calls (fallback)
+                if let contentArray = output.content {
+                    for content in contentArray {
+                        switch content {
+                        case .outputText(_):
+                            break // Text already handled above
+                        case .functionCall(let functionCall):
+                            print("🔧 Calling tool: \(functionCall.name)")
+                            
+                            let result = await executeTool(
+                                name: functionCall.name,
+                                arguments: functionCall.arguments,
+                                input: input
+                            )
+                            
+                            chatHistory.addToolCall(
+                                callId: functionCall.callId,
+                                function: functionCall.name,
+                                result: result
+                            )
+                            
+                            // Add tool result to conversation
+                            toolResults.append(SAOAIMessage(
+                                role: .user,
+                                content: [.inputText(.init(
+                                    text: "Function \(functionCall.name) (call_id: \(functionCall.callId)) result: \(result)"
+                                ))]
+                            ))
+                        }
+                    }
                 }
             }
         }
@@ -486,40 +541,52 @@ class AdvancedConsoleChatbot {
             print("\n🔧 Processing tool results...")
             print("🤖 Assistant: ", terminator: "")
             
-            let followUpStream = client.responses.createStreaming(
-                model: azureConfig.deploymentName,
-                input: messagesToSend + toolResults,
-                previousResponseId: response.id
-            )
+            let messagesToSend: [SAOAIMessage]
+            if chatHistory.lastResponseId == nil {
+                let systemMessage = SAOAIMessage(role: .system, text: "You are a helpful AI assistant with vision capabilities. You can analyze images and have detailed conversations about them. You have access to tools for weather, calculations, and code execution.")
+                messagesToSend = [systemMessage] + toolResults
+            } else {
+                messagesToSend = toolResults
+            }
             
-            var finalResponse = ""
-            var finalResponseId: String?
-            
-            for try await chunk in followUpStream {
-                if finalResponseId == nil {
-                    finalResponseId = chunk.id
-                }
+            do {
+                let followUpStream = client.responses.createStreaming(
+                    model: azureConfig.deploymentName,
+                    input: messagesToSend,
+                    previousResponseId: response.id
+                )
                 
-                for output in chunk.output ?? [] {
-                    for content in output.content ?? [] {
-                        if let text = content.text, !text.isEmpty, content.type != "status" {
-                            print(text, terminator: "")
-                            finalResponse += text
+                var finalResponse = ""
+                var finalResponseId: String?
+                
+                for try await chunk in followUpStream {
+                    if finalResponseId == nil {
+                        finalResponseId = chunk.id
+                    }
+                    
+                    for output in chunk.output ?? [] {
+                        for content in output.content ?? [] {
+                            if let text = content.text, !text.isEmpty, content.type != "status" {
+                                print(text, terminator: "")
+                                finalResponse += text
+                            }
                         }
                     }
                 }
+                
+                // Create final response for history
+                let finalResponseObj = SAOAIResponse(
+                    id: finalResponseId,
+                    model: azureConfig.deploymentName,
+                    created: Int(Date().timeIntervalSince1970),
+                    output: [SAOAIOutput(content: [.outputText(.init(text: finalResponse))])],
+                    usage: nil
+                )
+                
+                chatHistory.addAssistantResponse(finalResponseObj)
+            } catch {
+                print("❌ Error processing tool results: \(error.localizedDescription)")
             }
-            
-            // Create final response for history
-            let finalResponseObj = SAOAIResponse(
-                id: finalResponseId,
-                model: azureConfig.deploymentName, 
-                created: Int(Date().timeIntervalSince1970),
-                output: [SAOAIOutput(content: [.outputText(.init(text: finalResponse))])],
-                usage: nil
-            )
-            
-            chatHistory.addAssistantResponse(finalResponseObj)
         }
         
         print("\n")
