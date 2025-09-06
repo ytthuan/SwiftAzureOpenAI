@@ -1,0 +1,31 @@
+{
+  "notes" : "Basic conversation with streaming enabled, no tools",
+  "requestBody" : "{\"input\":[{\"role\":\"system\",\"content\":[{\"text\":\"You are a helpful assistant.\",\"type\":\"input_text\"}]},{\"role\":\"user\",\"content\":[{\"type\":\"input_text\",\"text\":\"Tell me a story about a programmer who discovers AI. Keep it short but engaging.\"}]}],\"model\":\"gpt-5-nano\",\"max_output_tokens\":150,\"stream\":true}",
+  "responseBody" : "event: response.created\ndata: {\"type\":\"response.created\",\"sequence_number\":0,\"response\":{\"id\":\"resp_68bbfbfc3b40819797e51908b9f311a70bd110e62914bd7d\",\"object\":\"response\",\"created_at\":1757150204,\"status\":\"in_progress\",\"background\":false,\"content_filters\":null,\"error\":null,\"incomplete_details\":null,\"instructions\":null,\"max_output_tokens\":150,\"max_tool_calls\":null,\"model\":\"gpt-5-nano\",\"output\":[],\"parallel_tool_calls\":true,\"previous_response_id\":null,\"prompt_cache_key\":null,\"reasoning\":{\"effort\":\"medium\",\"summary\":null},\"safety_identifier\":null,\"service_tier\":\"auto\",\"store\":true,\"temperature\":1.0,\"text\":{\"format\":{\"type\":\"text\"}},\"tool_choice\":\"auto\",\"tools\":[],\"top_p\":1.0,\"truncation\":\"disabled\",\"usage\":null,\"user\":null,\"metadata\":{}}}\n\nevent: response.in_progress\ndata: {\"type\":\"response.in_progress\",\"sequence_number\":1,\"response\":{\"id\":\"resp_68bbfbfc3b40819797e51908b9f311a70bd110e62914bd7d\",\"object\":\"response\",\"created_at\":1757150204,\"status\":\"in_progress\",\"background\":false,\"content_filters\":null,\"error\":null,\"incomplete_details\":null,\"instructions\":null,\"max_output_tokens\":150,\"max_tool_calls\":null,\"model\":\"gpt-5-nano\",\"output\":[],\"parallel_tool_calls\":true,\"previous_response_id\":null,\"prompt_cache_key\":null,\"reasoning\":{\"effort\":\"medium\",\"summary\":null},\"safety_identifier\":null,\"service_tier\":\"auto\",\"store\":true,\"temperature\":1.0,\"text\":{\"format\":{\"type\":\"text\"}},\"tool_choice\":\"auto\",\"tools\":[],\"top_p\":1.0,\"truncation\":\"disabled\",\"usage\":null,\"user\":null,\"metadata\":{}}}\n\nevent: response.output_item.added\ndata: {\"type\":\"response.output_item.added\",\"sequence_number\":2,\"output_index\":0,\"item\":{\"id\":\"rs_68bbfbfc7bd88197842d8d7377bbb6070bd110e62914bd7d\",\"type\":\"reasoning\",\"summary\":[]}}\n\nevent: response.output_item.done\ndata: {\"type\":\"response.output_item.done\",\"sequence_number\":3,\"output_index\":0,\"item\":{\"id\":\"rs_68bbfbfc7bd88197842d8d7377bbb6070bd110e62914bd7d\",\"type\":\"reasoning\",\"summary\":[]}}\n\nevent: response.incomplete\ndata: {\"type\":\"response.incomplete\",\"sequence_number\":4,\"response\":{\"id\":\"resp_68bbfbfc3b40819797e51908b9f311a70bd110e62914bd7d\",\"object\":\"response\",\"created_at\":1757150204,\"status\":\"incomplete\",\"background\":false,\"content_filters\":null,\"error\":null,\"incomplete_details\":{\"reason\":\"max_output_tokens\"},\"instructions\":null,\"max_output_tokens\":150,\"max_tool_calls\":null,\"model\":\"gpt-5-nano\",\"output\":[{\"id\":\"rs_68bbfbfc7bd88197842d8d7377bbb6070bd110e62914bd7d\",\"type\":\"reasoning\",\"summary\":[]}],\"parallel_tool_calls\":true,\"previous_response_id\":null,\"prompt_cache_key\":null,\"reasoning\":{\"effort\":\"medium\",\"summary\":null},\"safety_identifier\":null,\"service_tier\":\"default\",\"store\":true,\"temperature\":1.0,\"text\":{\"format\":{\"type\":\"text\"}},\"tool_choice\":\"auto\",\"tools\":[],\"top_p\":1.0,\"truncation\":\"disabled\",\"usage\":{\"input_tokens\":33,\"input_tokens_details\":{\"cached_tokens\":0},\"output_tokens\":128,\"output_tokens_details\":{\"reasoning_tokens\":128},\"total_tokens\":161},\"user\":null,\"metadata\":{}}}\n\n",
+  "responseHeaders" : {
+    "Apim-Request-Id" : "58301282-fa37-4468-9a43-791e7b992316",
+    "Azure-Openai-Data-Collection" : "true",
+    "Connection" : "close",
+    "Content-Type" : "text\/event-stream; charset=utf-8",
+    "Date" : "Sat, 06 Sep 2025 09:16:43 GMT",
+    "Strict-Transport-Security" : "max-age=31536000; includeSubDomains; preload",
+    "Transfer-Encoding" : "chunked",
+    "X-Content-Type-Options" : "nosniff",
+    "X-Inference-Lb-Proxy-Warmup-Variants" : "api",
+    "X-Kv-Partition-Key" : "fixed",
+    "X-Ms-Cmp-Host" : "cmp.norwayeast.hyena.infra.ai.azure.com",
+    "X-Ms-Deployment-Name" : "gpt-5-nano",
+    "X-Ms-Oai-Backend-Host" : "https:\/\/n-gpt43-noe-a1-oai-oe-hbzqt9.norwayeast.inference.ml.azure.com",
+    "X-Ms-Oai-M4-Input-Cls-Host" : "https:\/\/n-saf9a-noe-a1-oai-oe-foh8t1.norwayeast.inference.ml.azure.com",
+    "X-Ms-Oai-M4-Input-Cls-Traffic-Group" : "aoai-safety-online",
+    "X-Ms-Oai-M4-Output-Cls-Host" : "https:\/\/n-saf1b-noe-a1-oai-oe-7kt3dl.norwayeast.inference.ml.azure.com",
+    "X-Ms-Oai-M4-Output-Cls-Traffic-Group" : "aoai-safety-online",
+    "X-Ms-Region" : "East US 2",
+    "X-Ratelimit-Limit-Requests" : "200",
+    "X-Ratelimit-Remaining-Requests" : "197",
+    "X-Request-Id" : "c05d604f-0249-471d-b8da-03cec5908f52"
+  },
+  "responseStatus" : 200,
+  "testCase" : "normal_conversation_streaming",
+  "timestamp" : "2025-09-06T09:16:45Z"
+}

@@ -9,19 +9,20 @@ import FoundationNetworking
  * RawApiTesting.swift - Comprehensive Azure OpenAI API Testing & Response Capture
  * 
  * Enhanced testing functionality that captures HTTP response message sample data
- * from real Azure OpenAI endpoints for later reference across different edge cases:
+ * from real Azure OpenAI endpoints for later reference. Based on latest Microsoft
+ * documentation for data structure validation to ensure SDK decodes correctly and safely.
  * 
- * Edge Cases Covered:
- * 1. Normal conversation - non streaming
- * 2. Tool call (including function call, code interpreter) - non streaming
- * 3. Normal conversation - streaming
- * 4. Tool call including function call and code interpreter - streaming
+ * Edge Cases Covered (one file per case):
+ * 1. Normal conversation - non streaming → api_response_normal_conversation_non_streaming.json
+ * 2. Tool call (function calls) - non streaming → api_response_tool_call_function_non_streaming.json
+ * 3. Normal conversation - streaming → api_response_normal_conversation_streaming.json
+ * 4. Tool call (function calls) - streaming → api_response_tool_call_function_streaming.json
  * 
  * Purpose:
- * - Direct inspection of Azure OpenAI endpoint responses
- * - Capture and save real API response data for later reference
- * - Validation of different tool call scenarios
- * - Integration validation after bug fixes or feature enhancements
+ * - Direct inspection of Azure OpenAI endpoint responses per Microsoft docs
+ * - Capture and save real API response data for SDK validation reference
+ * - Validation of tool call data structures per Azure OpenAI API specification
+ * - Ensure proper decoding of function call arguments, streaming events, etc.
  * 
  * Usage:
  * Set environment variables and run:
@@ -155,18 +156,17 @@ struct ResponseCapture: Codable {
     let notes: String
 }
 
-// File manager for saving responses
+// File manager for saving responses - one file per case for reference
 struct ResponseSaver {
     static func saveResponse(_ capture: ResponseCapture) {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
-        let timestamp = formatter.string(from: Date())
-        
-        let filename = "api_response_\(capture.testCase.replacingOccurrences(of: " ", with: "_"))_\(timestamp).json"
+        // Create simple filename without timestamp - one file per case
+        let filename = "api_response_\(capture.testCase.replacingOccurrences(of: " ", with: "_")).json"
         let url = URL(fileURLWithPath: filename)
         
         do {
-            let data = try JSONEncoder().encode(capture)
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+            let data = try encoder.encode(capture)
             try data.write(to: url)
             print("💾 Response saved to: \(filename)")
         } catch {
@@ -445,7 +445,8 @@ func liveAPItest() async {
     print("🧪 SwiftAzureOpenAI - Live API Testing & Response Capture Tool")
     print("==============================================================")
     print("This tool tests Azure OpenAI endpoints directly and captures response data")
-    print("for later reference across different edge cases including tool calls.")
+    print("aligned with Microsoft documentation for SDK validation and safe decoding.")
+    print("Saves one file per edge case for future reference (no duplicates).")
     print("")
     
     // Check environment configuration
@@ -500,15 +501,18 @@ func liveAPItest() async {
         print("   3. ✅ Normal conversation - streaming") 
         print("   4. ✅ Tool call (function calls) - streaming")
         print("")
-        print("📂 Response files saved in current directory with format:")
-        print("   api_response_[test_case]_[timestamp].json")
+        print("📂 Response files saved (one per case for reference):")
+        print("   • api_response_normal_conversation_non_streaming.json")
+        print("   • api_response_tool_call_function_non_streaming.json")
+        print("   • api_response_normal_conversation_streaming.json")
+        print("   • api_response_tool_call_function_streaming.json")
         print("")
-        print("💡 These captured responses can now be used for:")
-        print("   • SDK validation and testing")
-        print("   • Response format analysis")
-        print("   • Tool call behavior verification")
+        print("💡 These captured responses aligned with Microsoft docs can be used for:")
+        print("   • SDK validation and safe decoding verification")
+        print("   • Response format analysis per Azure OpenAI API spec")
+        print("   • Tool call data structure validation")
         print("   • Streaming vs non-streaming comparison")
-        print("   • Error handling scenario development")
+        print("   • Function call argument parsing reference")
         
     } catch {
         print("\n❌ Live API testing failed with error:")
