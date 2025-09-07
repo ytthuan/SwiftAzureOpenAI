@@ -382,7 +382,7 @@ class AdvancedConsoleChatbot {
         print("\n🔧 Processing with tools...")
         print("🤖 Assistant: ", terminator: "")
         
-        // Prepare messages for streaming - include system message for first conversation
+        // Prepare messages for API call - include system message for first conversation
         let messagesToSend: [SAOAIMessage]
         if chatHistory.lastResponseId == nil {
             // First message in conversation - include system message
@@ -393,76 +393,25 @@ class AdvancedConsoleChatbot {
             messagesToSend = [message]
         }
         
-        // Use streaming for tool-based requests for better real-time experience
-        let stream = client.responses.createStreaming(
+        // Use non-streaming API for tool-based requests to ensure proper function call handling
+        // This fixes the "Bad Request" issue that occurs when tools are used with streaming API
+        let response = try await client.responses.create(
             model: azureConfig.deploymentName,
             input: messagesToSend,
             tools: availableTools,
             previousResponseId: chatHistory.lastResponseId
         )
         
-        var fullResponse = ""
-        var responseId: String?
-        var hasFunctionCall = false
-        
-        // Process streaming response
-        for try await chunk in stream {
-            // Extract response ID from first chunk
-            if responseId == nil {
-                responseId = chunk.id
-            }
-            
-            // Process streaming content
-            for output in chunk.output ?? [] {
-                for content in output.content ?? [] {
-                    if let text = content.text, !text.isEmpty, content.type != "status" {
-                        print(text, terminator: "")
-                        fullResponse += text
-                    }
-                    
-                    // Detect function calls in streaming
-                    if content.type == "function_call" {
-                        hasFunctionCall = true
-                        print("🔧 Function call detected - switching to non-streaming mode for proper handling")
-                    }
-                }
-            }
-        }
-        
-        // If function calls were detected, make a non-streaming follow-up request
-        // to get the proper function call structure (this is a workaround for the
-        // current limitation where streaming responses don't preserve full function call data)
-        if hasFunctionCall {
-            print("\n🔧 Making non-streaming request for function call handling...")
-            
-            let nonStreamingResponse = try await client.responses.create(
-                model: azureConfig.deploymentName,
-                input: messagesToSend,
-                tools: availableTools,
-                previousResponseId: chatHistory.lastResponseId
-            )
-            
-            // Process function calls from the non-streaming response
-            await processFunctionCalls(response: nonStreamingResponse, input: input)
-        } else {
-            // No function calls - create regular text response
-            let response = SAOAIResponse(
-                id: responseId,
-                model: azureConfig.deploymentName,
-                created: Int(Date().timeIntervalSince1970),
-                output: [SAOAIOutput(content: [.outputText(.init(text: fullResponse))])],
-                usage: nil
-            )
-            
-            chatHistory.addAssistantResponse(response)
-            print("\n")
-        }
+        // Process function calls from the response
+        await processFunctionCalls(response: response, input: input)
     }
     
     private func processFunctionCalls(response: SAOAIResponse, input: String) async {
         var toolResults: [SAOAIMessage] = []
+        var hasTextContent = false
+        var textResponse = ""
         
-        // Process function calls from response
+        // Process response content and function calls
         for output in response.output {
             // Check for function calls at output level (Azure OpenAI Responses API format)
             if output.type == "function_call" {
@@ -490,12 +439,16 @@ class AdvancedConsoleChatbot {
                     ))
                 }
             } else {
-                // Also check content for function calls (fallback)
+                // Check content for both text and function calls
                 if let contentArray = output.content {
                     for content in contentArray {
                         switch content {
-                        case .outputText(_):
-                            break // Text already handled above
+                        case .outputText(let textOutput):
+                            if !textOutput.text.isEmpty {
+                                print(textOutput.text, terminator: "")
+                                textResponse += textOutput.text
+                                hasTextContent = true
+                            }
                         case .functionCall(let functionCall):
                             print("🔧 Calling tool: \(functionCall.name)")
                             
@@ -526,7 +479,7 @@ class AdvancedConsoleChatbot {
         
         chatHistory.addAssistantResponse(response)
         
-        // If we have tool results, send follow-up streaming request
+        // If we have tool results, send follow-up streaming request for the final response
         if !toolResults.isEmpty {
             print("\n🔧 Processing tool results...")
             print("🤖 Assistant: ", terminator: "")
@@ -577,6 +530,9 @@ class AdvancedConsoleChatbot {
             } catch {
                 print("❌ Error processing tool results: \(error.localizedDescription)")
             }
+        } else if hasTextContent {
+            // If there was only text content and no tool calls, just display it
+            print("")
         }
         
         print("\n")
