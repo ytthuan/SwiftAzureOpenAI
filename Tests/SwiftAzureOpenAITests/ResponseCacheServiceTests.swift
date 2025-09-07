@@ -132,7 +132,7 @@ final class ResponseCacheServiceTests: XCTestCase {
         let response = APIResponse(
             data: SAOAIResponse(
                 id: "resp_complex",
-                model: "gpt-4o-mini",
+                model: "gpt-4o",
                 created: 1700000000,
                 output: [
                     SAOAIOutput(

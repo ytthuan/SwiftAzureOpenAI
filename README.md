@@ -517,7 +517,7 @@ Quick setup for live testing:
 ```bash
 # Azure OpenAI
 export AZURE_OPENAI_ENDPOINT="https://your-resource.openai.azure.com"
-export AZURE_OPENAI_API_KEY="your-azure-api-key"
+export COPILOT_AGENT_AZURE_OPENAI_API_KEY="your-azure-api-key"
 export AZURE_OPENAI_DEPLOYMENT="your-deployment-name"
 
 # Or OpenAI
@@ -533,7 +533,7 @@ import Foundation
 // Example test function
 func testAzureOpenAI() async throws {
     guard let endpoint = ProcessInfo.processInfo.environment["AZURE_OPENAI_ENDPOINT"],
-          let apiKey = ProcessInfo.processInfo.environment["AZURE_OPENAI_API_KEY"],
+          let apiKey = ProcessInfo.processInfo.environment["COPILOT_AGENT_AZURE_OPENAI_API_KEY"] ?? ProcessInfo.processInfo.environment["AZURE_OPENAI_API_KEY"],
           let deployment = ProcessInfo.processInfo.environment["AZURE_OPENAI_DEPLOYMENT"] else {
         print("Azure OpenAI environment variables not set")
         return

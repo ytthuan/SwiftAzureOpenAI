@@ -23,7 +23,7 @@ final class HTTPClientTests: XCTestCase {
         let config = SAOAIAzureConfiguration(
             endpoint: "https://test.openai.azure.com",
             apiKey: "test-key",
-            deploymentName: "gpt-4o-mini"
+            deploymentName: "gpt-4o"
         )
         let client = HTTPClient(configuration: config)
         
@@ -104,10 +104,10 @@ final class HTTPClientTests: XCTestCase {
         
         // Test with Azure configuration  
         let azureConfig = SAOAIAzureConfiguration(
-            endpoint: "https://myresource.openai.azure.com",
-            apiKey: "azure-key",
-            deploymentName: "gpt-4o-mini",
-            apiVersion: "2024-02-01"
+            endpoint: "https://test.openai.azure.com",
+            apiKey: "test-key",
+            deploymentName: "gpt-4o",
+            apiVersion: "preview"
         )
         let azureClient = HTTPClient(configuration: azureConfig)
         XCTAssertNotNil(azureClient)
@@ -129,7 +129,7 @@ final class HTTPClientTests: XCTestCase {
         // Test with various URL formats
         let urls = [
             "https://api.openai.com/v1/responses",
-            "https://myresource.openai.azure.com/openai/v1/responses?api-version=preview",
+            "https://test.openai.azure.com/openai/v1/responses?api-version=preview",
             "http://localhost:8080/test",
             "https://api.example.com/path/with/multiple/segments"
         ]

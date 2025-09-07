@@ -13,7 +13,7 @@ final class EdgeCaseTests: XCTestCase {
         let config = SAOAIAzureConfiguration(
             endpoint: "not-a-valid-url",
             apiKey: "test-key",
-            deploymentName: "gpt-4o-mini"
+            deploymentName: "gpt-4o"
         )
         
         // Should still create configuration object

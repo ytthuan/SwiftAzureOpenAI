@@ -4,15 +4,15 @@ import XCTest
 final class ConfigurationTests: XCTestCase {
     func testSAOAIAzureConfigurationBuildsBaseURLAndHeaders() {
         let config = SAOAIAzureConfiguration(
-            endpoint: "https://myresource.openai.azure.com",
+            endpoint: "https://test.openai.azure.com",
             apiKey: "test-key",
-            deploymentName: "gpt-4o-mini",
+            deploymentName: "gpt-4o",
             apiVersion: "preview"
         )
 
         let baseURL = config.baseURL
         XCTAssertEqual(baseURL.scheme, "https")
-        XCTAssertEqual(baseURL.host, "myresource.openai.azure.com")
+        XCTAssertEqual(baseURL.host, "test.openai.azure.com")
         XCTAssertEqual(baseURL.path, "/openai/v1/responses")
 
         // Test that URL is constructed correctly (v1 API needs api-version=preview query parameter)
@@ -26,9 +26,9 @@ final class ConfigurationTests: XCTestCase {
 
     func testSAOAIAzureConfigurationDefaultAPIVersion() {
         let config = SAOAIAzureConfiguration(
-            endpoint: "https://myresource.openai.azure.com",
+            endpoint: "https://test.openai.azure.com",
             apiKey: "test-key",
-            deploymentName: "gpt-4o-mini"
+            deploymentName: "gpt-4o"
         )
 
         // Test that default configuration includes api-version=preview query parameter in v1 API
