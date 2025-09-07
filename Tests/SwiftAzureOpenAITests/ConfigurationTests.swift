@@ -3,38 +3,34 @@ import XCTest
 
 final class ConfigurationTests: XCTestCase {
     func testSAOAIAzureConfigurationBuildsBaseURLAndHeaders() {
-        let config = SAOAIAzureConfiguration(
-            endpoint: "https://test.openai.azure.com",
-            apiKey: "test-key",
-            deploymentName: "gpt-4o",
-            apiVersion: "preview"
-        )
+        let config = TestEnvironmentHelper.createStandardAzureConfiguration()
 
         let baseURL = config.baseURL
         XCTAssertEqual(baseURL.scheme, "https")
-        XCTAssertEqual(baseURL.host, "test.openai.azure.com")
+        
+        // Use expected values from environment variables or defaults
+        let expectedHost = URL(string: TestEnvironmentHelper.azureEndpoint)?.host ?? "test.openai.azure.com"
+        XCTAssertEqual(baseURL.host, expectedHost)
         XCTAssertEqual(baseURL.path, "/openai/v1/responses")
 
-        // Test that URL is constructed correctly (v1 API needs api-version=preview query parameter)
+        // Test that URL is constructed correctly (v1 API needs api-version query parameter)
         let components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)
         let apiVersion = components?.queryItems?.first(where: { $0.name == "api-version" })?.value
-        XCTAssertEqual(apiVersion, "preview", "v1 Response API should include api-version=preview query parameter")
+        XCTAssertEqual(apiVersion, TestEnvironmentHelper.azureAPIVersion, "v1 Response API should include api-version query parameter")
 
-        XCTAssertEqual(config.headers["api-key"], "test-key")
+        XCTAssertEqual(config.headers["api-key"], TestEnvironmentHelper.azureAPIKey)
         XCTAssertEqual(config.headers["Content-Type"], "application/json")
     }
 
     func testSAOAIAzureConfigurationDefaultAPIVersion() {
-        let config = SAOAIAzureConfiguration(
-            endpoint: "https://test.openai.azure.com",
-            apiKey: "test-key",
-            deploymentName: "gpt-4o"
+        let config = TestEnvironmentHelper.createAzureConfiguration(
+            apiVersion: nil  // Test default API version
         )
 
-        // Test that default configuration includes api-version=preview query parameter in v1 API
+        // Test that default configuration includes api-version query parameter in v1 API
         let components = URLComponents(url: config.baseURL, resolvingAgainstBaseURL: false)
         let apiVersion = components?.queryItems?.first(where: { $0.name == "api-version" })?.value
-        XCTAssertEqual(apiVersion, "preview", "v1 Response API should include api-version=preview query parameter")
+        XCTAssertEqual(apiVersion, TestEnvironmentHelper.azureAPIVersion, "v1 Response API should include api-version query parameter")
     }
 
     func testSAOAIOpenAIConfigurationHeaders() {

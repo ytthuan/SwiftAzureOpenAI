@@ -51,11 +51,7 @@ final class GitHubIssueComplianceTests: XCTestCase {
         }
         
         // Test that it works with the client (structure only, no HTTP call)
-        let config = SAOAIAzureConfiguration(
-            endpoint: "https://test.openai.azure.com",
-            apiKey: "test-key",
-            deploymentName: "gpt-4o"
-        )
+        let config = TestEnvironmentHelper.createStandardAzureConfiguration()
         let client = SAOAIClient(configuration: config)
         
         // This would compile and execute the request structure

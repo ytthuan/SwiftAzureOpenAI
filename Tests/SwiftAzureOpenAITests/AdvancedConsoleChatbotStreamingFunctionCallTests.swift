@@ -103,12 +103,7 @@ final class AdvancedConsoleChatbotStreamingFunctionCallTests: XCTestCase {
         // 1. Streaming request detects function call
         // 2. Falls back to non-streaming request for proper function call handling
         
-        let config = SAOAIAzureConfiguration(
-            endpoint: "https://test.openai.azure.com",
-            apiKey: "test-key",
-            deploymentName: "gpt-4o",
-            apiVersion: "preview"
-        )
+        let config = TestEnvironmentHelper.createStandardAzureConfiguration()
         
         let client = SAOAIClient(configuration: config)
         

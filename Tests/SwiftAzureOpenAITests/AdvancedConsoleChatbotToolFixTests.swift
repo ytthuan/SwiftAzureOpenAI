@@ -9,12 +9,7 @@ final class AdvancedConsoleChatbotToolFixTests: XCTestCase {
         // This test verifies that when the AdvancedConsoleChatbot processes tool-based requests,
         // it uses the non-streaming API which properly handles function calls
         
-        let mockConfig = SAOAIAzureConfiguration(
-            endpoint: "https://test.openai.azure.com",
-            apiKey: "test-key",
-            deploymentName: "gpt-4o",
-            apiVersion: "preview"
-        )
+        let mockConfig = TestEnvironmentHelper.createStandardAzureConfiguration()
         
         let client = SAOAIClient(configuration: mockConfig)
         
@@ -32,7 +27,6 @@ final class AdvancedConsoleChatbotToolFixTests: XCTestCase {
                 ]),
                 "required": .array([.string("expression")])
             ])
-        )
         
         let systemMessage = SAOAIMessage(role: .system, text: "You are a helpful AI assistant with access to tools for weather information, code execution, and mathematical calculations. Use these tools when users ask relevant questions. You also have vision capabilities to analyze images.")
         let userMessage = SAOAIMessage(role: .user, text: "can you use the tool to calculate 10 minus 120033")
@@ -47,7 +41,7 @@ final class AdvancedConsoleChatbotToolFixTests: XCTestCase {
                     model: mockConfig.deploymentName,
                     input: [systemMessage, userMessage],
                     tools: [calculatorTool],
-                    previousResponseId: nil
+                    previousResponseId: nil)
                 )
             }
         }())
@@ -60,12 +54,7 @@ final class AdvancedConsoleChatbotToolFixTests: XCTestCase {
         // This test verifies that regular text responses (without tools) still use streaming API
         // to maintain the "advanced" real-time experience
         
-        let mockConfig = SAOAIAzureConfiguration(
-            endpoint: "https://test.openai.azure.com",
-            apiKey: "test-key",
-            deploymentName: "gpt-4o",
-            apiVersion: "preview"
-        )
+        let mockConfig = TestEnvironmentHelper.createStandardAzureConfiguration()
         
         let client = SAOAIClient(configuration: mockConfig)
         
@@ -76,8 +65,7 @@ final class AdvancedConsoleChatbotToolFixTests: XCTestCase {
         let streamingCall = client.responses.createStreaming(
             model: mockConfig.deploymentName,
             input: [systemMessage, userMessage],
-            previousResponseId: nil
-        )
+            previousResponseId: nil)
         
         XCTAssertNotNil(streamingCall)
         
@@ -102,7 +90,6 @@ final class AdvancedConsoleChatbotToolFixTests: XCTestCase {
                 ]),
                 "required": .array([.string("expression")])
             ])
-        )
         
         // Verify the tool structure
         XCTAssertEqual(calculatorTool.name, "calculate")
@@ -124,12 +111,7 @@ final class AdvancedConsoleChatbotToolFixTests: XCTestCase {
         // This test validates that the fixed AdvancedConsoleChatbot pattern 
         // now matches the working ConsoleChatbot pattern
         
-        let mockConfig = SAOAIAzureConfiguration(
-            endpoint: "https://test.openai.azure.com",
-            apiKey: "test-key",
-            deploymentName: "gpt-4o",
-            apiVersion: "preview"
-        )
+        let mockConfig = TestEnvironmentHelper.createStandardAzureConfiguration()
         
         let client = SAOAIClient(configuration: mockConfig)
         
@@ -146,7 +128,6 @@ final class AdvancedConsoleChatbotToolFixTests: XCTestCase {
                 ]),
                 "required": .array([.string("expression")])
             ])
-        )
         
         let systemMessage = SAOAIMessage(role: .system, text: "You are a helpful AI assistant with vision capabilities and access to various tools. You can analyze images, perform calculations, execute code, get weather information, and handle file operations. When tools are available, use them to provide accurate and helpful responses.")
         let userMessage = SAOAIMessage(role: .user, text: "can you use the tool to calculate 10 minus 120033")
@@ -158,7 +139,7 @@ final class AdvancedConsoleChatbotToolFixTests: XCTestCase {
                     model: mockConfig.deploymentName,
                     input: [systemMessage, userMessage],
                     tools: [calculatorTool],
-                    previousResponseId: nil
+                    previousResponseId: nil)
                 )
             }
         }())
@@ -170,7 +151,7 @@ final class AdvancedConsoleChatbotToolFixTests: XCTestCase {
                     model: mockConfig.deploymentName,
                     input: [userMessage],
                     tools: [calculatorTool],
-                    previousResponseId: "some-response-id"
+                    previousResponseId: "some-response-id")
                 )
             }
         }())
