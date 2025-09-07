@@ -27,6 +27,7 @@ final class AdvancedConsoleChatbotToolFixTests: XCTestCase {
                 ]),
                 "required": .array([.string("expression")])
             ])
+        )
         
         let systemMessage = SAOAIMessage(role: .system, text: "You are a helpful AI assistant with access to tools for weather information, code execution, and mathematical calculations. Use these tools when users ask relevant questions. You also have vision capabilities to analyze images.")
         let userMessage = SAOAIMessage(role: .user, text: "can you use the tool to calculate 10 minus 120033")
@@ -42,7 +43,6 @@ final class AdvancedConsoleChatbotToolFixTests: XCTestCase {
                     input: [systemMessage, userMessage],
                     tools: [calculatorTool],
                     previousResponseId: nil)
-                )
             }
         }())
         
@@ -90,6 +90,7 @@ final class AdvancedConsoleChatbotToolFixTests: XCTestCase {
                 ]),
                 "required": .array([.string("expression")])
             ])
+        )
         
         // Verify the tool structure
         XCTAssertEqual(calculatorTool.name, "calculate")
@@ -128,6 +129,7 @@ final class AdvancedConsoleChatbotToolFixTests: XCTestCase {
                 ]),
                 "required": .array([.string("expression")])
             ])
+        )
         
         let systemMessage = SAOAIMessage(role: .system, text: "You are a helpful AI assistant with vision capabilities and access to various tools. You can analyze images, perform calculations, execute code, get weather information, and handle file operations. When tools are available, use them to provide accurate and helpful responses.")
         let userMessage = SAOAIMessage(role: .user, text: "can you use the tool to calculate 10 minus 120033")
@@ -140,7 +142,6 @@ final class AdvancedConsoleChatbotToolFixTests: XCTestCase {
                     input: [systemMessage, userMessage],
                     tools: [calculatorTool],
                     previousResponseId: nil)
-                )
             }
         }())
         
@@ -152,7 +153,6 @@ final class AdvancedConsoleChatbotToolFixTests: XCTestCase {
                     input: [userMessage],
                     tools: [calculatorTool],
                     previousResponseId: "some-response-id")
-                )
             }
         }())
         

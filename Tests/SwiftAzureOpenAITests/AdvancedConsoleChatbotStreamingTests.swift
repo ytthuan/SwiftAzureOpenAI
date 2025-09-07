@@ -21,7 +21,6 @@ final class AdvancedConsoleChatbotStreamingTests: XCTestCase {
             model: mockConfig.deploymentName,
             input: emptyMessages,  // Empty array - this is the problem!
             previousResponseId: nil)
-        )
         
         // The call should be created without throwing, but will fail when executed
         // because Azure OpenAI requires at least one message in the conversation
@@ -64,7 +63,6 @@ final class AdvancedConsoleChatbotStreamingTests: XCTestCase {
             model: mockConfig.deploymentName,
             input: [systemMessage, userMessage],  // Include system message!
             previousResponseId: nil)
-        )
         
         XCTAssertNotNil(correctedStream)
     }
@@ -89,7 +87,6 @@ final class AdvancedConsoleChatbotStreamingTests: XCTestCase {
             input: [systemMessage, userMessage],  // Include system message!
             tools: [weatherTool],
             previousResponseId: nil)
-        )
         
         XCTAssertNotNil(correctedStreamWithTools)
     }
@@ -140,6 +137,7 @@ final class AdvancedConsoleChatbotStreamingTests: XCTestCase {
             name: "get_weather",
             description: "Get weather",
             parameters: .object(["type": .string("object")])
+        )
         
         // Simulate the fixed AdvancedConsoleChatbot tool-based pattern
         
@@ -166,6 +164,7 @@ final class AdvancedConsoleChatbotStreamingTests: XCTestCase {
                 callId: "call_123",
                 output: "{\"weather\": \"sunny\"}"
             ))]
+        )
         
         let followUpStream = client.responses.createStreaming(
             model: mockConfig.deploymentName,
@@ -200,6 +199,7 @@ final class AdvancedConsoleChatbotStreamingTests: XCTestCase {
             model: mockConfig.deploymentName,
             input: [secondUserMessage],  // FIXED: Only current message, not conversation history
             previousResponseId: "response-id-1"
+        )
         
         XCTAssertNotNil(subsequentStream)
         
@@ -208,6 +208,7 @@ final class AdvancedConsoleChatbotStreamingTests: XCTestCase {
             name: "get_weather",
             description: "Get weather",
             parameters: .object(["type": .string("object")])
+        )
         
         let toolUserMessage = SAOAIMessage(role: .user, text: "weather:London")
         
@@ -226,6 +227,7 @@ final class AdvancedConsoleChatbotStreamingTests: XCTestCase {
             input: [toolUserMessage],  // FIXED: Only current message
             tools: [weatherTool],
             previousResponseId: "response-id-2"
+        )
         
         XCTAssertNotNil(subsequentToolStream)
     }
