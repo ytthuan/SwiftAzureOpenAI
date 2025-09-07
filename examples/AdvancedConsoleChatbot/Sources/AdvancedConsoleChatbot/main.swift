@@ -45,21 +45,7 @@ let weatherTool = SAOAITool.function(
 )
 
 /// Code interpreter tool (custom implementation for demonstration)
-let codeInterpreterTool = SAOAITool(
-    type: "code_interpreter",
-    name: "code_interpreter",
-    description: "Execute Python code and return results",
-    parameters: .object([
-        "type": .string("object"),
-        "properties": .object([
-            "code": .object([
-                "type": .string("string"),
-                "description": .string("Python code to execute")
-            ])
-        ]),
-        "required": .array([.string("code")])
-    ])
-)
+let codeInterpreterTool = SAOAITool.codeInterpreter()
 
 /// Math calculator function tool
 let calculatorTool = SAOAITool.function(
