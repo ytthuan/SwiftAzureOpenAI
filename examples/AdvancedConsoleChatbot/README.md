@@ -143,13 +143,10 @@ let weatherTool = SAOAITool.function(
 
 ### Code Interpreter Tool
 ```swift
-let codeInterpreterTool = SAOAITool(
-    type: "code_interpreter",
-    name: "code_interpreter", 
-    description: "Execute Python code and return results",
-    parameters: .object([...])
-)
+let codeInterpreterTool = SAOAITool.codeInterpreter()
 ```
+
+This creates a properly configured code interpreter tool with the required `container` field set to `{"type": "auto"}`.
 
 ## Architecture
 
