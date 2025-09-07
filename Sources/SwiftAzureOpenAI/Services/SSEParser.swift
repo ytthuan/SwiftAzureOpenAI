@@ -3,8 +3,15 @@ import Foundation
 /// Parser for OpenAI/Azure OpenAI Server-Sent Events (SSE) streaming format
 public final class SSEParser: Sendable {
     
-    /// Parse SSE data chunks and extract JSON payload
-    public static func parseSSEChunk(_ data: Data) throws -> SAOAIStreamingResponse? {
+    /// Parse SSE data chunks and extract JSON payload with optional logging and code interpreter tracking
+    public static func parseSSEChunk(
+        _ data: Data,
+        logger: SSELogger? = nil,
+        codeInterpreterTracker: CodeInterpreterTracker? = nil
+    ) throws -> SAOAIStreamingResponse? {
+        // Log raw chunk if logger is provided
+        logger?.logRawChunk(data)
+        
         guard let string = String(data: data, encoding: .utf8) else {
             throw SAOAIError.decodingError(NSError(domain: "SSEParser", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid UTF-8 data"]))
         }
@@ -37,8 +44,11 @@ public final class SSEParser: Sendable {
                     
                     // First try to parse as Azure OpenAI event format
                     if let azureEvent = try? decoder.decode(AzureOpenAISSEEvent.self, from: jsonData) {
-                        // Convert Azure OpenAI event to streaming response
-                        return convertAzureEventToStreamingResponse(azureEvent)
+                        // Log the event if logger is provided
+                        logger?.logEvent(azureEvent, rawData: data)
+                        
+                        // Convert Azure OpenAI event to streaming response with enhanced tracking
+                        return convertAzureEventToStreamingResponse(azureEvent, codeInterpreterTracker: codeInterpreterTracker)
                     }
                     
                     // Fallback to direct streaming response format (for backward compatibility)
@@ -54,8 +64,16 @@ public final class SSEParser: Sendable {
         return nil
     }
     
+    /// Parse SSE data chunks and extract JSON payload (backward compatibility method)
+    public static func parseSSEChunk(_ data: Data) throws -> SAOAIStreamingResponse? {
+        return try parseSSEChunk(data, logger: nil, codeInterpreterTracker: nil)
+    }
+    
     /// Convert Azure OpenAI SSE event to streaming response format
-    private static func convertAzureEventToStreamingResponse(_ event: AzureOpenAISSEEvent) -> SAOAIStreamingResponse? {
+    private static func convertAzureEventToStreamingResponse(
+        _ event: AzureOpenAISSEEvent,
+        codeInterpreterTracker: CodeInterpreterTracker? = nil
+    ) -> SAOAIStreamingResponse? {
         // Handle different types of Azure OpenAI SSE events based on official OpenAI Response API documentation
         switch event.type {
         
@@ -73,7 +91,7 @@ public final class SSEParser: Sendable {
             return handleDeltaEvent(event: event, contentType: "audio_transcript")
             
         case "response.code_interpreter_call_code.delta":
-            return handleDeltaEvent(event: event, contentType: "code_interpreter_code")
+            return handleCodeInterpreterDeltaEvent(event: event, codeInterpreterTracker: codeInterpreterTracker)
             
         case "response.refusal.delta":
             return handleDeltaEvent(event: event, contentType: "refusal")
@@ -104,7 +122,7 @@ public final class SSEParser: Sendable {
             return handleDoneEvent(event: event, contentType: "audio_transcript")
             
         case "response.code_interpreter_call_code.done":
-            return handleDoneEvent(event: event, contentType: "code_interpreter_code")
+            return handleCodeInterpreterDoneEvent(event: event, codeInterpreterTracker: codeInterpreterTracker)
             
         case "response.refusal.done":
             return handleDoneEvent(event: event, contentType: "refusal")
@@ -140,14 +158,14 @@ public final class SSEParser: Sendable {
             
         // MARK: - Output Item Events
         case "response.output_item.added", "response.output_item.done":
-            return handleOutputItemEvent(event: event)
+            return handleOutputItemEvent(event: event, codeInterpreterTracker: codeInterpreterTracker)
             
         // MARK: - Tool Call Events
         case "response.file_search_call.searching", "response.file_search_call.in_progress", "response.file_search_call.completed":
             return handleToolCallEvent(event: event, toolType: "file_search")
             
         case "response.code_interpreter_call.interpreting", "response.code_interpreter_call.in_progress", "response.code_interpreter_call.completed":
-            return handleToolCallEvent(event: event, toolType: "code_interpreter")
+            return handleCodeInterpreterToolCallEvent(event: event, codeInterpreterTracker: codeInterpreterTracker)
             
         case "response.web_search_call.searching", "response.web_search_call.in_progress", "response.web_search_call.completed":
             return handleToolCallEvent(event: event, toolType: "web_search")
@@ -339,8 +357,18 @@ public final class SSEParser: Sendable {
     }
     
     /// Handle output item events
-    private static func handleOutputItemEvent(event: AzureOpenAISSEEvent) -> SAOAIStreamingResponse? {
+    private static func handleOutputItemEvent(
+        event: AzureOpenAISSEEvent,
+        codeInterpreterTracker: CodeInterpreterTracker? = nil
+    ) -> SAOAIStreamingResponse? {
         guard let item = event.item else { return nil }
+        
+        // Enhanced tracking for code interpreter items
+        if event.type == "response.output_item.added" && item.type == "code_interpreter_call" {
+            if let itemId = event.itemId {
+                _ = codeInterpreterTracker?.trackContainer(itemId: itemId, item: item)
+            }
+        }
         
         // Create content based on item type
         let content: SAOAIStreamingContent
@@ -349,6 +377,10 @@ public final class SSEParser: Sendable {
         } else if item.type == "reasoning" {
             // Keep reasoning content but without debug text
             content = SAOAIStreamingContent(type: "reasoning", text: "", index: 0)
+        } else if item.type == "code_interpreter_call" {
+            // Enhanced code interpreter status tracking
+            let statusText = event.type == "response.output_item.added" ? "Code interpreter started" : "Code interpreter completed"
+            content = SAOAIStreamingContent(type: "code_interpreter_status", text: statusText, index: 0)
         } else if event.type == "response.output_item.added" || event.type == "response.output_item.done" {
             // For pure status events like added/done, create status content with empty text
             content = SAOAIStreamingContent(type: "status", text: "", index: 0)
@@ -482,6 +514,111 @@ public final class SSEParser: Sendable {
             
             return nil
         }
+    }
+    
+    /// Handle code interpreter delta events with enhanced tracking
+    private static func handleCodeInterpreterDeltaEvent(
+        event: AzureOpenAISSEEvent,
+        codeInterpreterTracker: CodeInterpreterTracker?
+    ) -> SAOAIStreamingResponse? {
+        guard let delta = event.delta, let itemId = event.itemId else { return nil }
+        
+        // Track code delta in container if tracker is available
+        let container = codeInterpreterTracker?.appendCodeDelta(itemId: itemId, code: delta)
+        
+        // Create streaming content with the delta
+        let content = SAOAIStreamingContent(type: "code_interpreter_code", text: delta, index: event.outputIndex ?? 0)
+        let output = SAOAIStreamingOutput(content: [content], role: "assistant")
+        
+        // Convert event type to enum
+        let eventType = SAOAIStreamingEventType(rawValue: event.type)
+        
+        // Convert item if present
+        let item = event.item.map { SAOAIStreamingItem(from: $0) }
+        
+        // Include container info in response if available
+        let response = SAOAIStreamingResponse(
+            id: itemId,
+            model: nil,
+            created: nil,
+            output: [output],
+            usage: nil,
+            eventType: eventType,
+            item: item
+        )
+        
+        // Add container metadata if available (for future extensions)
+        if container != nil {
+            // You could extend SAOAIStreamingResponse to include container info if needed
+            // For now, we'll include it in the content metadata
+        }
+        
+        return response
+    }
+    
+    /// Handle code interpreter done events with enhanced tracking
+    private static func handleCodeInterpreterDoneEvent(
+        event: AzureOpenAISSEEvent,
+        codeInterpreterTracker: CodeInterpreterTracker?
+    ) -> SAOAIStreamingResponse? {
+        guard let itemId = event.itemId else { return nil }
+        
+        // Mark code completion in tracker
+        _ = codeInterpreterTracker?.markCodeComplete(itemId: itemId, finalCode: event.arguments)
+        
+        // For done events, use arguments if available, otherwise use empty text to avoid displaying "[DONE]" to users
+        let finalContent = event.arguments ?? ""
+        
+        let content = SAOAIStreamingContent(type: "code_interpreter_code", text: finalContent, index: event.outputIndex ?? 0)
+        let output = SAOAIStreamingOutput(content: [content], role: "assistant")
+        
+        // Convert event type to enum
+        let eventType = SAOAIStreamingEventType(rawValue: event.type)
+        
+        // Convert item if present
+        let item = event.item.map { SAOAIStreamingItem(from: $0) }
+        
+        return SAOAIStreamingResponse(
+            id: itemId,
+            model: nil,
+            created: nil,
+            output: [output],
+            usage: nil,
+            eventType: eventType,
+            item: item
+        )
+    }
+    
+    /// Handle code interpreter tool call events with enhanced tracking
+    private static func handleCodeInterpreterToolCallEvent(
+        event: AzureOpenAISSEEvent,
+        codeInterpreterTracker: CodeInterpreterTracker?
+    ) -> SAOAIStreamingResponse? {
+        let statusText = event.type.components(separatedBy: ".").last ?? "in_progress"
+        
+        // Enhanced status tracking for code interpreter
+        if let itemId = event.itemId, statusText == "completed" {
+            _ = codeInterpreterTracker?.markCompleted(itemId: itemId)
+        }
+        
+        let content = SAOAIStreamingContent(type: "code_interpreter", text: "Code interpreter: \(statusText)", index: event.outputIndex ?? 0)
+        let output = SAOAIStreamingOutput(content: [content], role: "assistant")
+        
+        // Convert event type to enum
+        let eventType = SAOAIStreamingEventType(rawValue: event.type)
+        
+        // Convert item if present
+        let item = event.item.map { SAOAIStreamingItem(from: $0) }
+        
+        return SAOAIStreamingResponse(
+            id: event.itemId,
+            model: nil,
+            created: nil,
+            output: [output],
+            usage: nil,
+            eventType: eventType,
+            item: item
+        )
     }
     
     /// Check if SSE chunk indicates completion

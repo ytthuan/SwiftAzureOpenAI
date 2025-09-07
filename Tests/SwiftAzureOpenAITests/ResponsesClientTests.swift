@@ -156,4 +156,6 @@ private struct TestableConfiguration: SAOAIConfiguration {
             "Content-Type": "application/json"
         ]
     }
+    
+    var sseLoggerConfiguration: SSELoggerConfiguration { .disabled }
 }
