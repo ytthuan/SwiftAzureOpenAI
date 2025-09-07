@@ -187,12 +187,20 @@ public final class SSEParser: Sendable {
         let content = SAOAIStreamingContent(type: contentType, text: delta, index: event.outputIndex ?? 0)
         let output = SAOAIStreamingOutput(content: [content], role: "assistant")
         
+        // Convert event type to enum
+        let eventType = SAOAIStreamingEventType(rawValue: event.type)
+        
+        // Convert item if present
+        let item = event.item.map { SAOAIStreamingItem(from: $0) }
+        
         return SAOAIStreamingResponse(
             id: event.itemId, // Use item_id for delta events
             model: nil,
             created: nil,
             output: [output],
-            usage: nil
+            usage: nil,
+            eventType: eventType,
+            item: item
         )
     }
     
@@ -204,12 +212,20 @@ public final class SSEParser: Sendable {
         let content = SAOAIStreamingContent(type: contentType, text: finalContent, index: event.outputIndex ?? 0)
         let output = SAOAIStreamingOutput(content: [content], role: "assistant")
         
+        // Convert event type to enum
+        let eventType = SAOAIStreamingEventType(rawValue: event.type)
+        
+        // Convert item if present
+        let item = event.item.map { SAOAIStreamingItem(from: $0) }
+        
         return SAOAIStreamingResponse(
             id: event.itemId,
             model: nil,
             created: nil,
             output: [output],
-            usage: nil
+            usage: nil,
+            eventType: eventType,
+            item: item
         )
     }
     
@@ -219,12 +235,20 @@ public final class SSEParser: Sendable {
         
         let streamingOutput = convertAzureOutputToStreamingOutput(response.output)
         
+        // Convert event type to enum
+        let eventType = SAOAIStreamingEventType(rawValue: event.type)
+        
+        // Convert item if present
+        let item = event.item.map { SAOAIStreamingItem(from: $0) }
+        
         return SAOAIStreamingResponse(
             id: response.id,
             model: response.model,
             created: response.createdAt,
             output: streamingOutput,
-            usage: response.usage
+            usage: response.usage,
+            eventType: eventType,
+            item: item
         )
     }
     
@@ -251,12 +275,20 @@ public final class SSEParser: Sendable {
         let content = SAOAIStreamingContent(type: "status", text: "Response queued", index: 0)
         let output = SAOAIStreamingOutput(content: [content], role: "assistant")
         
+        // Convert event type to enum
+        let eventType = SAOAIStreamingEventType(rawValue: event.type)
+        
+        // Convert item if present
+        let item = event.item.map { SAOAIStreamingItem(from: $0) }
+        
         return SAOAIStreamingResponse(
             id: response.id,
             model: response.model,
             created: response.createdAt,
             output: [output],
-            usage: response.usage
+            usage: response.usage,
+            eventType: eventType,
+            item: item
         )
     }
     
@@ -266,12 +298,20 @@ public final class SSEParser: Sendable {
         let content = SAOAIStreamingContent(type: "status", text: "", index: event.outputIndex ?? 0)
         let output = SAOAIStreamingOutput(content: [content], role: "assistant")
         
+        // Convert event type to enum
+        let eventType = SAOAIStreamingEventType(rawValue: event.type)
+        
+        // Convert item if present
+        let item = event.item.map { SAOAIStreamingItem(from: $0) }
+        
         return SAOAIStreamingResponse(
             id: event.itemId,
             model: nil,
             created: nil,
             output: [output],
-            usage: nil
+            usage: nil,
+            eventType: eventType,
+            item: item
         )
     }
     
@@ -281,12 +321,20 @@ public final class SSEParser: Sendable {
         let content = SAOAIStreamingContent(type: "status", text: "", index: event.outputIndex ?? 0)
         let output = SAOAIStreamingOutput(content: [content], role: "assistant")
         
+        // Convert event type to enum
+        let eventType = SAOAIStreamingEventType(rawValue: event.type)
+        
+        // Convert item if present
+        let item = event.item.map { SAOAIStreamingItem(from: $0) }
+        
         return SAOAIStreamingResponse(
             id: event.itemId,
             model: nil,
             created: nil,
             output: [output],
-            usage: nil
+            usage: nil,
+            eventType: eventType,
+            item: item
         )
     }
     
@@ -311,12 +359,20 @@ public final class SSEParser: Sendable {
         
         let output = SAOAIStreamingOutput(content: [content], role: "assistant")
         
+        // Convert event type to enum
+        let eventType = SAOAIStreamingEventType(rawValue: event.type)
+        
+        // Convert item
+        let streamingItem = SAOAIStreamingItem(from: item)
+        
         return SAOAIStreamingResponse(
             id: item.id,
             model: nil,
             created: nil,
             output: [output],
-            usage: nil
+            usage: nil,
+            eventType: eventType,
+            item: streamingItem
         )
     }
     
@@ -326,12 +382,20 @@ public final class SSEParser: Sendable {
         let content = SAOAIStreamingContent(type: toolType, text: "\(toolType.capitalized): \(statusText)", index: event.outputIndex ?? 0)
         let output = SAOAIStreamingOutput(content: [content], role: "assistant")
         
+        // Convert event type to enum
+        let eventType = SAOAIStreamingEventType(rawValue: event.type)
+        
+        // Convert item if present
+        let item = event.item.map { SAOAIStreamingItem(from: $0) }
+        
         return SAOAIStreamingResponse(
             id: event.itemId,
             model: nil,
             created: nil,
             output: [output],
-            usage: nil
+            usage: nil,
+            eventType: eventType,
+            item: item
         )
     }
     
@@ -340,12 +404,20 @@ public final class SSEParser: Sendable {
         let content = SAOAIStreamingContent(type: "annotation", text: "Text annotation added", index: event.outputIndex ?? 0)
         let output = SAOAIStreamingOutput(content: [content], role: "assistant")
         
+        // Convert event type to enum
+        let eventType = SAOAIStreamingEventType(rawValue: event.type)
+        
+        // Convert item if present
+        let item = event.item.map { SAOAIStreamingItem(from: $0) }
+        
         return SAOAIStreamingResponse(
             id: event.itemId,
             model: nil,
             created: nil,
             output: [output],
-            usage: nil
+            usage: nil,
+            eventType: eventType,
+            item: item
         )
     }
     
@@ -370,12 +442,20 @@ public final class SSEParser: Sendable {
         let content = SAOAIStreamingContent(type: "error", text: "Error occurred", index: 0)
         let output = SAOAIStreamingOutput(content: [content], role: "assistant")
         
+        // Convert event type to enum
+        let eventType = SAOAIStreamingEventType(rawValue: event.type)
+        
+        // Convert item if present
+        let item = event.item.map { SAOAIStreamingItem(from: $0) }
+        
         return SAOAIStreamingResponse(
             id: event.itemId,
             model: nil,
             created: nil,
             output: [output],
-            usage: nil
+            usage: nil,
+            eventType: eventType,
+            item: item
         )
     }
     
