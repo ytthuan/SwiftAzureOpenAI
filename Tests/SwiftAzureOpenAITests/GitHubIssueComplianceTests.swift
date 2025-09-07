@@ -133,9 +133,9 @@ final class GitHubIssueComplianceTests: XCTestCase {
         // )
         
         let config = SAOAIAzureConfiguration(
-            endpoint: "https://test.openai.azure.com",
-            apiKey: "test-key",
-            deploymentName: "gpt-4o"
+            endpoint: TestEnvironmentHelper.azureEndpoint,
+            apiKey: TestEnvironmentHelper.azureAPIKey,
+            deploymentName: TestEnvironmentHelper.azureDeployment
         )
         let client = SAOAIClient(configuration: config)
         
@@ -205,9 +205,9 @@ final class GitHubIssueComplianceTests: XCTestCase {
         // This test demonstrates the complete workflow described in the GitHub issue
         
         let config = SAOAIAzureConfiguration(
-            endpoint: "https://test.openai.azure.com",
-            apiKey: "test-key",
-            deploymentName: "gpt-4o"
+            endpoint: TestEnvironmentHelper.azureEndpoint,
+            apiKey: TestEnvironmentHelper.azureAPIKey,
+            deploymentName: TestEnvironmentHelper.azureDeployment
         )
         let client = SAOAIClient(configuration: config)
         
