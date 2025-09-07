@@ -9,12 +9,7 @@ final class AdvancedConsoleChatbotToolFixTests: XCTestCase {
         // This test verifies that when the AdvancedConsoleChatbot processes tool-based requests,
         // it uses the non-streaming API which properly handles function calls
         
-        let mockConfig = SAOAIAzureConfiguration(
-            endpoint: "https://test.openai.azure.com",
-            apiKey: "test-key",
-            deploymentName: "gpt-4o",
-            apiVersion: "preview"
-        )
+        let mockConfig = TestEnvironmentHelper.createStandardAzureConfiguration()
         
         let client = SAOAIClient(configuration: mockConfig)
         
@@ -47,8 +42,7 @@ final class AdvancedConsoleChatbotToolFixTests: XCTestCase {
                     model: mockConfig.deploymentName,
                     input: [systemMessage, userMessage],
                     tools: [calculatorTool],
-                    previousResponseId: nil
-                )
+                    previousResponseId: nil)
             }
         }())
         
@@ -60,12 +54,7 @@ final class AdvancedConsoleChatbotToolFixTests: XCTestCase {
         // This test verifies that regular text responses (without tools) still use streaming API
         // to maintain the "advanced" real-time experience
         
-        let mockConfig = SAOAIAzureConfiguration(
-            endpoint: "https://test.openai.azure.com",
-            apiKey: "test-key",
-            deploymentName: "gpt-4o",
-            apiVersion: "preview"
-        )
+        let mockConfig = TestEnvironmentHelper.createStandardAzureConfiguration()
         
         let client = SAOAIClient(configuration: mockConfig)
         
@@ -76,8 +65,7 @@ final class AdvancedConsoleChatbotToolFixTests: XCTestCase {
         let streamingCall = client.responses.createStreaming(
             model: mockConfig.deploymentName,
             input: [systemMessage, userMessage],
-            previousResponseId: nil
-        )
+            previousResponseId: nil)
         
         XCTAssertNotNil(streamingCall)
         
@@ -124,12 +112,7 @@ final class AdvancedConsoleChatbotToolFixTests: XCTestCase {
         // This test validates that the fixed AdvancedConsoleChatbot pattern 
         // now matches the working ConsoleChatbot pattern
         
-        let mockConfig = SAOAIAzureConfiguration(
-            endpoint: "https://test.openai.azure.com",
-            apiKey: "test-key",
-            deploymentName: "gpt-4o",
-            apiVersion: "preview"
-        )
+        let mockConfig = TestEnvironmentHelper.createStandardAzureConfiguration()
         
         let client = SAOAIClient(configuration: mockConfig)
         
@@ -158,8 +141,7 @@ final class AdvancedConsoleChatbotToolFixTests: XCTestCase {
                     model: mockConfig.deploymentName,
                     input: [systemMessage, userMessage],
                     tools: [calculatorTool],
-                    previousResponseId: nil
-                )
+                    previousResponseId: nil)
             }
         }())
         
@@ -170,8 +152,7 @@ final class AdvancedConsoleChatbotToolFixTests: XCTestCase {
                     model: mockConfig.deploymentName,
                     input: [userMessage],
                     tools: [calculatorTool],
-                    previousResponseId: "some-response-id"
-                )
+                    previousResponseId: "some-response-id")
             }
         }())
         

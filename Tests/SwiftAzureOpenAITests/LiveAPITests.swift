@@ -8,7 +8,7 @@ import FoundationNetworking
 /// Live API tests using pure URLSession to verify streaming and non-streaming functionality
 /// These tests require environment variables to be set:
 /// - AZURE_OPENAI_ENDPOINT: Azure OpenAI endpoint URL
-/// - AZURE_OPENAI_API_KEY or COPILOT_AGENT_AZURE_OPENAI_API_KEY: Azure OpenAI API key (should be set as secret)
+/// - COPILOT_AGENT_AZURE_OPENAI_API_KEY or AZURE_OPENAI_API_KEY: Azure OpenAI API key (should be set as secret)
 /// - AZURE_OPENAI_DEPLOYMENT: Azure OpenAI deployment name
 final class LiveAPITests: XCTestCase {
     
@@ -19,7 +19,7 @@ final class LiveAPITests: XCTestCase {
     }
     
     private var azureAPIKey: String? {
-        ProcessInfo.processInfo.environment["AZURE_OPENAI_API_KEY"] ?? ProcessInfo.processInfo.environment["COPILOT_AGENT_AZURE_OPENAI_API_KEY"]
+        ProcessInfo.processInfo.environment["COPILOT_AGENT_AZURE_OPENAI_API_KEY"] ?? ProcessInfo.processInfo.environment["AZURE_OPENAI_API_KEY"]
     }
     
     private var azureDeployment: String? {
@@ -40,7 +40,7 @@ final class LiveAPITests: XCTestCase {
     
     func testCallAPIWithURLSessionNonStreaming() async throws {
         guard hasAzureCredentials else {
-            throw XCTSkip("Azure OpenAI credentials not available. Set AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_API_KEY (or COPILOT_AGENT_AZURE_OPENAI_API_KEY), and AZURE_OPENAI_DEPLOYMENT environment variables.")
+            throw XCTSkip("Azure OpenAI credentials not available. Set AZURE_OPENAI_ENDPOINT, COPILOT_AGENT_AZURE_OPENAI_API_KEY (or AZURE_OPENAI_API_KEY), and AZURE_OPENAI_DEPLOYMENT environment variables.")
         }
         
         guard let endpoint = azureEndpoint,
@@ -172,7 +172,7 @@ final class LiveAPITests: XCTestCase {
     
     func testCallAPIWithURLSessionStreaming() async throws {
         guard hasAzureCredentials else {
-            throw XCTSkip("Azure OpenAI credentials not available. Set AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_API_KEY (or COPILOT_AGENT_AZURE_OPENAI_API_KEY), and AZURE_OPENAI_DEPLOYMENT environment variables.")
+            throw XCTSkip("Azure OpenAI credentials not available. Set AZURE_OPENAI_ENDPOINT, COPILOT_AGENT_AZURE_OPENAI_API_KEY (or AZURE_OPENAI_API_KEY), and AZURE_OPENAI_DEPLOYMENT environment variables.")
         }
         
         guard let endpoint = azureEndpoint,
@@ -267,7 +267,7 @@ final class LiveAPITests: XCTestCase {
     
     func testAPIErrorHandling() async throws {
         guard hasAzureCredentials else {
-            throw XCTSkip("Azure OpenAI credentials not available. Set AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_API_KEY (or COPILOT_AGENT_AZURE_OPENAI_API_KEY), and AZURE_OPENAI_DEPLOYMENT environment variables.")
+            throw XCTSkip("Azure OpenAI credentials not available. Set AZURE_OPENAI_ENDPOINT, COPILOT_AGENT_AZURE_OPENAI_API_KEY (or AZURE_OPENAI_API_KEY), and AZURE_OPENAI_DEPLOYMENT environment variables.")
         }
         
         guard let endpoint = azureEndpoint,
@@ -336,7 +336,7 @@ final class LiveAPITests: XCTestCase {
     
     func testDebugRequestStructure() async throws {
         guard hasAzureCredentials else {
-            throw XCTSkip("Azure OpenAI credentials not available. Set AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_API_KEY (or COPILOT_AGENT_AZURE_OPENAI_API_KEY), and AZURE_OPENAI_DEPLOYMENT environment variables.")
+            throw XCTSkip("Azure OpenAI credentials not available. Set AZURE_OPENAI_ENDPOINT, COPILOT_AGENT_AZURE_OPENAI_API_KEY (or AZURE_OPENAI_API_KEY), and AZURE_OPENAI_DEPLOYMENT environment variables.")
         }
         
         guard let endpoint = azureEndpoint,

@@ -275,12 +275,7 @@ data: [DONE]
     
     /// Test end-to-end streaming flow that AdvancedConsoleChatbot would use
     func testEndToEndStreamingFlow() async throws {
-        let config = SAOAIAzureConfiguration(
-            endpoint: "https://test.openai.azure.com",
-            apiKey: "test-key",
-            deploymentName: "gpt-4o",
-            apiVersion: "preview"
-        )
+        let config = TestEnvironmentHelper.createStandardAzureConfiguration()
         
         let client = SAOAIClient(configuration: config)
         
@@ -314,12 +309,7 @@ data: [DONE]
     
     /// Test that streaming works with tools as AdvancedConsoleChatbot uses
     func testStreamingWithToolsFlow() async throws {
-        let config = SAOAIAzureConfiguration(
-            endpoint: "https://test.openai.azure.com",
-            apiKey: "test-key",
-            deploymentName: "gpt-4o",
-            apiVersion: "preview"
-        )
+        let config = TestEnvironmentHelper.createStandardAzureConfiguration()
         
         let client = SAOAIClient(configuration: config)
         

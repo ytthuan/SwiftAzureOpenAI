@@ -15,11 +15,7 @@ final class SwiftAzureOpenAITests: XCTestCase {
     }
     
     func testInitializationWithCache() {
-        let config = SAOAIAzureConfiguration(
-            endpoint: "https://test.openai.azure.com",
-            apiKey: "test-key",
-            deploymentName: "gpt-4o-mini"
-        )
+        let config = TestEnvironmentHelper.createStandardAzureConfiguration()
         let cache = InMemoryResponseCache()
         let client = SAOAIClient(configuration: config, cache: cache)
         

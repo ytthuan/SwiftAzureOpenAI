@@ -9,20 +9,18 @@ final class EdgeCaseTests: XCTestCase {
     // MARK: - Configuration Edge Cases
     
     func testAzureConfigurationWithInvalidEndpoint() {
-        // Should not crash with malformed endpoint
-        let config = SAOAIAzureConfiguration(
-            endpoint: "not-a-valid-url",
-            apiKey: "test-key",
-            deploymentName: "gpt-4o-mini"
+        // Should not crash with malformed endpoint - using environment variable base
+        let config = TestEnvironmentHelper.createAzureConfiguration(
+            endpoint: "not-a-valid-url"
         )
         
         // Should still create configuration object
         XCTAssertNotNil(config)
-        XCTAssertEqual(config.headers["api-key"], "test-key")
+        XCTAssertEqual(config.headers["api-key"], TestEnvironmentHelper.azureAPIKey)
     }
     
     func testAzureConfigurationWithEmptyValues() {
-        let config = SAOAIAzureConfiguration(
+        let config = TestEnvironmentHelper.createAzureConfiguration(
             endpoint: "",
             apiKey: "",
             deploymentName: ""

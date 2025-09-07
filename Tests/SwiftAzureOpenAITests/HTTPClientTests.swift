@@ -20,11 +20,7 @@ final class HTTPClientTests: XCTestCase {
     }
     
     func testHTTPClientInitialization() {
-        let config = SAOAIAzureConfiguration(
-            endpoint: "https://test.openai.azure.com",
-            apiKey: "test-key",
-            deploymentName: "gpt-4o-mini"
-        )
+        let config = TestEnvironmentHelper.createStandardAzureConfiguration()
         let client = HTTPClient(configuration: config)
         
         // Should initialize without throwing
@@ -102,13 +98,8 @@ final class HTTPClientTests: XCTestCase {
         let openAIClient = HTTPClient(configuration: openAIConfig)
         XCTAssertNotNil(openAIClient)
         
-        // Test with Azure configuration  
-        let azureConfig = SAOAIAzureConfiguration(
-            endpoint: "https://myresource.openai.azure.com",
-            apiKey: "azure-key",
-            deploymentName: "gpt-4o-mini",
-            apiVersion: "2024-02-01"
-        )
+        // Test with Azure configuration using environment variables
+        let azureConfig = TestEnvironmentHelper.createStandardAzureConfiguration()
         let azureClient = HTTPClient(configuration: azureConfig)
         XCTAssertNotNil(azureClient)
     }
@@ -129,7 +120,7 @@ final class HTTPClientTests: XCTestCase {
         // Test with various URL formats
         let urls = [
             "https://api.openai.com/v1/responses",
-            "https://myresource.openai.azure.com/openai/v1/responses?api-version=preview",
+            "https://test.openai.azure.com/openai/v1/responses?api-version=preview",
             "http://localhost:8080/test",
             "https://api.example.com/path/with/multiple/segments"
         ]

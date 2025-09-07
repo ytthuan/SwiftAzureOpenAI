@@ -9,12 +9,7 @@ final class AdvancedConsoleChatbotStreamingTests: XCTestCase {
         // This test demonstrates the issue pattern that causes "Bad Request"
         // when streaming is called with empty conversation history
         
-        let mockConfig = SAOAIAzureConfiguration(
-            endpoint: "https://test.openai.azure.com",
-            apiKey: "test-key",
-            deploymentName: "gpt-4o",
-            apiVersion: "preview"
-        )
+        let mockConfig = TestEnvironmentHelper.createStandardAzureConfiguration()
         
         let client = SAOAIClient(configuration: mockConfig)
         
@@ -25,8 +20,7 @@ final class AdvancedConsoleChatbotStreamingTests: XCTestCase {
         let streamingCall = client.responses.createStreaming(
             model: mockConfig.deploymentName,
             input: emptyMessages,  // Empty array - this is the problem!
-            previousResponseId: nil
-        )
+            previousResponseId: nil)
         
         // The call should be created without throwing, but will fail when executed
         // because Azure OpenAI requires at least one message in the conversation
@@ -35,12 +29,7 @@ final class AdvancedConsoleChatbotStreamingTests: XCTestCase {
     
     /// Test that demonstrates the working pattern used by ConsoleChatbot
     func testNonStreamingWithSystemMessageWorks() {
-        let mockConfig = SAOAIAzureConfiguration(
-            endpoint: "https://test.openai.azure.com",
-            apiKey: "test-key",
-            deploymentName: "gpt-4o",
-            apiVersion: "preview"
-        )
+        let mockConfig = TestEnvironmentHelper.createStandardAzureConfiguration()
         
         let client = SAOAIClient(configuration: mockConfig)
         
@@ -62,12 +51,7 @@ final class AdvancedConsoleChatbotStreamingTests: XCTestCase {
     
     /// Test the corrected streaming pattern that should work
     func testStreamingWithSystemMessageShouldWork() {
-        let mockConfig = SAOAIAzureConfiguration(
-            endpoint: "https://test.openai.azure.com",
-            apiKey: "test-key",
-            deploymentName: "gpt-4o",
-            apiVersion: "preview"
-        )
+        let mockConfig = TestEnvironmentHelper.createStandardAzureConfiguration()
         
         let client = SAOAIClient(configuration: mockConfig)
         
@@ -78,20 +62,14 @@ final class AdvancedConsoleChatbotStreamingTests: XCTestCase {
         let correctedStream = client.responses.createStreaming(
             model: mockConfig.deploymentName,
             input: [systemMessage, userMessage],  // Include system message!
-            previousResponseId: nil
-        )
+            previousResponseId: nil)
         
         XCTAssertNotNil(correctedStream)
     }
     
     /// Test that verifies the pattern with tools also includes system message
     func testStreamingWithToolsAndSystemMessage() {
-        let mockConfig = SAOAIAzureConfiguration(
-            endpoint: "https://test.openai.azure.com",
-            apiKey: "test-key",
-            deploymentName: "gpt-4o",
-            apiVersion: "preview"
-        )
+        let mockConfig = TestEnvironmentHelper.createStandardAzureConfiguration()
         
         let client = SAOAIClient(configuration: mockConfig)
         
@@ -108,20 +86,14 @@ final class AdvancedConsoleChatbotStreamingTests: XCTestCase {
             model: mockConfig.deploymentName,
             input: [systemMessage, userMessage],  // Include system message!
             tools: [weatherTool],
-            previousResponseId: nil
-        )
+            previousResponseId: nil)
         
         XCTAssertNotNil(correctedStreamWithTools)
     }
     
     /// Test that simulates the AdvancedConsoleChatbot conversation flow pattern
     func testAdvancedConsoleChatbotConversationPattern() {
-        let mockConfig = SAOAIAzureConfiguration(
-            endpoint: "https://test.openai.azure.com",
-            apiKey: "test-key",
-            deploymentName: "gpt-4o",
-            apiVersion: "preview"
-        )
+        let mockConfig = TestEnvironmentHelper.createStandardAzureConfiguration()
         
         let client = SAOAIClient(configuration: mockConfig)
         
@@ -138,8 +110,7 @@ final class AdvancedConsoleChatbotStreamingTests: XCTestCase {
         let firstStream = client.responses.createStreaming(
             model: mockConfig.deploymentName,
             input: firstCallMessages,
-            previousResponseId: nil
-        )
+            previousResponseId: nil)
         
         XCTAssertNotNil(firstStream)
         
@@ -151,20 +122,14 @@ final class AdvancedConsoleChatbotStreamingTests: XCTestCase {
         let subsequentStream = client.responses.createStreaming(
             model: mockConfig.deploymentName,
             input: updatedConversationMessages,
-            previousResponseId: "some-response-id"
-        )
+            previousResponseId: "some-response-id")
         
         XCTAssertNotNil(subsequentStream)
     }
     
     /// Test that simulates the AdvancedConsoleChatbot tool-based conversation pattern
     func testAdvancedConsoleChatbotToolBasedPattern() {
-        let mockConfig = SAOAIAzureConfiguration(
-            endpoint: "https://test.openai.azure.com",
-            apiKey: "test-key",
-            deploymentName: "gpt-4o",
-            apiVersion: "preview"
-        )
+        let mockConfig = TestEnvironmentHelper.createStandardAzureConfiguration()
         
         let client = SAOAIClient(configuration: mockConfig)
         
@@ -188,8 +153,7 @@ final class AdvancedConsoleChatbotStreamingTests: XCTestCase {
             model: mockConfig.deploymentName,
             input: firstCallMessages,
             tools: [weatherTool],
-            previousResponseId: nil
-        )
+            previousResponseId: nil)
         
         XCTAssertNotNil(firstToolStream)
         
@@ -205,20 +169,14 @@ final class AdvancedConsoleChatbotStreamingTests: XCTestCase {
         let followUpStream = client.responses.createStreaming(
             model: mockConfig.deploymentName,
             input: firstCallMessages + [toolResultMessage],
-            previousResponseId: "some-response-id"
-        )
+            previousResponseId: "some-response-id")
         
         XCTAssertNotNil(followUpStream)
     }
     
     /// Test that validates the exact fix for AdvancedConsoleChatbot streaming pattern
     func testFixedAdvancedConsoleChatbotStreamingPattern() {
-        let mockConfig = SAOAIAzureConfiguration(
-            endpoint: "https://test.openai.azure.com",
-            apiKey: "test-key",
-            deploymentName: "gpt-4o",
-            apiVersion: "preview"
-        )
+        let mockConfig = TestEnvironmentHelper.createStandardAzureConfiguration()
         
         let client = SAOAIClient(configuration: mockConfig)
         
@@ -232,8 +190,7 @@ final class AdvancedConsoleChatbotStreamingTests: XCTestCase {
         let firstStream = client.responses.createStreaming(
             model: mockConfig.deploymentName,
             input: [systemMessage, firstUserMessage],  // FIXED: Not using conversation history
-            previousResponseId: nil
-        )
+            previousResponseId: nil)
         
         XCTAssertNotNil(firstStream)
         
@@ -260,8 +217,7 @@ final class AdvancedConsoleChatbotStreamingTests: XCTestCase {
             model: mockConfig.deploymentName,
             input: [systemMessage, toolUserMessage],  // FIXED: Not using conversation history
             tools: [weatherTool],
-            previousResponseId: nil
-        )
+            previousResponseId: nil)
         
         XCTAssertNotNil(firstToolStream)
         

@@ -13,7 +13,8 @@ Set the following environment variables before running live API tests:
 export AZURE_OPENAI_ENDPOINT="https://your-resource.openai.azure.com"
 
 # Required: Azure OpenAI API key (should be kept secret)
-export AZURE_OPENAI_API_KEY="your-azure-api-key"
+export COPILOT_AGENT_AZURE_OPENAI_API_KEY="your-azure-api-key"
+# Alternative: export AZURE_OPENAI_API_KEY="your-azure-api-key"
 
 # Required: Azure OpenAI deployment name
 export AZURE_OPENAI_DEPLOYMENT="your-deployment-name"
@@ -33,7 +34,7 @@ Your Azure OpenAI deployment should:
 ```bash
 # Set environment variables first
 export AZURE_OPENAI_ENDPOINT="https://your-resource.openai.azure.com"
-export AZURE_OPENAI_API_KEY="your-azure-api-key"
+export COPILOT_AGENT_AZURE_OPENAI_API_KEY="your-azure-api-key"
 export AZURE_OPENAI_DEPLOYMENT="gpt-4o"
 
 # Run all live API tests

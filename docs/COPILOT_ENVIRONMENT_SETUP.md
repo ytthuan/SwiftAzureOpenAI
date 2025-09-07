@@ -33,14 +33,16 @@ To enable live Azure OpenAI API testing in the Copilot environment, you can conf
 - `AZURE_OPENAI_DEPLOYMENT` - Your Azure OpenAI deployment name (e.g., `gpt-4o`)
 
 #### Environment Secrets (Private)
-- `AZURE_OPENAI_API_KEY` - Your Azure OpenAI API key (keep this secret!)
+- `COPILOT_AGENT_AZURE_OPENAI_API_KEY` - Your Azure OpenAI API key (primary, keep this secret!)
+- `AZURE_OPENAI_API_KEY` - Alternative Azure OpenAI API key (fallback, keep this secret!)
 
 ### Environment Variable Configuration Example
 
 ```bash
 # Example values (replace with your actual values)
 AZURE_OPENAI_ENDPOINT="https://your-resource.openai.azure.com"
-AZURE_OPENAI_API_KEY="your-azure-api-key"  # Store as secret
+COPILOT_AGENT_AZURE_OPENAI_API_KEY="your-azure-api-key"  # Store as secret (primary)
+AZURE_OPENAI_API_KEY="your-azure-api-key"  # Store as secret (fallback)
 AZURE_OPENAI_DEPLOYMENT="gpt-4o"
 ```
 

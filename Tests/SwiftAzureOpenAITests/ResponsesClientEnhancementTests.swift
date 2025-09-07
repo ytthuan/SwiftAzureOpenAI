@@ -7,11 +7,7 @@ final class ResponsesClientEnhancementTests: XCTestCase {
     
     override func setUp() {
         super.setUp()
-        let config = SAOAIAzureConfiguration(
-            endpoint: "https://test.openai.azure.com",
-            apiKey: "test-key",
-            deploymentName: "test-model"
-        )
+        let config = TestEnvironmentHelper.createStandardAzureConfiguration()
         mockClient = SAOAIClient(configuration: config)
     }
     

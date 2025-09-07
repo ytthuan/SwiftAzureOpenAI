@@ -27,9 +27,11 @@ import FoundationNetworking
  * Usage:
  * Set environment variables and run:
  * export AZURE_OPENAI_ENDPOINT="https://your-resource.openai.azure.com"
- * export AZURE_OPENAI_API_KEY="your-api-key"
+ * export COPILOT_AGENT_AZURE_OPENAI_API_KEY="your-api-key"
  * export AZURE_OPENAI_DEPLOYMENT="your-deployment-name"
  * swift RawApiTesting.swift
+ * 
+ * Alternative: You can also use AZURE_OPENAI_API_KEY instead of COPILOT_AGENT_AZURE_OPENAI_API_KEY
  */
 
 // MARK: - Environment Configuration
@@ -42,8 +44,8 @@ struct EnvironmentConfig {
     static func fromEnvironment() -> EnvironmentConfig? {
         guard let endpoint = ProcessInfo.processInfo.environment["AZURE_OPENAI_ENDPOINT"]?.trimmingCharacters(in: .whitespacesAndNewlines),
               !endpoint.isEmpty,
-              let apiKey = (ProcessInfo.processInfo.environment["AZURE_OPENAI_API_KEY"] ?? 
-                           ProcessInfo.processInfo.environment["COPILOT_AGENT_AZURE_OPENAI_API_KEY"])?.trimmingCharacters(in: .whitespacesAndNewlines),
+              let apiKey = (ProcessInfo.processInfo.environment["COPILOT_AGENT_AZURE_OPENAI_API_KEY"] ?? 
+                           ProcessInfo.processInfo.environment["AZURE_OPENAI_API_KEY"])?.trimmingCharacters(in: .whitespacesAndNewlines),
               !apiKey.isEmpty,
               let deployment = ProcessInfo.processInfo.environment["AZURE_OPENAI_DEPLOYMENT"]?.trimmingCharacters(in: .whitespacesAndNewlines),
               !deployment.isEmpty else {
@@ -454,10 +456,10 @@ func liveAPItest() async {
         print("❌ Missing required environment variables!")
         print("Please set the following environment variables:")
         print("   AZURE_OPENAI_ENDPOINT=\"https://your-resource.openai.azure.com\"")
-        print("   AZURE_OPENAI_API_KEY=\"your-api-key\"")
+        print("   COPILOT_AGENT_AZURE_OPENAI_API_KEY=\"your-api-key\"")
         print("   AZURE_OPENAI_DEPLOYMENT=\"your-deployment-name\"")
         print("")
-        print("Optional: You can also use COPILOT_AGENT_AZURE_OPENAI_API_KEY instead of AZURE_OPENAI_API_KEY")
+        print("Optional: You can also use AZURE_OPENAI_API_KEY instead of COPILOT_AGENT_AZURE_OPENAI_API_KEY")
         return
     }
     
