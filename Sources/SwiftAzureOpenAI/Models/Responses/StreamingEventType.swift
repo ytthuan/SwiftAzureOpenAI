@@ -13,6 +13,7 @@ public enum SAOAIStreamingEventType: String, CaseIterable, Codable, Sendable {
     case responseOutputItemAdded = "response.output_item.added"
     case responseOutputItemInProgress = "response.output_item.in_progress"
     case responseOutputItemCompleted = "response.output_item.completed"
+    case responseOutputItemDone = "response.output_item.done"
     
     // MARK: - Content Part Events
     case responseContentPartAdded = "response.content_part.added"

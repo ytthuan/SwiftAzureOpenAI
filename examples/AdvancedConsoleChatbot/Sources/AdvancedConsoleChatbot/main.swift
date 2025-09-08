@@ -673,7 +673,7 @@ class AdvancedConsoleChatbot {
         case .responseFunctionCallArgumentsDone:
             await handleFunctionCallArgumentsDone(chunk: chunk)
             
-        case .responseOutputItemCompleted:
+        case .responseOutputItemCompleted, .responseOutputItemDone:
             await handleOutputItemDone(chunk: chunk, outputsForModel: &outputsForModel, assistantMessageCompleted: &assistantMessageCompleted)
             
         case .responseCompleted:

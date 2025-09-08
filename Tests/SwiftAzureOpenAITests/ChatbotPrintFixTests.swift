@@ -62,7 +62,7 @@ final class ChatbotPrintFixTests: XCTestCase {
         print("✅ Reasoning events preserve their type but have empty text")
     }
     
-    /// Test that function call events still work properly
+    /// Test that function call events don't create unwanted text output
     func testFunctionCallEventsStillWork() throws {
         let functionCallData = """
         event: response.output_item.added
@@ -72,10 +72,10 @@ final class ChatbotPrintFixTests: XCTestCase {
         
         let functionCallResponse = try SSEParser.parseSSEChunk(functionCallData)
         XCTAssertNotNil(functionCallResponse, "Function call item should be parsed")
-        XCTAssertEqual(functionCallResponse?.output?.first?.content?.first?.text, "Function call: get_weather", "Function call should have descriptive text")
-        XCTAssertEqual(functionCallResponse?.output?.first?.content?.first?.type, "function_call", "Function call type should be preserved")
+        XCTAssertEqual(functionCallResponse?.output?.first?.content?.first?.text, "", "Function call should not create text output to prevent unwanted printing")
+        XCTAssertEqual(functionCallResponse?.output?.first?.content?.first?.type, "status", "Function call type should be status to prevent text display")
         
-        print("✅ Function call events still work with descriptive text")
+        print("✅ Function call events don't create unwanted text output")
     }
     
     /// Test that delta events still work properly

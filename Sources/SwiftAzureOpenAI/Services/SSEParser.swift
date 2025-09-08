@@ -372,8 +372,9 @@ public final class SSEParser: Sendable {
         
         // Create content based on item type
         let content: SAOAIStreamingContent
-        if item.type == "function_call", let name = item.name {
-            content = SAOAIStreamingContent(type: "function_call", text: "Function call: \(name)", index: 0)
+        if item.type == "function_call" {
+            // For function call items, don't create text content as this should be handled by event processing
+            content = SAOAIStreamingContent(type: "status", text: "", index: 0)
         } else if item.type == "reasoning" {
             // Keep reasoning content but without debug text
             content = SAOAIStreamingContent(type: "reasoning", text: "", index: 0)
