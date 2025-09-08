@@ -81,12 +81,33 @@ class ConsoleMessage {
 /// - Tool result processing and display
 
 // MARK: - Configuration
-let azureConfig = SAOAIAzureConfiguration(
-    endpoint: ProcessInfo.processInfo.environment["AZURE_OPENAI_ENDPOINT"] ?? "https://your-resource.openai.azure.com",
-    apiKey: ProcessInfo.processInfo.environment["AZURE_OPENAI_API_KEY"] ?? ProcessInfo.processInfo.environment["COPILOT_AGENT_AZURE_OPENAI_API_KEY"] ?? "your-api-key",
-    deploymentName: ProcessInfo.processInfo.environment["AZURE_OPENAI_DEPLOYMENT"] ?? "gpt-4o",
-    apiVersion: "preview"
-)
+let azureConfig: SAOAIAzureConfiguration = {
+    // Default config
+    let endpoint = ProcessInfo.processInfo.environment["AZURE_OPENAI_ENDPOINT"] ?? "https://your-resource.openai.azure.com"
+    let apiKey = ProcessInfo.processInfo.environment["AZURE_OPENAI_API_KEY"] ?? ProcessInfo.processInfo.environment["COPILOT_AGENT_AZURE_OPENAI_API_KEY"] ?? "your-api-key"
+    let deployment = ProcessInfo.processInfo.environment["AZURE_OPENAI_DEPLOYMENT"] ?? "gpt-4o"
+    let apiVersion = "preview"
+    
+    // Build log path next to this main.swift for consistency
+    let mainFileURL = URL(fileURLWithPath: #filePath)
+    let logDirectoryURL = mainFileURL.deletingLastPathComponent()
+    let logPath = logDirectoryURL.appendingPathComponent("sse_events.log").path
+    
+    // Enable SSE logger via configuration so core pipeline logs events
+    let sseConfig = SSELoggerConfiguration.enabled(
+        logFilePath: logPath,
+        includeTimestamp: true,
+        includeSequenceNumber: true
+    )
+    
+    return SAOAIAzureConfiguration(
+        endpoint: endpoint,
+        apiKey: apiKey,
+        deploymentName: deployment,
+        apiVersion: apiVersion,
+        sseLoggerConfiguration: sseConfig
+    )
+}()
 
 let client = SAOAIClient(configuration: azureConfig)
 
@@ -267,6 +288,7 @@ class AdvancedChatHistory {
     }
     
     func addToolCall(callId: String, function: String, result: String) {
+        // only need for function calls, not for code interpreter
         toolCalls.append((callId: callId, function: function, result: result))
     }
     
@@ -462,7 +484,7 @@ class AdvancedConsoleChatbot {
     }
     
     private func handleToolBasedRequest(_ input: String, message: SAOAIMessage) async throws {
-        print("\n🔧 Processing with tools...")
+        // print("\n🔧 Processing with tools...")
         print("🤖 Assistant: ", terminator: "")
         
         // Prepare messages for API call - include system message for first conversation
@@ -1054,7 +1076,9 @@ struct AdvancedConsoleChatbotApp {
         
         if hasCredentials {
             // Run with real API and enable SSE logging
-            let logPath = "/tmp/sse_events_\(Date().timeIntervalSince1970).log"
+            let mainFileURL = URL(fileURLWithPath: #filePath)
+            let logDirectoryURL = mainFileURL.deletingLastPathComponent()
+            let logPath = logDirectoryURL.appendingPathComponent("sse_events.log").path
             print("📋 SSE event logging enabled at: \(logPath)")
             await AdvancedConsoleChatbot(enableSSELogging: true, logFilePath: logPath).start()
         } else {
