@@ -8,3 +8,4 @@ DerivedData/
 .netrc
 build.log
 Package.resolved
+*.log
