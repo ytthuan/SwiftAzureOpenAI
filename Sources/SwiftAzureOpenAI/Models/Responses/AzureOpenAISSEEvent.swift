@@ -14,6 +14,26 @@ public struct AzureOpenAISSEEvent: Codable, Sendable {
     public let delta: String?
     public let arguments: String?
     
+    public init(
+        type: String,
+        sequenceNumber: Int? = nil,
+        response: AzureOpenAIEventResponse? = nil,
+        outputIndex: Int? = nil,
+        item: AzureOpenAIEventItem? = nil,
+        itemId: String? = nil,
+        delta: String? = nil,
+        arguments: String? = nil
+    ) {
+        self.type = type
+        self.sequenceNumber = sequenceNumber
+        self.response = response
+        self.outputIndex = outputIndex
+        self.item = item
+        self.itemId = itemId
+        self.delta = delta
+        self.arguments = arguments
+    }
+    
     private enum CodingKeys: String, CodingKey {
         case type
         case sequenceNumber = "sequence_number"
@@ -56,6 +76,27 @@ public struct AzureOpenAIEventItem: Codable, Sendable {
     public let callId: String?
     public let name: String?
     public let summary: [String]?
+    public let containerId: String?
+    
+    public init(
+        id: String? = nil,
+        type: String? = nil,
+        status: String? = nil,
+        arguments: String? = nil,
+        callId: String? = nil,
+        name: String? = nil,
+        summary: [String]? = nil,
+        containerId: String? = nil
+    ) {
+        self.id = id
+        self.type = type
+        self.status = status
+        self.arguments = arguments
+        self.callId = callId
+        self.name = name
+        self.summary = summary
+        self.containerId = containerId
+    }
     
     private enum CodingKeys: String, CodingKey {
         case id
@@ -65,6 +106,7 @@ public struct AzureOpenAIEventItem: Codable, Sendable {
         case callId = "call_id"
         case name
         case summary
+        case containerId = "container_id"
     }
 }
 
@@ -77,6 +119,7 @@ public struct AzureOpenAIEventOutput: Codable, Sendable {
     public let callId: String?
     public let name: String?
     public let summary: [String]?
+    public let containerId: String?
     
     private enum CodingKeys: String, CodingKey {
         case id
@@ -86,5 +129,6 @@ public struct AzureOpenAIEventOutput: Codable, Sendable {
         case callId = "call_id"
         case name
         case summary
+        case containerId = "container_id"
     }
 }

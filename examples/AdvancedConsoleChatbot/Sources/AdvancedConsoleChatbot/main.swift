@@ -1,6 +1,75 @@
 import Foundation
 import SwiftAzureOpenAI
 
+// MARK: - Enhanced Event Handling Structures
+
+/// Step management for tracking tool calls and their UI representation
+class StepManager {
+    var toolSteps: [String: ConsoleStep] = [:]  // item_id -> step
+    var itemSteps: [String: ConsoleStep] = [:]  // item_id -> step  
+    var functionNameToStep: [String: ConsoleStep] = [:]  // function_name -> step
+    var functionArgsByItemId: [String: String] = [:]  // item_id -> accumulated args
+    var functionMetaByItemId: [String: FunctionMetadata] = [:]  // item_id -> metadata
+    var stepInputsByFuncName: [String: String] = [:]  // function_name -> accumulated input
+    var stepOutputsByFuncName: [String: String] = [:]  // function_name -> accumulated output
+    var processedFunctionCallIds: Set<String> = []  // call_id set
+    
+    struct FunctionMetadata {
+        let name: String
+        let callId: String
+    }
+}
+
+/// Console representation of a tool step
+class ConsoleStep {
+    let name: String
+    let type: String
+    var input: String = ""
+    var output: String = ""
+    var language: String = ""
+    var showInput: String = ""
+    
+    init(name: String, type: String, language: String = "") {
+        self.name = name
+        self.type = type
+        self.language = language
+    }
+    
+    func streamToken(_ text: String, isInput: Bool = false) {
+        if isInput {
+            input += text
+        } else {
+            output += text
+        }
+    }
+    
+    func update() {
+        // In a real UI, this would update the display
+        // For console, we'll handle this in the display logic
+    }
+}
+
+/// Console representation of a message
+class ConsoleMessage {
+    var content: String = ""
+    let metadata: [String: Any]
+    let parentId: String?
+    
+    init(content: String = "", metadata: [String: Any] = [:], parentId: String? = nil) {
+        self.content = content
+        self.metadata = metadata
+        self.parentId = parentId
+    }
+    
+    func streamToken(_ text: String) {
+        content += text
+    }
+    
+    func update() {
+        // In a real UI, this would update the display
+    }
+}
+
 // MARK: - Advanced Console Chatbot Example
 
 /// Comprehensive console chatbot demonstrating all SwiftAzureOpenAI features:
@@ -266,6 +335,28 @@ class AdvancedConsoleChatbot {
     private var isRunning = true
     private let availableTools = [weatherTool, codeInterpreterTool, calculatorTool]
     
+    // Enhanced event handling infrastructure
+    private let stepManager = StepManager()
+    private let codeInterpreterTracker = CodeInterpreterTracker()
+    private var sseLogger: SSELogger?
+    private var currentMessage: ConsoleMessage?
+    private var currentStep: ConsoleStep?
+    private var currentToolCall: Any?
+    
+    // Container ID tracking for code interpreter
+    private var containerIds: Set<String> = []
+    
+    init(enableSSELogging: Bool = false, logFilePath: String? = nil) {
+        if enableSSELogging {
+            let logConfig = SSELoggerConfiguration.enabled(
+                logFilePath: logFilePath,
+                includeTimestamp: true,
+                includeSequenceNumber: true
+            )
+            self.sseLogger = SSELogger(configuration: logConfig)
+        }
+    }
+    
     func start() async {
         printWelcome()
         
@@ -284,9 +375,14 @@ class AdvancedConsoleChatbot {
         print("=============================================")
         print("Features demonstrated:")
         print("• 🔧 Function calling (weather, calculator)")
-        print("• 🐍 Code interpreter tool")
+        print("• 🐍 Code interpreter tool with container tracking")
         print("• 🖼️  Multi-modal support (images)")
         print("• 📚 Conversation history chaining")
+        print("• 📝 Enhanced SSE event handling (Python SDK style)")
+        print("• 🗂️  Parallel tool call management")
+        if sseLogger != nil {
+            print("• 📋 SSE event logging enabled")
+        }
         print("")
         print("Available commands:")
         print("• 'history' - Show conversation history")
@@ -295,6 +391,7 @@ class AdvancedConsoleChatbot {
         print("• 'quit' - Exit the chatbot")
         print("")
         print("Just ask naturally and I'll use tools when needed!")
+        print("Try: 'can you write fibonacci code to execute and get first 10 number'")
         print("===================================================\n")
     }
     
@@ -379,149 +476,454 @@ class AdvancedConsoleChatbot {
             messagesToSend = [message]
         }
         
-        // Use non-streaming API for tool-based requests to ensure proper function call handling
-        // This fixes the "Bad Request" issue that occurs when tools are used with streaming API
-        let response = try await client.responses.create(
+        // Use streaming API with enhanced SSE event handling
+        let stream = client.responses.createStreaming(
             model: azureConfig.deploymentName,
             input: messagesToSend,
             tools: availableTools,
             previousResponseId: chatHistory.lastResponseId
         )
         
-        // Process function calls from the response
-        await processFunctionCalls(response: response, input: input)
+        // Process the stream with Python SDK-style event handling
+        await processStreamWithEnhancedEventHandling(stream: stream, input: input)
     }
     
-    private func processFunctionCalls(response: SAOAIResponse, input: String) async {
-        var toolResults: [SAOAIMessage] = []
-        var hasTextContent = false
-        var textResponse = ""
+    /// Process streaming response with enhanced event handling like Python SDK
+    private func processStreamWithEnhancedEventHandling(
+        stream: AsyncThrowingStream<SAOAIStreamingResponse, Error>,
+        input: String
+    ) async {
+        var assistantMessageCompleted = false
+        var lastResponseId: String?
+        var outputsForModel: [Any] = []
         
-        // Process response content and function calls
-        for output in response.output {
-            // Check for function calls at output level (Azure OpenAI Responses API format)
-            if output.type == "function_call" {
-                if let name = output.name, let callId = output.callId, let arguments = output.arguments {
-                    print("🔧 Calling tool: \(name)")
-                    
-                    let result = await executeTool(
-                        name: name,
-                        arguments: arguments,
-                        input: input
-                    )
-                    
-                    chatHistory.addToolCall(
-                        callId: callId,
-                        function: name,
-                        result: result
-                    )
-                    
-                    // Add tool result to conversation
-                    toolResults.append(SAOAIMessage(
-                        role: .user,
-                        content: [.inputText(.init(
-                            text: "Function \(name) (call_id: \(callId)) result: \(result)"
-                        ))]
-                    ))
+        do {
+            for try await chunk in stream {
+                // Extract response ID from first chunk
+                if lastResponseId == nil {
+                    lastResponseId = chunk.id
                 }
-            } else {
-                // Check content for both text and function calls
-                if let contentArray = output.content {
-                    for content in contentArray {
-                        switch content {
-                        case .outputText(let textOutput):
-                            if !textOutput.text.isEmpty {
-                                print(textOutput.text, terminator: "")
-                                textResponse += textOutput.text
-                                hasTextContent = true
-                            }
-                        case .functionCall(let functionCall):
-                            print("🔧 Calling tool: \(functionCall.name)")
-                            
-                            let result = await executeTool(
-                                name: functionCall.name,
-                                arguments: functionCall.arguments,
-                                input: input
-                            )
-                            
-                            chatHistory.addToolCall(
-                                callId: functionCall.callId,
-                                function: functionCall.name,
-                                result: result
-                            )
-                            
-                            // Add tool result to conversation
-                            toolResults.append(SAOAIMessage(
-                                role: .user,
-                                content: [.inputText(.init(
-                                    text: "Function \(functionCall.name) (call_id: \(functionCall.callId)) result: \(result)"
-                                ))]
-                            ))
-                        }
-                    }
+                
+                // Process enhanced SSE events using raw SSE parsing for detailed event handling
+                await processChunkWithEnhancedEventHandling(
+                    chunk: chunk,
+                    input: input,
+                    assistantMessageCompleted: &assistantMessageCompleted,
+                    outputsForModel: &outputsForModel
+                )
+                
+                // Check for completion
+                if assistantMessageCompleted {
+                    break
                 }
+            }
+            
+            // Create final response for history
+            if let responseId = lastResponseId {
+                let finalResponse = SAOAIResponse(
+                    id: responseId,
+                    model: azureConfig.deploymentName,
+                    created: Int(Date().timeIntervalSince1970),
+                    output: [SAOAIOutput(content: [.outputText(.init(text: currentMessage?.content ?? ""))])],
+                    usage: nil
+                )
+                chatHistory.addAssistantResponse(finalResponse)
+            }
+            
+            // If we have tool results, handle follow-up
+            if !outputsForModel.isEmpty {
+                print("\n🔧 Processing tool results...")
+                await handleToolResultsFollowUp(outputs: outputsForModel, responseId: lastResponseId)
+            }
+            
+        } catch {
+            print("❌ Error processing stream: \(error.localizedDescription)")
+        }
+        
+        print("\n")
+    }
+    
+    /// Process individual chunk with enhanced event handling similar to Python SDK
+    private func processChunkWithEnhancedEventHandling(
+        chunk: SAOAIStreamingResponse,
+        input: String,
+        assistantMessageCompleted: inout Bool,
+        outputsForModel: inout [Any]
+    ) async {
+        // Simulate the event-based processing from Python SDK
+        // Since the current streaming response doesn't expose full event details,
+        // we'll work with what we have and simulate the enhanced tracking
+        
+        guard let eventType = chunk.eventType else {
+            // Handle legacy streaming without event type
+            await processLegacyStreamingChunk(chunk)
+            return
+        }
+        
+        // Log the event if SSE logger is enabled
+        if let logger = sseLogger {
+            // Convert chunk back to SSE event for logging (simplified)
+            let sseEvent = AzureOpenAISSEEvent(
+                type: eventType.rawValue,
+                sequenceNumber: nil,
+                response: nil,
+                outputIndex: nil,
+                item: chunk.item.map { streamingItem in
+                    AzureOpenAIEventItem(
+                        id: streamingItem.id,
+                        type: streamingItem.type?.rawValue,
+                        status: streamingItem.status,
+                        arguments: streamingItem.arguments,
+                        callId: streamingItem.callId,
+                        name: streamingItem.name,
+                        summary: streamingItem.summary,
+                        containerId: streamingItem.containerId
+                    )
+                },
+                itemId: chunk.item?.id,
+                delta: chunk.output?.first?.content?.first?.text,
+                arguments: chunk.item?.arguments
+            )
+            logger.logEvent(sseEvent)
+        }
+        
+        // Handle specific event types like Python SDK
+        switch eventType {
+        case .responseOutputItemAdded:
+            await handleOutputItemAdded(chunk: chunk, assistantMessageCompleted: &assistantMessageCompleted)
+            
+        case .responseOutputTextDelta:
+            await handleOutputTextDelta(chunk: chunk)
+            
+        case .responseCodeInterpreterCallCodeDelta:
+            await handleCodeInterpreterCallCodeDelta(chunk: chunk)
+            
+        case .responseFunctionCallArgumentsDelta:
+            await handleFunctionCallArgumentsDelta(chunk: chunk)
+            
+        case .responseCodeInterpreterCallCompleted:
+            await handleCodeInterpreterCallCompleted(chunk: chunk)
+            
+        case .responseFunctionCallArgumentsDone:
+            await handleFunctionCallArgumentsDone(chunk: chunk)
+            
+        case .responseOutputItemCompleted:
+            await handleOutputItemDone(chunk: chunk, outputsForModel: &outputsForModel, assistantMessageCompleted: &assistantMessageCompleted)
+            
+        case .responseCompleted:
+            // Handle response completion
+            break
+            
+        default:
+            // Handle other event types or fallback to legacy processing
+            await processLegacyStreamingChunk(chunk)
+        }
+    }
+    
+    /// Handle response.output_item.added events (Python SDK equivalent)
+    private func handleOutputItemAdded(
+        chunk: SAOAIStreamingResponse,
+        assistantMessageCompleted: inout Bool
+    ) async {
+        guard let item = chunk.item else { return }
+        
+        switch item.type {
+        case .message:
+            // Create new message
+            currentMessage = ConsoleMessage(
+                content: "",
+                metadata: ["api_type": "responses_api"]
+            )
+            
+        case .codeInterpreterCall:
+            // Track container ID from code interpreter call
+            if let containerId = item.containerId {
+                containerIds.insert(containerId)
+                print("\n🐍 Code Interpreter Started (Container: \(containerId))")
+            }
+            
+            // Create step for code interpreter
+            currentStep = ConsoleStep(
+                name: "Code Interpreter",
+                type: "tool",
+                language: "python"
+            )
+            currentStep?.showInput = "python"
+            
+            if let itemId = item.id {
+                stepManager.toolSteps[itemId] = currentStep
+                stepManager.itemSteps[itemId] = currentStep
+            }
+            
+        case .functionCall:
+            // Handle function call creation
+            let fnName = item.name ?? "Function Call"
+            
+            // Reuse step per function name or create new one
+            let stepForFn = stepManager.functionNameToStep[fnName] ?? {
+                let step = ConsoleStep(
+                    name: "Function: \(fnName)",
+                    type: "tool",
+                    language: "json"
+                )
+                step.showInput = "json"
+                stepManager.functionNameToStep[fnName] = step
+                return step
+            }()
+            
+            currentStep = stepForFn
+            
+            if let itemId = item.id {
+                stepManager.toolSteps[itemId] = stepForFn
+                stepManager.itemSteps[itemId] = stepForFn
+                
+                // Save metadata
+                stepManager.functionMetaByItemId[itemId] = StepManager.FunctionMetadata(
+                    name: fnName,
+                    callId: item.callId ?? ""
+                )
+            }
+            
+        case .mcpCall:
+            // Handle MCP call creation
+            currentStep = ConsoleStep(
+                name: "MCP Call",
+                type: "tool"
+            )
+            
+            if let itemId = item.id {
+                stepManager.toolSteps[itemId] = currentStep
+                stepManager.itemSteps[itemId] = currentStep
+            }
+            
+        default:
+            break
+        }
+    }
+    
+    /// Handle response.output_text.delta events
+    private func handleOutputTextDelta(chunk: SAOAIStreamingResponse) async {
+        guard let text = chunk.output?.first?.content?.first?.text, !text.isEmpty else { return }
+        
+        if let message = currentMessage {
+            message.streamToken(text)
+            print(text, terminator: "")
+        }
+    }
+    
+    /// Handle response.code_interpreter_call_code.delta events
+    private func handleCodeInterpreterCallCodeDelta(chunk: SAOAIStreamingResponse) async {
+        guard let delta = chunk.output?.first?.content?.first?.text, !delta.isEmpty else { return }
+        guard let itemId = chunk.item?.id else { return }
+        
+        // Stream delta into correct step by item_id
+        let targetStep = stepManager.itemSteps[itemId] ?? currentStep
+        if let step = targetStep {
+            step.streamToken(delta, isInput: true)
+            // In a real UI, this would update immediately. For console, we'll show accumulated code
+        }
+        
+        // Track in code interpreter tracker
+        _ = codeInterpreterTracker.appendCodeDelta(itemId: itemId, code: delta)
+    }
+    
+    /// Handle response.function_call_arguments.delta events
+    private func handleFunctionCallArgumentsDelta(chunk: SAOAIStreamingResponse) async {
+        guard let delta = chunk.output?.first?.content?.first?.text, !delta.isEmpty else { return }
+        guard let itemId = chunk.item?.id else { return }
+        
+        // Accumulate deltas instead of streaming them directly (Python SDK approach)
+        if stepManager.functionArgsByItemId[itemId] == nil {
+            stepManager.functionArgsByItemId[itemId] = ""
+        }
+        stepManager.functionArgsByItemId[itemId]! += delta
+    }
+    
+    /// Handle response.code_interpreter_call.completed events
+    private func handleCodeInterpreterCallCompleted(chunk: SAOAIStreamingResponse) async {
+        guard let itemId = chunk.item?.id else { return }
+        
+        let step = stepManager.toolSteps[itemId] ?? stepManager.itemSteps[itemId]
+        if let step = step {
+            // Show completed marker
+            step.output = chunk.output?.first?.content?.first?.text ?? "Completed"
+            step.language = "markdown"
+            step.update()
+            
+            print("\n🐍 Code Interpreter Completed")
+            if !step.input.isEmpty {
+                print("Code executed:")
+                print("```python")
+                print(step.input)
+                print("```")
+            }
+            if !step.output.isEmpty && step.output != "Completed" {
+                print("Output:")
+                print(step.output)
             }
         }
         
-        chatHistory.addAssistantResponse(response)
+        // Mark as completed in tracker
+        _ = codeInterpreterTracker.markCompleted(itemId: itemId)
+    }
+    
+    /// Handle response.function_call_arguments.done events
+    private func handleFunctionCallArgumentsDone(chunk: SAOAIStreamingResponse) async {
+        guard let itemId = chunk.item?.id else { return }
         
-        // If we have tool results, send follow-up streaming request for the final response
-        if !toolResults.isEmpty {
-            print("\n🔧 Processing tool results...")
-            print("🤖 Assistant: ", terminator: "")
+        // Get final accumulated arguments
+        let argsStr = stepManager.functionArgsByItemId[itemId] ?? ""
+        
+        // Update step input
+        if let meta = stepManager.functionMetaByItemId[itemId] {
+            let fnName = meta.name
+            let prevInput = stepManager.stepInputsByFuncName[fnName] ?? ""
+            let combinedInput = prevInput.isEmpty ? argsStr : "\(prevInput)\n\(argsStr)"
+            stepManager.stepInputsByFuncName[fnName] = combinedInput
             
-            let messagesToSend: [SAOAIMessage]
-            if chatHistory.lastResponseId == nil {
-                let systemMessage = SAOAIMessage(role: .system, text: "You are a helpful AI assistant with access to tools for weather information, code execution, and mathematical calculations. Use these tools when users ask relevant questions. You also have vision capabilities to analyze images.")
-                messagesToSend = [systemMessage] + toolResults
-            } else {
-                messagesToSend = toolResults
+            if let stepForFn = stepManager.functionNameToStep[fnName] {
+                stepForFn.input = combinedInput
+                stepForFn.language = "json"
+                stepForFn.update()
+            }
+        }
+    }
+    
+    /// Handle response.output_item.done events
+    private func handleOutputItemDone(
+        chunk: SAOAIStreamingResponse,
+        outputsForModel: inout [Any],
+        assistantMessageCompleted: inout Bool
+    ) async {
+        guard let item = chunk.item else { return }
+        
+        // Handle function call completion and execution
+        if item.type == .functionCall {
+            guard let itemId = item.id else { return }
+            let step = stepManager.itemSteps[itemId]
+            let meta = stepManager.functionMetaByItemId[itemId]
+            let funcName = meta?.name ?? ""
+            let callIdForSubmit = meta?.callId ?? ""
+            
+            // Avoid duplicate processing
+            if !callIdForSubmit.isEmpty && stepManager.processedFunctionCallIds.contains(callIdForSubmit) {
+                return
             }
             
-            do {
-                let followUpStream = client.responses.createStreaming(
-                    model: azureConfig.deploymentName,
-                    input: messagesToSend,
-                    previousResponseId: response.id
-                )
+            // Get final arguments
+            let rawArgs = stepManager.functionArgsByItemId[itemId] ?? ""
+            
+            if !funcName.isEmpty && !callIdForSubmit.isEmpty {
+                print("\n🔧 Executing \(funcName)...")
                 
-                var finalResponse = ""
-                var finalResponseId: String?
+                // Execute the tool function
+                let result = await executeTool(name: funcName, arguments: rawArgs, input: "")
                 
-                for try await chunk in followUpStream {
-                    if finalResponseId == nil {
-                        finalResponseId = chunk.id
+                // Update step output
+                let prevOutput = stepManager.stepOutputsByFuncName[funcName] ?? ""
+                let rawDisplay = result
+                let appendedOutput = prevOutput.isEmpty ? rawDisplay : "\(prevOutput)\n\(rawDisplay)"
+                stepManager.stepOutputsByFuncName[funcName] = appendedOutput
+                
+                let stepForFn = stepManager.functionNameToStep[funcName] ?? step
+                if let step = stepForFn {
+                    step.streamToken("\n\(rawDisplay)")
+                    print("Result: \(rawDisplay)")
+                }
+                
+                // Stage for model
+                outputsForModel.append([
+                    "type": "function_call_output",
+                    "call_id": callIdForSubmit,
+                    "output": result
+                ])
+                stepManager.processedFunctionCallIds.insert(callIdForSubmit)
+            }
+        }
+        
+        // Detect assistant message completion
+        if item.type == .message && item.status == "completed" {
+            assistantMessageCompleted = true
+        }
+    }
+    
+    /// Handle legacy streaming chunks (fallback for chunks without detailed event info)
+    private func processLegacyStreamingChunk(_ chunk: SAOAIStreamingResponse) async {
+        // Process legacy streaming content
+        for output in chunk.output ?? [] {
+            for content in output.content ?? [] {
+                if let text = content.text, !text.isEmpty, content.type != "status" {
+                    if let message = currentMessage {
+                        message.streamToken(text)
                     }
-                    
-                    for output in chunk.output ?? [] {
-                        for content in output.content ?? [] {
-                            if let text = content.text, !text.isEmpty, content.type != "status" {
-                                print(text, terminator: "")
-                                finalResponse += text
-                            }
+                    print(text, terminator: "")
+                }
+            }
+        }
+    }
+    
+    /// Handle follow-up requests after tool execution
+    private func handleToolResultsFollowUp(outputs: [Any], responseId: String?) async {
+        // Convert outputs to proper message format
+        var toolResultMessages: [SAOAIMessage] = []
+        
+        for output in outputs {
+            if let outputDict = output as? [String: Any],
+               let callId = outputDict["call_id"] as? String,
+               let result = outputDict["output"] as? String {
+                
+                let message = SAOAIMessage(
+                    role: .user,
+                    content: [.inputText(.init(
+                        text: "Function result (call_id: \(callId)): \(result)"
+                    ))]
+                )
+                toolResultMessages.append(message)
+            }
+        }
+        
+        guard !toolResultMessages.isEmpty else { return }
+        
+        do {
+            // Use streaming for follow-up response
+            let followUpStream = client.responses.createStreaming(
+                model: azureConfig.deploymentName,
+                input: toolResultMessages,
+                previousResponseId: responseId
+            )
+            
+            var finalResponse = ""
+            var finalResponseId: String?
+            
+            for try await chunk in followUpStream {
+                if finalResponseId == nil {
+                    finalResponseId = chunk.id
+                }
+                
+                for output in chunk.output ?? [] {
+                    for content in output.content ?? [] {
+                        if let text = content.text, !text.isEmpty, content.type != "status" {
+                            print(text, terminator: "")
+                            finalResponse += text
                         }
                     }
                 }
-                
-                // Create final response for history
-                let finalResponseObj = SAOAIResponse(
-                    id: finalResponseId,
+            }
+            
+            // Create final response for history
+            if let responseId = finalResponseId {
+                let response = SAOAIResponse(
+                    id: responseId,
                     model: azureConfig.deploymentName,
                     created: Int(Date().timeIntervalSince1970),
                     output: [SAOAIOutput(content: [.outputText(.init(text: finalResponse))])],
                     usage: nil
                 )
-                
-                chatHistory.addAssistantResponse(finalResponseObj)
-            } catch {
-                print("❌ Error processing tool results: \(error.localizedDescription)")
+                chatHistory.addAssistantResponse(response)
             }
-        } else if hasTextContent {
-            // If there was only text content and no tool calls, just display it
-            print("")
+        } catch {
+            print("❌ Error processing tool results: \(error.localizedDescription)")
         }
-        
-        print("\n")
     }
     
     private func handleRegularRequest(_ message: SAOAIMessage) async throws {
@@ -615,12 +1017,15 @@ func runDemoMode() {
     print("")
     print("📝 Features showcased:")
     print("• ✅ Function calling (weather API)")
-    print("• ✅ Code interpreter tool")
+    print("• ✅ Code interpreter tool with container tracking")
     print("• ✅ Mathematical calculator")
     print("• ✅ Multi-modal support (images)")
     print("• ✅ Conversation history chaining")
     print("• ✅ Interactive command handling")
     print("• ✅ Tool result processing")
+    print("• ✅ Enhanced SSE event handling (Python SDK style)")
+    print("• ✅ Parallel tool call management")
+    print("• ✅ SSE event logging for diagnostics")
     print("")
     print("🚀 To run with real API:")
     print("1. Set environment variables:")
@@ -629,7 +1034,10 @@ func runDemoMode() {
     print("   export AZURE_OPENAI_DEPLOYMENT='gpt-4o'")
     print("2. Run the chatbot and chat naturally!")
     print("")
-    print("The AI will automatically use tools when appropriate.")
+    print("🐍 Test with code interpreter:")
+    print("   Try: 'can you write fibonacci code to execute and get first 10 number'")
+    print("")
+    print("The AI will automatically use tools when appropriate and log all SSE events.")
 }
 
 // MARK: - Main Execution
@@ -645,8 +1053,10 @@ struct AdvancedConsoleChatbotApp {
                            endpoint != "https://your-resource.openai.azure.com"
         
         if hasCredentials {
-            // Run with real API
-            await AdvancedConsoleChatbot().start()
+            // Run with real API and enable SSE logging
+            let logPath = "/tmp/sse_events_\(Date().timeIntervalSince1970).log"
+            print("📋 SSE event logging enabled at: \(logPath)")
+            await AdvancedConsoleChatbot(enableSSELogging: true, logFilePath: logPath).start()
         } else {
             // Run in demo mode
             runDemoMode()

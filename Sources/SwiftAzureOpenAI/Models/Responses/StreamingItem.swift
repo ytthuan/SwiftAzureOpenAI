@@ -24,6 +24,9 @@ public struct SAOAIStreamingItem: Codable, Equatable, Sendable {
     /// Summary information (for reasoning summaries)
     public let summary: [String]?
     
+    /// Container ID for code interpreter calls
+    public let containerId: String?
+    
     public init(
         type: SAOAIStreamingItemType?,
         id: String?,
@@ -31,7 +34,8 @@ public struct SAOAIStreamingItem: Codable, Equatable, Sendable {
         arguments: String?,
         callId: String?,
         name: String?,
-        summary: [String]?
+        summary: [String]?,
+        containerId: String? = nil
     ) {
         self.type = type
         self.id = id
@@ -40,6 +44,7 @@ public struct SAOAIStreamingItem: Codable, Equatable, Sendable {
         self.callId = callId
         self.name = name
         self.summary = summary
+        self.containerId = containerId
     }
     
     /// Initialize from AzureOpenAIEventItem
@@ -51,6 +56,7 @@ public struct SAOAIStreamingItem: Codable, Equatable, Sendable {
         self.callId = azureItem.callId
         self.name = azureItem.name
         self.summary = azureItem.summary
+        self.containerId = azureItem.containerId
     }
     
     /// Initialize from AzureOpenAIEventOutput
@@ -62,6 +68,7 @@ public struct SAOAIStreamingItem: Codable, Equatable, Sendable {
         self.callId = azureOutput.callId
         self.name = azureOutput.name
         self.summary = azureOutput.summary
+        self.containerId = azureOutput.containerId
     }
     
     private enum CodingKeys: String, CodingKey {
@@ -72,5 +79,6 @@ public struct SAOAIStreamingItem: Codable, Equatable, Sendable {
         case callId = "call_id"
         case name
         case summary
+        case containerId = "container_id"
     }
 }
