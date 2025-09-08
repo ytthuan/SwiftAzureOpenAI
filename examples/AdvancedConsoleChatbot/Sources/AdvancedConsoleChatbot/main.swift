@@ -517,8 +517,10 @@ class AdvancedConsoleChatbot {
     ) async {
         var assistantMessageCompleted = false
         var lastResponseId: String?
-        var outputsForModel: [Any] = []
+        var outputsForModel: [SAOAIMessage] = []
+        var previousResponseId: String? = chatHistory.lastResponseId
         
+        // First round - process the initial stream
         do {
             for try await chunk in stream {
                 // Extract response ID from first chunk
@@ -540,26 +542,68 @@ class AdvancedConsoleChatbot {
                 }
             }
             
-            // Create final response for history
-            if let responseId = lastResponseId {
-                let finalResponse = SAOAIResponse(
-                    id: responseId,
-                    model: azureConfig.deploymentName,
-                    created: Int(Date().timeIntervalSince1970),
-                    output: [SAOAIOutput(content: [.outputText(.init(text: currentMessage?.content ?? ""))])],
-                    usage: nil
-                )
-                chatHistory.addAssistantResponse(finalResponse)
-            }
-            
-            // If we have tool results, handle follow-up
-            if !outputsForModel.isEmpty {
-                print("\n🔧 Processing tool results...")
-                await handleToolResultsFollowUp(outputs: outputsForModel, responseId: lastResponseId)
-            }
+            // Update previous response ID for next round
+            previousResponseId = lastResponseId
             
         } catch {
             print("❌ Error processing stream: \(error.localizedDescription)")
+        }
+        
+        // Main conversation loop - continue until assistant message is completed
+        while !outputsForModel.isEmpty && !assistantMessageCompleted {
+            print("\n🔧 Submitting tool results for next round...")
+            
+            do {
+                // Create new stream with tool outputs
+                let followUpStream = client.responses.createStreaming(
+                    model: azureConfig.deploymentName,
+                    input: outputsForModel,
+                    previousResponseId: previousResponseId
+                )
+                
+                // Reset outputs for next round
+                outputsForModel.removeAll()
+                
+                // Process follow-up stream
+                for try await chunk in followUpStream {
+                    // Update response ID
+                    if let chunkId = chunk.id {
+                        lastResponseId = chunkId
+                    }
+                    
+                    // Process enhanced SSE events
+                    await processChunkWithEnhancedEventHandling(
+                        chunk: chunk,
+                        input: input,
+                        assistantMessageCompleted: &assistantMessageCompleted,
+                        outputsForModel: &outputsForModel
+                    )
+                    
+                    // Check for completion
+                    if assistantMessageCompleted {
+                        break
+                    }
+                }
+                
+                // Update previous response ID for next round
+                previousResponseId = lastResponseId
+                
+            } catch {
+                print("❌ Error processing follow-up stream: \(error.localizedDescription)")
+                break
+            }
+        }
+        
+        // Create final response for history
+        if let responseId = lastResponseId {
+            let finalResponse = SAOAIResponse(
+                id: responseId,
+                model: azureConfig.deploymentName,
+                created: Int(Date().timeIntervalSince1970),
+                output: [SAOAIOutput(content: [.outputText(.init(text: currentMessage?.content ?? ""))])],
+                usage: nil
+            )
+            chatHistory.addAssistantResponse(finalResponse)
         }
         
         print("\n")
@@ -570,7 +614,7 @@ class AdvancedConsoleChatbot {
         chunk: SAOAIStreamingResponse,
         input: String,
         assistantMessageCompleted: inout Bool,
-        outputsForModel: inout [Any]
+        outputsForModel: inout [SAOAIMessage]
     ) async {
         // Simulate the event-based processing from Python SDK
         // Since the current streaming response doesn't expose full event details,
@@ -814,7 +858,7 @@ class AdvancedConsoleChatbot {
     /// Handle response.output_item.done events
     private func handleOutputItemDone(
         chunk: SAOAIStreamingResponse,
-        outputsForModel: inout [Any],
+        outputsForModel: inout [SAOAIMessage],
         assistantMessageCompleted: inout Bool
     ) async {
         guard let item = chunk.item else { return }
@@ -853,12 +897,15 @@ class AdvancedConsoleChatbot {
                     print("Result: \(rawDisplay)")
                 }
                 
-                // Stage for model
-                outputsForModel.append([
-                    "type": "function_call_output",
-                    "call_id": callIdForSubmit,
-                    "output": result
-                ])
+                // Stage for model with proper function call output format
+                let functionCallOutput = SAOAIMessage(
+                    role: .user,
+                    content: [.functionCallOutput(.init(
+                        callId: callIdForSubmit,
+                        output: result
+                    ))]
+                )
+                outputsForModel.append(functionCallOutput)
                 stepManager.processedFunctionCallIds.insert(callIdForSubmit)
             }
         }
@@ -881,70 +928,6 @@ class AdvancedConsoleChatbot {
                     print(text, terminator: "")
                 }
             }
-        }
-    }
-    
-    /// Handle follow-up requests after tool execution
-    private func handleToolResultsFollowUp(outputs: [Any], responseId: String?) async {
-        // Convert outputs to proper message format
-        var toolResultMessages: [SAOAIMessage] = []
-        
-        for output in outputs {
-            if let outputDict = output as? [String: Any],
-               let callId = outputDict["call_id"] as? String,
-               let result = outputDict["output"] as? String {
-                
-                let message = SAOAIMessage(
-                    role: .user,
-                    content: [.inputText(.init(
-                        text: "Function result (call_id: \(callId)): \(result)"
-                    ))]
-                )
-                toolResultMessages.append(message)
-            }
-        }
-        
-        guard !toolResultMessages.isEmpty else { return }
-        
-        do {
-            // Use streaming for follow-up response
-            let followUpStream = client.responses.createStreaming(
-                model: azureConfig.deploymentName,
-                input: toolResultMessages,
-                previousResponseId: responseId
-            )
-            
-            var finalResponse = ""
-            var finalResponseId: String?
-            
-            for try await chunk in followUpStream {
-                if finalResponseId == nil {
-                    finalResponseId = chunk.id
-                }
-                
-                for output in chunk.output ?? [] {
-                    for content in output.content ?? [] {
-                        if let text = content.text, !text.isEmpty, content.type != "status" {
-                            print(text, terminator: "")
-                            finalResponse += text
-                        }
-                    }
-                }
-            }
-            
-            // Create final response for history
-            if let responseId = finalResponseId {
-                let response = SAOAIResponse(
-                    id: responseId,
-                    model: azureConfig.deploymentName,
-                    created: Int(Date().timeIntervalSince1970),
-                    output: [SAOAIOutput(content: [.outputText(.init(text: finalResponse))])],
-                    usage: nil
-                )
-                chatHistory.addAssistantResponse(response)
-            }
-        } catch {
-            print("❌ Error processing tool results: \(error.localizedDescription)")
         }
     }
     
