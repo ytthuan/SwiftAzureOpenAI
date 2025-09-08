@@ -247,10 +247,14 @@ public final class ResponsesClient {
         let baseURL = self.configuration.baseURL
         let httpClient = self.httpClient
         let configHeaders = self.configuration.headers
+        let sseLoggerConfig = self.configuration.sseLoggerConfiguration
         
         return AsyncThrowingStream { continuation in
             Task {
                 do {
+                    // Create SSE logger if enabled
+                    let sseLogger: SSELogger? = sseLoggerConfig.isEnabled ? SSELogger(configuration: sseLoggerConfig) : nil
+                    
                     // Merge configuration headers with streaming-specific headers
                     var streamingHeaders = configHeaders
                     streamingHeaders["Accept"] = "text/event-stream"
@@ -265,7 +269,7 @@ public final class ResponsesClient {
                     let stream = httpClient.sendStreaming(apiRequest)
                     
                     for try await chunk in stream {
-                        if let response = try OptimizedSSEParser.parseSSEChunkOptimized(chunk) {
+                        if let response = try OptimizedSSEParser.parseSSEChunkOptimized(chunk, logger: sseLogger) {
                             continuation.yield(response)
                         }
                         

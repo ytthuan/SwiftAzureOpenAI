@@ -49,15 +49,18 @@ public final class OptimizedSSEParser: Sendable {
     // MARK: - High-Performance Parsing Methods
     
     /// Parse SSE chunk using optimized byte-level processing
-    public static func parseSSEChunkOptimized(_ data: Data) throws -> SAOAIStreamingResponse? {
+    public static func parseSSEChunkOptimized(_ data: Data, logger: SSELogger? = nil) throws -> SAOAIStreamingResponse? {
         let buffer = bufferPool.acquire()
         defer { bufferPool.release(buffer) }
         
-        return try parseLines(from: data, using: buffer)
+        // Log raw chunk if logger is provided
+        logger?.logRawChunk(data)
+        
+        return try parseLines(from: data, using: buffer, logger: logger)
     }
     
     /// Parse lines from SSE data using byte-level processing
-    private static func parseLines(from data: Data, using buffer: Data) throws -> SAOAIStreamingResponse? {
+    private static func parseLines(from data: Data, using buffer: Data, logger: SSELogger? = nil) throws -> SAOAIStreamingResponse? {
         var currentPos = 0
         let dataCount = data.count
         
@@ -97,7 +100,7 @@ public final class OptimizedSSEParser: Sendable {
                     }
                     
                     // Try to parse JSON directly from subdata to avoid copying
-                    if let response = try parseJSONFast(jsonData) {
+                    if let response = try parseJSONFast(jsonData, logger: logger) {
                         return response
                     }
                 }
@@ -108,7 +111,7 @@ public final class OptimizedSSEParser: Sendable {
     }
     
     /// Fast JSON parsing with minimal allocations
-    private static func parseJSONFast(_ jsonData: Data) throws -> SAOAIStreamingResponse? {
+    private static func parseJSONFast(_ jsonData: Data, logger: SSELogger? = nil) throws -> SAOAIStreamingResponse? {
         // Skip empty JSON data
         guard !jsonData.isEmpty else { return nil }
         
@@ -118,6 +121,9 @@ public final class OptimizedSSEParser: Sendable {
         do {
             // Try Azure OpenAI event format first (most common)
             if let azureEvent = try? decoder.decode(AzureOpenAISSEEvent.self, from: jsonData) {
+                // Log the event if logger is provided
+                logger?.logEvent(azureEvent, rawData: jsonData)
+                
                 return convertAzureEventToStreamingResponseOptimized(azureEvent)
             }
             

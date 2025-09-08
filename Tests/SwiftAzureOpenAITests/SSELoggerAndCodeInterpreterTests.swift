@@ -104,6 +104,51 @@ final class SSELoggerAndCodeInterpreterTests: XCTestCase {
         print("✅ SSE logger disabled test passed")
     }
     
+    /// Test SSE logging integration in OptimizedSSEParser
+    func testSSELoggingIntegrationInOptimizedParser() async {
+        print("🧪 Testing SSE logging integration in OptimizedSSEParser...")
+        
+        let logPath = tempLogDirectory.appendingPathComponent("integration_test.log").path
+        let config = SSELoggerConfiguration.enabled(logFilePath: logPath)
+        let logger = SSELogger(configuration: config)
+        
+        // Create test SSE data that would be parsed
+        let testData = """
+        data: {"type":"response.text.delta","sequenceNumber":1,"outputIndex":0,"itemId":"test_item","delta":"Hello, World!"}
+        
+        """.data(using: .utf8)!
+        
+        // Test the optimized parser with logger
+        do {
+            let response = try OptimizedSSEParser.parseSSEChunkOptimized(testData, logger: logger)
+            
+            XCTAssertNotNil(response, "Parser should return a valid response")
+            
+            // Give logger time to write (it's async)
+            let expectation = XCTestExpectation(description: "Log file written")
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                expectation.fulfill()
+            }
+            await fulfillment(of: [expectation], timeout: 1.0)
+            
+            // Check if log file was created and contains expected content
+            XCTAssertTrue(FileManager.default.fileExists(atPath: logPath))
+            
+            if let logContent = try? String(contentsOfFile: logPath, encoding: .utf8) {
+                XCTAssertTrue(logContent.contains("response.text.delta"))
+                XCTAssertTrue(logContent.contains("Hello, World!"))
+                XCTAssertTrue(logContent.contains("RAW_CHUNK:"))
+                print("✅ SSE logging integration test passed")
+                print("📄 Log content: \(logContent.prefix(200))...")
+            } else {
+                XCTFail("Could not read log file content")
+            }
+            
+        } catch {
+            XCTFail("Error during test: \(error)")
+        }
+    }
+    
     // MARK: - Code Interpreter Tracker Tests
     
     /// Test code interpreter container tracking
