@@ -60,7 +60,7 @@ final class LiveAPITests: XCTestCase {
         let request = SAOAIRequest(
             model: deployment,
             input: [
-                SAOAIMessage(role: .user, text: "Hello! Please respond with just 'Hi there!' and nothing else.")
+                .message(SAOAIMessage(role: .user, text: "Hello! Please respond with just 'Hi there!' and nothing else."))
             ],
             maxOutputTokens: 20,
             stream: false
@@ -192,7 +192,7 @@ final class LiveAPITests: XCTestCase {
         let request = SAOAIRequest(
             model: deployment,
             input: [
-                SAOAIMessage(role: .user, text: "Count from 1 to 5, each number on a new line.")
+                .message(SAOAIMessage(role: .user, text: "Count from 1 to 5, each number on a new line."))
             ],
             maxOutputTokens: 50,
             stream: true
@@ -286,7 +286,7 @@ final class LiveAPITests: XCTestCase {
         let request = SAOAIRequest(
             model: "invalid-model-name-that-does-not-exist",
             input: [
-                SAOAIMessage(role: .user, text: "Test")
+                .message(SAOAIMessage(role: .user, text: "Test"))
             ],
             maxOutputTokens: 10
         )
@@ -375,7 +375,7 @@ final class LiveAPITests: XCTestCase {
         // Create request like the chatbot does
         let request = SAOAIRequest(
             model: deployment,
-            input: messages,
+            input: messages.map { .message($0) },
             tools: [weatherTool],
             stream: true
         )

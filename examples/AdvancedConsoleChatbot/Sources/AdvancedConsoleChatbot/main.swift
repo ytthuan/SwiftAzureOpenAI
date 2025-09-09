@@ -483,7 +483,7 @@ class AdvancedConsoleChatbot {
     ) async {
         var assistantMessageCompleted = false
         var lastResponseId: String?
-        var outputsForModel: [SAOAIMessage] = []
+        var functionCallOutputs: [SAOAIInputContent.FunctionCallOutput] = []
         var previousResponseId: String? = chatHistory.lastResponseId
         
         // First round - process the initial stream
@@ -499,7 +499,7 @@ class AdvancedConsoleChatbot {
                     chunk: chunk,
                     input: input,
                     assistantMessageCompleted: &assistantMessageCompleted,
-                    outputsForModel: &outputsForModel
+                    functionCallOutputs: &functionCallOutputs
                 )
                 
                 // Check for completion
@@ -516,20 +516,11 @@ class AdvancedConsoleChatbot {
         }
         
         // Main conversation loop - continue until assistant message is completed
-        while !outputsForModel.isEmpty && !assistantMessageCompleted {
+        while !functionCallOutputs.isEmpty && !assistantMessageCompleted {
             print("\n🔧 Submitting tool results for next round...")
-            print("🔍 DEBUG: outputsForModel count: \(outputsForModel.count)")
-            for (index, message) in outputsForModel.enumerated() {
-                let roleDescription = message.role?.rawValue ?? "no-role"
-                print("🔍 DEBUG: Message \(index): role=\(roleDescription)")
-                for content in message.content {
-                    switch content {
-                    case .functionCallOutput(let output):
-                        print("🔍 DEBUG: FunctionCallOutput - callId=\(output.callId), output='\(output.output)'")
-                    default:
-                        print("🔍 DEBUG: Other content type")
-                    }
-                }
+            print("🔍 DEBUG: functionCallOutputs count: \(functionCallOutputs.count)")
+            for (index, output) in functionCallOutputs.enumerated() {
+                print("🔍 DEBUG: FunctionCallOutput \(index): callId=\(output.callId), output='\(output.output)'")
             }
             print("🔍 DEBUG: previousResponseId: \(previousResponseId ?? "nil")")
             print("🔍 DEBUG: azureConfig details:")
@@ -540,7 +531,7 @@ class AdvancedConsoleChatbot {
             // Log the request payload structure for debugging
             print("🔍 DEBUG: Request payload structure:")
             print("   - model: \(azureConfig.deploymentName)")
-            print("   - input messages count: \(outputsForModel.count)")
+            print("   - function call outputs count: \(functionCallOutputs.count)")
             print("   - previousResponseId: \(previousResponseId ?? "nil")")
             print("   - tools: none (tool execution completed)")
             
@@ -552,46 +543,29 @@ class AdvancedConsoleChatbot {
                 print("🔍 DEBUG: About to call client.responses.createStreaming with:")
                 print("   - Configuration endpoint: \(azureConfig.endpoint)")
                 print("   - Model/deployment: \(azureConfig.deploymentName)")
-                print("   - Messages: \(outputsForModel.count) tool output messages")
+                print("   - Function call outputs: \(functionCallOutputs.count)")
                 print("   - Previous response ID: \(previousResponseId ?? "nil")")
                 
                 // Log the exact request structure
                 print("🔍 DEBUG: Detailed request structure:")
-                for (index, message) in outputsForModel.enumerated() {
-                    print("   Message[\(index)]:")
-                    let roleDescription = message.role?.rawValue ?? "no-role"
-                    print("     - role: \(roleDescription)")
-                    print("     - content count: \(message.content.count)")
-                    for (contentIndex, content) in message.content.enumerated() {
-                        switch content {
-                        case .functionCallOutput(let output):
-                            print("       Content[\(contentIndex)]: functionCallOutput")
-                            print("         - type: function_call_output")
-                            print("         - callId: \(output.callId)")
-                            print("         - output: \(output.output)")
-                        case .inputText(let text):
-                            print("       Content[\(contentIndex)]: inputText")
-                            print("         - type: input_text")
-                            print("         - text: \(text.text)")
-                        case .inputImage(let image):
-                            print("       Content[\(contentIndex)]: inputImage")
-                            print("         - type: input_image")
-                            print("         - imageURL: \(image.imageURL)")
-                        }
-                    }
+                for (index, output) in functionCallOutputs.enumerated() {
+                    print("   FunctionCallOutput[\(index)]:")
+                    print("     - type: function_call_output")
+                    print("     - callId: \(output.callId)")
+                    print("     - output: \(output.output)")
                 }
                 
-                // Use new optional role format for function call outputs (Python SDK style)
-                print("🔍 DEBUG: Sending function call outputs without role (Python SDK style)...")
+                // Use the new function call outputs API for proper Azure OpenAI Responses API format
+                print("🔍 DEBUG: Sending function call outputs using native Azure OpenAI format...")
                 
                 let followUpStream = client.responses.createStreaming(
                     model: azureConfig.deploymentName,
-                    input: outputsForModel,
+                    functionCallOutputs: functionCallOutputs,
                     previousResponseId: previousResponseId
                 )
                 
                 // Reset outputs for next round
-                outputsForModel.removeAll()
+                functionCallOutputs.removeAll()
                 
                 // Process follow-up stream
                 do {
@@ -606,7 +580,7 @@ class AdvancedConsoleChatbot {
                             chunk: chunk,
                             input: input,
                             assistantMessageCompleted: &assistantMessageCompleted,
-                            outputsForModel: &outputsForModel
+                            functionCallOutputs: &functionCallOutputs
                         )
                         
                         // Check for completion
@@ -676,7 +650,7 @@ class AdvancedConsoleChatbot {
         chunk: SAOAIStreamingResponse,
         input: String,
         assistantMessageCompleted: inout Bool,
-        outputsForModel: inout [SAOAIMessage]
+        functionCallOutputs: inout [SAOAIInputContent.FunctionCallOutput]
     ) async {
         // Simulate the event-based processing from Python SDK
         // Since the current streaming response doesn't expose full event details,
@@ -743,7 +717,7 @@ class AdvancedConsoleChatbot {
             
         case .responseOutputItemCompleted, .responseOutputItemDone:
             print("🔍 DEBUG: Processing event: responseOutputItemCompleted/Done")
-            await handleOutputItemDone(chunk: chunk, outputsForModel: &outputsForModel, assistantMessageCompleted: &assistantMessageCompleted)
+            await handleOutputItemDone(chunk: chunk, functionCallOutputs: &functionCallOutputs, assistantMessageCompleted: &assistantMessageCompleted)
             
         case .responseCompleted:
             print("🔍 DEBUG: Processing event: responseCompleted")
@@ -946,7 +920,7 @@ class AdvancedConsoleChatbot {
     /// Handle response.output_item.done events
     private func handleOutputItemDone(
         chunk: SAOAIStreamingResponse,
-        outputsForModel: inout [SAOAIMessage],
+        functionCallOutputs: inout [SAOAIInputContent.FunctionCallOutput],
         assistantMessageCompleted: inout Bool
     ) async {
         guard let item = chunk.item else { return }
@@ -988,14 +962,14 @@ class AdvancedConsoleChatbot {
                 }
                 
                 // Stage for model with proper function call output format (Azure Responses API style)
-                // NEW: Use the new optional role functionality for tool outputs
-                let functionCallOutput = SAOAIMessage(functionCallOutput: .init(
+                // NEW: Use direct function call output format for Azure API compatibility
+                let functionCallOutput = SAOAIInputContent.FunctionCallOutput(
                     callId: callIdForSubmit,
                     output: result
-                ))
-                outputsForModel.append(functionCallOutput)
+                )
+                functionCallOutputs.append(functionCallOutput)
                 stepManager.processedFunctionCallIds.insert(callIdForSubmit)
-                print("🔍 DEBUG: Added functionCallOutput without role (Python SDK style) to outputsForModel")
+                print("🔍 DEBUG: Added functionCallOutput (native Azure API format) to functionCallOutputs")
             }
         }
         

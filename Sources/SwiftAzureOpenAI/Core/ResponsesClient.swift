@@ -32,7 +32,7 @@ public final class ResponsesClient {
         
         let request = SAOAIRequest(
             model: model,
-            input: [message],
+            input: [.message(message)],
             maxOutputTokens: maxOutputTokens,
             temperature: temperature,
             topP: topP,
@@ -60,7 +60,7 @@ public final class ResponsesClient {
         
         let request = SAOAIRequest(
             model: model,
-            input: [message],
+            input: [.message(message)],
             maxOutputTokens: maxOutputTokens,
             temperature: temperature,
             topP: topP,
@@ -90,7 +90,7 @@ public final class ResponsesClient {
         
         let request = SAOAIRequest(
             model: model,
-            input: [message],
+            input: [.message(message)],
             maxOutputTokens: maxOutputTokens,
             temperature: temperature,
             topP: topP,
@@ -120,7 +120,7 @@ public final class ResponsesClient {
         
         let request = SAOAIRequest(
             model: model,
-            input: [message],
+            input: [.message(message)],
             maxOutputTokens: maxOutputTokens,
             temperature: temperature,
             topP: topP,
@@ -144,9 +144,10 @@ public final class ResponsesClient {
         previousResponseId: String? = nil,
         reasoning: SAOAIReasoning? = nil
     ) async throws -> SAOAIResponse {
+        let inputArray = input.map { SAOAIInput.message($0) }
         let request = SAOAIRequest(
             model: model,
-            input: input,
+            input: inputArray,
             maxOutputTokens: maxOutputTokens,
             temperature: temperature,
             topP: topP,
@@ -169,13 +170,40 @@ public final class ResponsesClient {
         previousResponseId: String? = nil,
         reasoning: SAOAIReasoning? = nil
     ) -> AsyncThrowingStream<SAOAIStreamingResponse, Error> {
+        let inputArray = input.map { SAOAIInput.message($0) }
         let request = SAOAIRequest(
             model: model,
-            input: input,
+            input: inputArray,
             maxOutputTokens: maxOutputTokens,
             temperature: temperature,
             topP: topP,
             tools: tools,
+            previousResponseId: previousResponseId,
+            reasoning: reasoning,
+            stream: true
+        )
+        
+        return sendStreamingRequest(request)
+    }
+    
+    /// Create a streaming response with function call outputs (for tool results)
+    public func createStreaming(
+        model: String,
+        functionCallOutputs: [SAOAIInputContent.FunctionCallOutput],
+        maxOutputTokens: Int? = nil,
+        temperature: Double? = nil,
+        topP: Double? = nil,
+        previousResponseId: String? = nil,
+        reasoning: SAOAIReasoning? = nil
+    ) -> AsyncThrowingStream<SAOAIStreamingResponse, Error> {
+        let inputArray = functionCallOutputs.map { SAOAIInput.functionCallOutput($0) }
+        let request = SAOAIRequest(
+            model: model,
+            input: inputArray,
+            maxOutputTokens: maxOutputTokens,
+            temperature: temperature,
+            topP: topP,
+            tools: nil, // No tools needed for function output responses
             previousResponseId: previousResponseId,
             reasoning: reasoning,
             stream: true
