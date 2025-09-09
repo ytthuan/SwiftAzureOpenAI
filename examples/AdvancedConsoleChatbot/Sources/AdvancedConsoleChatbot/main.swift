@@ -271,7 +271,8 @@ class AdvancedChatHistory {
         for (index, message) in messages.enumerated() {
             let roleIcon = message.role == .user ? "👤" : 
                           message.role == .assistant ? "🤖" : "🔧"
-            print("\(index + 1). \(roleIcon) \(message.role.rawValue.capitalized):")
+            let roleName = message.role?.rawValue.capitalized ?? "ToolOutput"
+            print("\(index + 1). \(roleIcon) \(roleName):")
             for content in message.content {
                 switch content {
                 case .inputText(let text):
@@ -519,7 +520,8 @@ class AdvancedConsoleChatbot {
             print("\n🔧 Submitting tool results for next round...")
             print("🔍 DEBUG: outputsForModel count: \(outputsForModel.count)")
             for (index, message) in outputsForModel.enumerated() {
-                print("🔍 DEBUG: Message \(index): role=\(message.role.rawValue)")
+                let roleDescription = message.role?.rawValue ?? "no-role"
+                print("🔍 DEBUG: Message \(index): role=\(roleDescription)")
                 for content in message.content {
                     switch content {
                     case .functionCallOutput(let output):
@@ -557,7 +559,8 @@ class AdvancedConsoleChatbot {
                 print("🔍 DEBUG: Detailed request structure:")
                 for (index, message) in outputsForModel.enumerated() {
                     print("   Message[\(index)]:")
-                    print("     - role: \(message.role.rawValue)")
+                    let roleDescription = message.role?.rawValue ?? "no-role"
+                    print("     - role: \(roleDescription)")
                     print("     - content count: \(message.content.count)")
                     for (contentIndex, content) in message.content.enumerated() {
                         switch content {
@@ -578,8 +581,8 @@ class AdvancedConsoleChatbot {
                     }
                 }
                 
-                // Use tool role for function call outputs (Azure Responses API format)
-                print("🔍 DEBUG: Using .tool role for function call outputs...")
+                // Use new optional role format for function call outputs (Python SDK style)
+                print("🔍 DEBUG: Sending function call outputs without role (Python SDK style)...")
                 
                 let followUpStream = client.responses.createStreaming(
                     model: azureConfig.deploymentName,
@@ -612,10 +615,10 @@ class AdvancedConsoleChatbot {
                         }
                     }
                     
-                    print("🔍 DEBUG: Tool role approach succeeded!")
+                    print("🔍 DEBUG: Function output streaming succeeded!")
                     
                 } catch {
-                    print("🔍 DEBUG: Tool role approach failed: \(error)")
+                    print("🔍 DEBUG: Function output streaming failed: \(error)")
                     throw error
                 }
                 
@@ -985,16 +988,14 @@ class AdvancedConsoleChatbot {
                 }
                 
                 // Stage for model with proper function call output format (Azure Responses API style)
-                let functionCallOutput = SAOAIMessage(
-                    role: .tool,  // Use .tool role instead of .user role
-                    content: [.functionCallOutput(.init(
-                        callId: callIdForSubmit,
-                        output: result
-                    ))]
-                )
+                // NEW: Use the new optional role functionality for tool outputs
+                let functionCallOutput = SAOAIMessage(functionCallOutput: .init(
+                    callId: callIdForSubmit,
+                    output: result
+                ))
                 outputsForModel.append(functionCallOutput)
                 stepManager.processedFunctionCallIds.insert(callIdForSubmit)
-                print("🔍 DEBUG: Added functionCallOutput with .tool role to outputsForModel")
+                print("🔍 DEBUG: Added functionCallOutput without role (Python SDK style) to outputsForModel")
             }
         }
         

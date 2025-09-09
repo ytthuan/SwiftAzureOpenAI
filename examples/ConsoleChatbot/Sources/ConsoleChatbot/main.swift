@@ -71,7 +71,8 @@ class ChatHistory {
         for (index, message) in messages.enumerated() {
             let roleIcon = message.role == .user ? "👤" : message.role == .assistant ? "🤖" : "🔧"
             let content = message.content.first?.description ?? "No content"
-            print("\(index + 1). \(roleIcon) \(message.role.rawValue.capitalized): \(content)")
+            let roleName = message.role?.rawValue.capitalized ?? "ToolOutput"
+            print("\(index + 1). \(roleIcon) \(roleName): \(content)")
         }
         print("Tools enabled: \(toolsEnabled ? "✅" : "❌")")
         print("================\n")
