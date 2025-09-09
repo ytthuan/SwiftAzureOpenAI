@@ -578,44 +578,21 @@ class AdvancedConsoleChatbot {
                     }
                 }
                 
-                // Try different approaches for the follow-up call
-                print("🔍 DEBUG: Attempting follow-up call approach 1: tool role messages...")
-                
-                // Approach 1: Try using .tool role instead of .user role for function outputs
-                let toolRoleMessages = outputsForModel.map { message in
-                    SAOAIMessage(role: .tool, content: message.content)
-                }
-                
-                print("🔍 DEBUG: Tool role messages structure:")
-                for (index, message) in toolRoleMessages.enumerated() {
-                    print("   ToolMessage[\(index)]: role=\(message.role.rawValue)")
-                    for (contentIndex, content) in message.content.enumerated() {
-                        switch content {
-                        case .functionCallOutput(let output):
-                            print("     Content[\(contentIndex)]: type=function_call_output, callId=\(output.callId)")
-                        default:
-                            print("     Content[\(contentIndex)]: other type")
-                        }
-                    }
-                }
+                // Use tool role for function call outputs (Azure Responses API format)
+                print("🔍 DEBUG: Using .tool role for function call outputs...")
                 
                 let followUpStream = client.responses.createStreaming(
                     model: azureConfig.deploymentName,
-                    input: toolRoleMessages,
+                    input: outputsForModel,
                     previousResponseId: previousResponseId
                 )
                 
                 // Reset outputs for next round
                 outputsForModel.removeAll()
                 
-                // Process follow-up stream with error handling for different approaches
-                var streamProcessed = false
-                var lastError: Error?
-                
+                // Process follow-up stream
                 do {
                     for try await chunk in followUpStream {
-                        streamProcessed = true
-                        
                         // Update response ID
                         if let chunkId = chunk.id {
                             lastResponseId = chunkId
@@ -634,52 +611,12 @@ class AdvancedConsoleChatbot {
                             break
                         }
                     }
-                } catch {
-                    lastError = error
-                    print("🔍 DEBUG: Tool role approach failed with error: \(error)")
                     
-                    // If tool role failed, try original user role approach
-                    if !streamProcessed {
-                        print("🔍 DEBUG: Attempting fallback approach with user role messages...")
-                        
-                        do {
-                            let fallbackStream = client.responses.createStreaming(
-                                model: azureConfig.deploymentName,
-                                input: outputsForModel.isEmpty ? 
-                                    toolRoleMessages.map { SAOAIMessage(role: .user, content: $0.content) } : 
-                                    outputsForModel,
-                                previousResponseId: previousResponseId
-                            )
-                            
-                            for try await chunk in fallbackStream {
-                                // Update response ID
-                                if let chunkId = chunk.id {
-                                    lastResponseId = chunkId
-                                }
-                                
-                                // Process enhanced SSE events
-                                await processChunkWithEnhancedEventHandling(
-                                    chunk: chunk,
-                                    input: input,
-                                    assistantMessageCompleted: &assistantMessageCompleted,
-                                    outputsForModel: &outputsForModel
-                                )
-                                
-                                // Check for completion
-                                if assistantMessageCompleted {
-                                    break
-                                }
-                            }
-                            
-                            print("🔍 DEBUG: Fallback user role approach succeeded!")
-                            
-                        } catch let fallbackError {
-                            print("🔍 DEBUG: Fallback approach also failed: \(fallbackError)")
-                            throw lastError ?? fallbackError
-                        }
-                    } else {
-                        throw error
-                    }
+                    print("🔍 DEBUG: Tool role approach succeeded!")
+                    
+                } catch {
+                    print("🔍 DEBUG: Tool role approach failed: \(error)")
+                    throw error
                 }
                 
                 // Update previous response ID for next round
@@ -1049,7 +986,7 @@ class AdvancedConsoleChatbot {
                 
                 // Stage for model with proper function call output format (Azure Responses API style)
                 let functionCallOutput = SAOAIMessage(
-                    role: .user,
+                    role: .tool,  // Use .tool role instead of .user role
                     content: [.functionCallOutput(.init(
                         callId: callIdForSubmit,
                         output: result
@@ -1057,7 +994,7 @@ class AdvancedConsoleChatbot {
                 )
                 outputsForModel.append(functionCallOutput)
                 stepManager.processedFunctionCallIds.insert(callIdForSubmit)
-                print("🔍 DEBUG: Added functionCallOutput to outputsForModel")
+                print("🔍 DEBUG: Added functionCallOutput with .tool role to outputsForModel")
             }
         }
         
