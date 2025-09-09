@@ -130,7 +130,7 @@ let weatherTool = SAOAITool.function(
                 "description": .string("Temperature unit preference")
             ])
         ]),
-        "required": .array([.string("location")])
+        "required": .array([.string("location"), .string("unit")])
     ])
 )
 
@@ -168,14 +168,7 @@ struct ToolExecutor {
             "\(Int.random(in: 60...85))°F" : temp
         
         return """
-        {
-            "location": "\(location)",
-            "temperature": "\(convertedTemp)",
-            "condition": "\(condition)",
-            "humidity": "\(Int.random(in: 30...80))%",
-            "wind_speed": "\(Int.random(in: 5...25)) km/h",
-            "unit": "\(unit)"
-        }
+        {"location": "\(location)", "temperature": "\(convertedTemp)", "condition": "\(condition)", "humidity": "\(Int.random(in: 30...80))%", "wind_speed": "\(Int.random(in: 5...25)) km/h", "unit": "\(unit)"}
         """
     }
     
@@ -188,36 +181,20 @@ struct ToolExecutor {
                               .replacingOccurrences(of: "\"", with: "")
                               .replacingOccurrences(of: "'", with: "")
             return """
-            {
-                "output": "\(output)",
-                "status": "success",
-                "execution_time": "0.05s"
-            }
+            {"output": "\(output)", "status": "success", "execution_time": "0.05s"}
             """
         } else if code.contains("+") || code.contains("-") || code.contains("*") || code.contains("/") {
             let result = Int.random(in: 1...100)
             return """
-            {
-                "output": "\(result)",
-                "status": "success",
-                "execution_time": "0.02s"
-            }
+            {"output": "\(result)", "status": "success", "execution_time": "0.02s"}
             """
         } else if code.contains("import") {
             return """
-            {
-                "output": "Module imported successfully",
-                "status": "success",
-                "execution_time": "0.15s"
-            }
+            {"output": "Module imported successfully", "status": "success", "execution_time": "0.15s"}
             """
         } else {
             return """
-            {
-                "output": "Code executed successfully",
-                "status": "success",
-                "execution_time": "0.08s"
-            }
+            {"output": "Code executed successfully", "status": "success", "execution_time": "0.08s"}
             """
         }
     }
@@ -228,29 +205,17 @@ struct ToolExecutor {
         if expression.contains("+") {
             let result = Int.random(in: 10...100)
             return """
-            {
-                "expression": "\(expression)",
-                "result": \(result),
-                "type": "addition"
-            }
+            {"expression": "\(expression)", "result": \(result), "type": "addition"}
             """
         } else if expression.contains("sqrt") {
             let result = Int.random(in: 2...10)
             return """
-            {
-                "expression": "\(expression)",
-                "result": \(result),
-                "type": "square_root"
-            }
+            {"expression": "\(expression)", "result": \(result), "type": "square_root"}
             """
         } else {
             let result = Double.random(in: 1...100)
             return """
-            {
-                "expression": "\(expression)",
-                "result": \(String(format: "%.2f", result)),
-                "type": "calculation"
-            }
+            {"expression": "\(expression)", "result": "\(String(format: "%.2f", result))", "type": "calculation"}
             """
         }
     }
@@ -552,9 +517,23 @@ class AdvancedConsoleChatbot {
         // Main conversation loop - continue until assistant message is completed
         while !outputsForModel.isEmpty && !assistantMessageCompleted {
             print("\n🔧 Submitting tool results for next round...")
+            print("🔍 DEBUG: outputsForModel count: \(outputsForModel.count)")
+            for (index, message) in outputsForModel.enumerated() {
+                print("🔍 DEBUG: Message \(index): role=\(message.role.rawValue)")
+                for content in message.content {
+                    switch content {
+                    case .functionCallOutput(let output):
+                        print("🔍 DEBUG: FunctionCallOutput - callId=\(output.callId), output='\(output.output)'")
+                    default:
+                        print("🔍 DEBUG: Other content type")
+                    }
+                }
+            }
+            print("🔍 DEBUG: previousResponseId: \(previousResponseId ?? "nil")")
             
             do {
                 // Create new stream with tool outputs
+                print("🔍 DEBUG: Creating follow-up stream with model=\(azureConfig.deploymentName)")
                 let followUpStream = client.responses.createStreaming(
                     model: azureConfig.deploymentName,
                     input: outputsForModel,
@@ -656,31 +635,40 @@ class AdvancedConsoleChatbot {
         // Handle specific event types like Python SDK
         switch eventType {
         case .responseOutputItemAdded:
+            print("🔍 DEBUG: Processing event: responseOutputItemAdded")
             await handleOutputItemAdded(chunk: chunk, assistantMessageCompleted: &assistantMessageCompleted)
             
         case .responseOutputTextDelta:
+            print("🔍 DEBUG: Processing event: responseOutputTextDelta")
             await handleOutputTextDelta(chunk: chunk)
             
         case .responseCodeInterpreterCallCodeDelta:
+            print("🔍 DEBUG: Processing event: responseCodeInterpreterCallCodeDelta")
             await handleCodeInterpreterCallCodeDelta(chunk: chunk)
             
         case .responseFunctionCallArgumentsDelta:
+            print("🔍 DEBUG: Processing event: responseFunctionCallArgumentsDelta")
             await handleFunctionCallArgumentsDelta(chunk: chunk)
             
         case .responseCodeInterpreterCallCompleted:
+            print("🔍 DEBUG: Processing event: responseCodeInterpreterCallCompleted")
             await handleCodeInterpreterCallCompleted(chunk: chunk)
             
         case .responseFunctionCallArgumentsDone:
+            print("🔍 DEBUG: Processing event: responseFunctionCallArgumentsDone")
             await handleFunctionCallArgumentsDone(chunk: chunk)
             
         case .responseOutputItemCompleted, .responseOutputItemDone:
+            print("🔍 DEBUG: Processing event: responseOutputItemCompleted/Done")
             await handleOutputItemDone(chunk: chunk, outputsForModel: &outputsForModel, assistantMessageCompleted: &assistantMessageCompleted)
             
         case .responseCompleted:
+            print("🔍 DEBUG: Processing event: responseCompleted")
             // Handle response completion
             break
             
         default:
+            print("🔍 DEBUG: Processing event: \(eventType.rawValue) (fallback to legacy)")
             // Handle other event types or fallback to legacy processing
             await processLegacyStreamingChunk(chunk)
         }
@@ -795,14 +783,28 @@ class AdvancedConsoleChatbot {
     
     /// Handle response.function_call_arguments.delta events
     private func handleFunctionCallArgumentsDelta(chunk: SAOAIStreamingResponse) async {
-        guard let delta = chunk.output?.first?.content?.first?.text, !delta.isEmpty else { return }
-        guard let itemId = chunk.item?.id else { return }
+        print("🔍 DEBUG: handleFunctionCallArgumentsDelta - chunk.id: \(chunk.id ?? "nil"), chunk.item: \(chunk.item?.id ?? "nil")")
+        
+        // Use chunk.id as itemId for function call arguments delta events
+        guard let itemId = chunk.id else { 
+            print("🔍 DEBUG: handleFunctionCallArgumentsDelta - no chunk.id")
+            return 
+        }
+        
+        let delta = chunk.output?.first?.content?.first?.text ?? ""
+        print("🔍 DEBUG: handleFunctionCallArgumentsDelta - itemId=\(itemId), delta='\(delta)'")
+        
+        guard !delta.isEmpty else { 
+            print("🔍 DEBUG: handleFunctionCallArgumentsDelta - empty delta, skipping")
+            return 
+        }
         
         // Accumulate deltas instead of streaming them directly (Python SDK approach)
         if stepManager.functionArgsByItemId[itemId] == nil {
             stepManager.functionArgsByItemId[itemId] = ""
         }
         stepManager.functionArgsByItemId[itemId]! += delta
+        print("🔍 DEBUG: Updated functionArgsByItemId[\(itemId)] = '\(stepManager.functionArgsByItemId[itemId]!)'")
     }
     
     /// Handle response.code_interpreter_call.completed events
@@ -839,6 +841,7 @@ class AdvancedConsoleChatbot {
         
         // Get final accumulated arguments
         let argsStr = stepManager.functionArgsByItemId[itemId] ?? ""
+        print("🔍 DEBUG: handleFunctionCallArgumentsDone - itemId=\(itemId), argsStr='\(argsStr)'")
         
         // Update step input
         if let meta = stepManager.functionMetaByItemId[itemId] {
@@ -846,6 +849,8 @@ class AdvancedConsoleChatbot {
             let prevInput = stepManager.stepInputsByFuncName[fnName] ?? ""
             let combinedInput = prevInput.isEmpty ? argsStr : "\(prevInput)\n\(argsStr)"
             stepManager.stepInputsByFuncName[fnName] = combinedInput
+            
+            print("🔍 DEBUG: Updated stepInputsByFuncName[\(fnName)] = '\(combinedInput)'")
             
             if let stepForFn = stepManager.functionNameToStep[fnName] {
                 stepForFn.input = combinedInput
@@ -878,12 +883,14 @@ class AdvancedConsoleChatbot {
             
             // Get final arguments
             let rawArgs = stepManager.functionArgsByItemId[itemId] ?? ""
+            print("🔍 DEBUG: handleOutputItemDone - funcName=\(funcName), callId=\(callIdForSubmit), rawArgs='\(rawArgs)'")
             
             if !funcName.isEmpty && !callIdForSubmit.isEmpty {
                 print("\n🔧 Executing \(funcName)...")
                 
                 // Execute the tool function
                 let result = await executeTool(name: funcName, arguments: rawArgs, input: "")
+                print("🔍 DEBUG: Tool execution result: '\(result)'")
                 
                 // Update step output
                 let prevOutput = stepManager.stepOutputsByFuncName[funcName] ?? ""
@@ -907,6 +914,7 @@ class AdvancedConsoleChatbot {
                 )
                 outputsForModel.append(functionCallOutput)
                 stepManager.processedFunctionCallIds.insert(callIdForSubmit)
+                print("🔍 DEBUG: Added functionCallOutput to outputsForModel")
             }
         }
         
@@ -986,11 +994,20 @@ class AdvancedConsoleChatbot {
     }
     
     private func executeTool(name: String, arguments: String, input: String) async -> String {
+        // Debug logging
+        print("🔍 DEBUG: executeTool called with:")
+        print("   - name: \(name)")
+        print("   - arguments: '\(arguments)'")
+        print("   - input: '\(input)'")
+        
         // Parse the JSON arguments from the function call
         guard let data = arguments.data(using: .utf8),
               let argumentsDict = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            print("❌ DEBUG: Failed to parse arguments as JSON")
             return "{\"error\": \"Invalid arguments format\"}"
         }
+        
+        print("✅ DEBUG: Successfully parsed arguments: \(argumentsDict)")
         
         switch name {
         case "get_weather":
