@@ -530,10 +530,54 @@ class AdvancedConsoleChatbot {
                 }
             }
             print("🔍 DEBUG: previousResponseId: \(previousResponseId ?? "nil")")
+            print("🔍 DEBUG: azureConfig details:")
+            print("   - endpoint: \(azureConfig.endpoint)")
+            print("   - deploymentName: \(azureConfig.deploymentName)")
+            print("   - apiVersion: \(azureConfig.apiVersion)")
+            
+            // Log the request payload structure for debugging
+            print("🔍 DEBUG: Request payload structure:")
+            print("   - model: \(azureConfig.deploymentName)")
+            print("   - input messages count: \(outputsForModel.count)")
+            print("   - previousResponseId: \(previousResponseId ?? "nil")")
+            print("   - tools: none (tool execution completed)")
             
             do {
                 // Create new stream with tool outputs
                 print("🔍 DEBUG: Creating follow-up stream with model=\(azureConfig.deploymentName)")
+                
+                // Add detailed logging before the API call
+                print("🔍 DEBUG: About to call client.responses.createStreaming with:")
+                print("   - Configuration endpoint: \(azureConfig.endpoint)")
+                print("   - Model/deployment: \(azureConfig.deploymentName)")
+                print("   - Messages: \(outputsForModel.count) tool output messages")
+                print("   - Previous response ID: \(previousResponseId ?? "nil")")
+                
+                // Log the exact request structure
+                print("🔍 DEBUG: Detailed request structure:")
+                for (index, message) in outputsForModel.enumerated() {
+                    print("   Message[\(index)]:")
+                    print("     - role: \(message.role.rawValue)")
+                    print("     - content count: \(message.content.count)")
+                    for (contentIndex, content) in message.content.enumerated() {
+                        switch content {
+                        case .functionCallOutput(let output):
+                            print("       Content[\(contentIndex)]: functionCallOutput")
+                            print("         - type: function_call_output")
+                            print("         - callId: \(output.callId)")
+                            print("         - output: \(output.output)")
+                        case .inputText(let text):
+                            print("       Content[\(contentIndex)]: inputText")
+                            print("         - type: input_text")
+                            print("         - text: \(text.text)")
+                        case .inputImage(let image):
+                            print("       Content[\(contentIndex)]: inputImage")
+                            print("         - type: input_image")
+                            print("         - imageURL: \(image.imageURL)")
+                        }
+                    }
+                }
+                
                 let followUpStream = client.responses.createStreaming(
                     model: azureConfig.deploymentName,
                     input: outputsForModel,
@@ -569,6 +613,31 @@ class AdvancedConsoleChatbot {
                 
             } catch {
                 print("❌ Error processing follow-up stream: \(error.localizedDescription)")
+                print("🔍 DEBUG: Full error details: \(error)")
+                
+                // Try to extract more specific error information
+                if let openAIError = error as? SAOAIError {
+                    print("🔍 DEBUG: SAOAIError details:")
+                    print("   - Type: \(openAIError)")
+                    switch openAIError {
+                    case .invalidAPIKey:
+                        print("   - Invalid API key")
+                    case .rateLimitExceeded:
+                        print("   - Rate limit exceeded")
+                    case .serverError(let statusCode):
+                        print("   - Server error with status code: \(statusCode)")
+                    case .invalidRequest(let message):
+                        print("   - Invalid request: \(message)")
+                    case .networkError(let underlying):
+                        print("   - Network error: \(underlying.localizedDescription)")
+                    case .decodingError(let underlying):
+                        print("   - Decoding error: \(underlying.localizedDescription)")
+                    case .apiError(let errorResponse):
+                        print("   - API error: \(errorResponse.error.message)")
+                        print("   - Error type: \(errorResponse.error.type ?? "unknown")")
+                        print("   - Error code: \(errorResponse.error.code ?? "unknown")")
+                    }
+                }
                 break
             }
         }
@@ -904,7 +973,7 @@ class AdvancedConsoleChatbot {
                     print("Result: \(rawDisplay)")
                 }
                 
-                // Stage for model with proper function call output format
+                // Stage for model with proper function call output format (Azure Responses API style)
                 let functionCallOutput = SAOAIMessage(
                     role: .user,
                     content: [.functionCallOutput(.init(
