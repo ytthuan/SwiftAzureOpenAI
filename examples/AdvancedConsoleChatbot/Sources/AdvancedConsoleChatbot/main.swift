@@ -513,6 +513,17 @@ class AdvancedConsoleChatbot {
                     assistantContent += text
                 }
                 
+                // Also track from legacy streaming for robustness
+                if chunk.eventType == nil {
+                    for output in chunk.output ?? [] {
+                        for content in output.content ?? [] {
+                            if let text = content.text, !text.isEmpty, content.type != "status" {
+                                assistantContent += text
+                            }
+                        }
+                    }
+                }
+                
                 // Check for completion
                 if assistantMessageCompleted {
                     break
@@ -563,6 +574,17 @@ class AdvancedConsoleChatbot {
                         assistantContent += text
                     }
                     
+                    // Also track from legacy streaming for robustness in follow-up rounds
+                    if chunk.eventType == nil {
+                        for output in chunk.output ?? [] {
+                            for content in output.content ?? [] {
+                                if let text = content.text, !text.isEmpty, content.type != "status" {
+                                    assistantContent += text
+                                }
+                            }
+                        }
+                    }
+                    
                     // Check for completion
                     if assistantMessageCompleted {
                         break
@@ -602,11 +624,17 @@ class AdvancedConsoleChatbot {
         
         // Create final response for history using accumulated content
         if let responseId = lastResponseId {
+            // Use currentMessage content if available, fall back to assistantContent
+            let finalContent = currentMessage?.content ?? assistantContent
+            
+            // Ensure we have some content for the assistant response
+            let responseContent = finalContent.isEmpty ? "I completed the requested action." : finalContent
+            
             let finalResponse = SAOAIResponse(
                 id: responseId,
                 model: azureConfig.deploymentName,
                 created: Int(Date().timeIntervalSince1970),
-                output: [SAOAIOutput(content: [.outputText(.init(text: assistantContent))])],
+                output: [SAOAIOutput(content: [.outputText(.init(text: responseContent))])],
                 usage: nil
             )
             chatHistory.addAssistantResponse(finalResponse)
