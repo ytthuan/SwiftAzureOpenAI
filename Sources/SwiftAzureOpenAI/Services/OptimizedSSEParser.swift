@@ -49,15 +49,18 @@ public final class OptimizedSSEParser: Sendable {
     // MARK: - High-Performance Parsing Methods
     
     /// Parse SSE chunk using optimized byte-level processing
-    public static func parseSSEChunkOptimized(_ data: Data) throws -> SAOAIStreamingResponse? {
+    public static func parseSSEChunkOptimized(_ data: Data, logger: SSELogger? = nil) throws -> SAOAIStreamingResponse? {
         let buffer = bufferPool.acquire()
         defer { bufferPool.release(buffer) }
         
-        return try parseLines(from: data, using: buffer)
+        // Log raw chunk if logger is provided
+        logger?.logRawChunk(data)
+        
+        return try parseLines(from: data, using: buffer, logger: logger)
     }
     
     /// Parse lines from SSE data using byte-level processing
-    private static func parseLines(from data: Data, using buffer: Data) throws -> SAOAIStreamingResponse? {
+    private static func parseLines(from data: Data, using buffer: Data, logger: SSELogger? = nil) throws -> SAOAIStreamingResponse? {
         var currentPos = 0
         let dataCount = data.count
         
@@ -97,7 +100,7 @@ public final class OptimizedSSEParser: Sendable {
                     }
                     
                     // Try to parse JSON directly from subdata to avoid copying
-                    if let response = try parseJSONFast(jsonData) {
+                    if let response = try parseJSONFast(jsonData, logger: logger) {
                         return response
                     }
                 }
@@ -108,7 +111,7 @@ public final class OptimizedSSEParser: Sendable {
     }
     
     /// Fast JSON parsing with minimal allocations
-    private static func parseJSONFast(_ jsonData: Data) throws -> SAOAIStreamingResponse? {
+    private static func parseJSONFast(_ jsonData: Data, logger: SSELogger? = nil) throws -> SAOAIStreamingResponse? {
         // Skip empty JSON data
         guard !jsonData.isEmpty else { return nil }
         
@@ -118,6 +121,9 @@ public final class OptimizedSSEParser: Sendable {
         do {
             // Try Azure OpenAI event format first (most common)
             if let azureEvent = try? decoder.decode(AzureOpenAISSEEvent.self, from: jsonData) {
+                // Log the event if logger is provided
+                logger?.logEvent(azureEvent, rawData: jsonData)
+                
                 return convertAzureEventToStreamingResponseOptimized(azureEvent)
             }
             
@@ -139,6 +145,10 @@ public final class OptimizedSSEParser: Sendable {
             return createDeltaResponse(event: event, contentType: "function_call_arguments")
         case "response.created", "response.in_progress", "response.completed":
             return createLifecycleResponse(event: event)
+        case "response.output_item.added", "response.output_item.done":
+            return createOutputItemResponse(event: event)
+        case "response.function_call_arguments.done":
+            return createArgumentsDoneResponse(event: event)
         default:
             // Use the SSE parser helper for less common events  
             return SSEParser.convertLifecycleEvent(event)
@@ -152,12 +162,20 @@ public final class OptimizedSSEParser: Sendable {
         let content = SAOAIStreamingContent(type: contentType, text: delta, index: event.outputIndex ?? 0)
         let output = SAOAIStreamingOutput(content: [content], role: "assistant")
         
+        // Convert event type to enum
+        let eventType = SAOAIStreamingEventType(rawValue: event.type)
+        
+        // Convert item if present
+        let item = event.item.map { SAOAIStreamingItem(from: $0) }
+        
         return SAOAIStreamingResponse(
             id: event.itemId,
             model: nil,
             created: nil,
             output: [output],
-            usage: nil
+            usage: nil,
+            eventType: eventType,
+            item: item
         )
     }
     
@@ -165,12 +183,17 @@ public final class OptimizedSSEParser: Sendable {
     private static func createLifecycleResponse(event: AzureOpenAISSEEvent) -> SAOAIStreamingResponse? {
         guard let response = event.response else { return nil }
         
+        // Convert event type to enum
+        let eventType = SAOAIStreamingEventType(rawValue: event.type)
+        
         return SAOAIStreamingResponse(
             id: response.id,
             model: response.model,
             created: response.createdAt,
             output: response.output?.compactMap { convertOutputOptimized($0) },
-            usage: response.usage
+            usage: response.usage,
+            eventType: eventType,
+            item: nil
         )
     }
     
@@ -178,7 +201,8 @@ public final class OptimizedSSEParser: Sendable {
     private static func convertOutputOptimized(_ output: AzureOpenAIEventOutput) -> SAOAIStreamingOutput? {
         switch output.type {
         case "function_call":
-            let content = SAOAIStreamingContent(type: "function_call", text: output.name ?? "", index: 0)
+            // For function call outputs, don't create text content as this should be handled by event processing
+            let content = SAOAIStreamingContent(type: "status", text: "", index: 0)
             return SAOAIStreamingOutput(content: [content], role: "assistant")
         default:
             return nil
@@ -221,6 +245,60 @@ private final class CachedJSONDecoder: @unchecked Sendable {
     
     func decode<T: Decodable>(_ type: T.Type, from data: Data) throws -> T {
         return try decoder.decode(type, from: data)
+    }
+}
+
+// MARK: - Additional methods for OptimizedSSEParser
+
+extension OptimizedSSEParser {
+    /// Fast output item response creation (response.output_item.added/done)
+    private static func createOutputItemResponse(event: AzureOpenAISSEEvent) -> SAOAIStreamingResponse? {
+        guard let item = event.item else { return nil }
+        
+        // Create status content without any text to prevent function names from being printed
+        let content = SAOAIStreamingContent(type: "status", text: "", index: 0)
+        let output = SAOAIStreamingOutput(content: [content], role: "assistant")
+        
+        // Convert event type to enum
+        let eventType = SAOAIStreamingEventType(rawValue: event.type)
+        
+        // Convert item
+        let streamingItem = SAOAIStreamingItem(from: item)
+        
+        return SAOAIStreamingResponse(
+            id: item.id,
+            model: nil,
+            created: nil,
+            output: [output],
+            usage: nil,
+            eventType: eventType,
+            item: streamingItem
+        )
+    }
+    
+    /// Fast function call arguments done response creation
+    private static func createArgumentsDoneResponse(event: AzureOpenAISSEEvent) -> SAOAIStreamingResponse? {
+        guard let item = event.item else { return nil }
+        
+        // Create status content without any text  
+        let content = SAOAIStreamingContent(type: "status", text: "", index: 0)
+        let output = SAOAIStreamingOutput(content: [content], role: "assistant")
+        
+        // Convert event type to enum
+        let eventType = SAOAIStreamingEventType(rawValue: event.type)
+        
+        // Convert item
+        let streamingItem = SAOAIStreamingItem(from: item)
+        
+        return SAOAIStreamingResponse(
+            id: item.id,
+            model: nil,
+            created: nil,
+            output: [output],
+            usage: nil,
+            eventType: eventType,
+            item: streamingItem
+        )
     }
 }
 

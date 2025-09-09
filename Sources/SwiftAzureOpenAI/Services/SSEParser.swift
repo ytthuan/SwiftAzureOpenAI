@@ -200,7 +200,12 @@ public final class SSEParser: Sendable {
     
     /// Handle delta events containing incremental streaming content
     private static func handleDeltaEvent(event: AzureOpenAISSEEvent, contentType: String) -> SAOAIStreamingResponse? {
-        guard let delta = event.delta else { return nil }
+        guard let delta = event.delta else { 
+            print("🔍 DEBUG: handleDeltaEvent - no delta for type: \(event.type)")
+            return nil 
+        }
+        
+        print("🔍 DEBUG: handleDeltaEvent - type: \(event.type), delta: '\(delta)', itemId: \(event.itemId ?? "nil"), hasItem: \(event.item != nil)")
         
         let content = SAOAIStreamingContent(type: contentType, text: delta, index: event.outputIndex ?? 0)
         let output = SAOAIStreamingOutput(content: [content], role: "assistant")
@@ -208,10 +213,31 @@ public final class SSEParser: Sendable {
         // Convert event type to enum
         let eventType = SAOAIStreamingEventType(rawValue: event.type)
         
-        // Convert item if present
-        let item = event.item.map { SAOAIStreamingItem(from: $0) }
+        // Convert item if present, or create minimal item from itemId for delta events
+        let item: SAOAIStreamingItem? = {
+            if let eventItem = event.item {
+                print("🔍 DEBUG: handleDeltaEvent - using existing item with id: \(eventItem.id ?? "nil")")
+                return SAOAIStreamingItem(from: eventItem)
+            } else if let itemId = event.itemId {
+                print("🔍 DEBUG: handleDeltaEvent - creating minimal item with id: \(itemId)")
+                // Create minimal streaming item for delta events that only have itemId
+                return SAOAIStreamingItem(
+                    type: nil,  // We don't know the type from delta events
+                    id: itemId,
+                    status: nil,
+                    arguments: nil,
+                    callId: nil,
+                    name: nil,
+                    summary: nil,
+                    containerId: nil
+                )
+            } else {
+                print("🔍 DEBUG: handleDeltaEvent - no item data available")
+                return nil
+            }
+        }()
         
-        return SAOAIStreamingResponse(
+        let result = SAOAIStreamingResponse(
             id: event.itemId, // Use item_id for delta events
             model: nil,
             created: nil,
@@ -220,6 +246,9 @@ public final class SSEParser: Sendable {
             eventType: eventType,
             item: item
         )
+        
+        print("🔍 DEBUG: handleDeltaEvent - created response with item.id: \(result.item?.id ?? "nil")")
+        return result
     }
     
     /// Handle done events indicating completion of streaming content
@@ -372,8 +401,9 @@ public final class SSEParser: Sendable {
         
         // Create content based on item type
         let content: SAOAIStreamingContent
-        if item.type == "function_call", let name = item.name {
-            content = SAOAIStreamingContent(type: "function_call", text: "Function call: \(name)", index: 0)
+        if item.type == "function_call" {
+            // For function call items, don't create text content as this should be handled by event processing
+            content = SAOAIStreamingContent(type: "status", text: "", index: 0)
         } else if item.type == "reasoning" {
             // Keep reasoning content but without debug text
             content = SAOAIStreamingContent(type: "reasoning", text: "", index: 0)
