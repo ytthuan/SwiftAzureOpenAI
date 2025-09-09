@@ -102,7 +102,7 @@ final class ResponsesClientTests: XCTestCase {
         let request = SAOAIRequest(
             model: "gpt-4o-mini",
             input: [
-                .message(SAOAIMessage(
+                SAOAIInput.message(SAOAIMessage(
                     role: .user,
                     content: [.inputText(.init(text: "Hello"))]
                 ))

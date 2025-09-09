@@ -12,7 +12,7 @@ final class ModelsCodingTests: XCTestCase {
         )
         let req = SAOAIRequest(
             model: "gpt-4o-mini",
-            input: [message],
+            input: [SAOAIInput.message(message)],
             maxOutputTokens: 256,
             temperature: 0.3,
             topP: 0.9,
@@ -37,7 +37,7 @@ final class ModelsCodingTests: XCTestCase {
         let reasoning = SAOAIReasoning(effort: "medium")
         let req = SAOAIRequest(
             model: "o4-mini",
-            input: [message],
+            input: [SAOAIInput.message(message)],
             maxOutputTokens: 100,
             temperature: 0.5,
             reasoning: reasoning

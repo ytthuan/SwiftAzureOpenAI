@@ -86,7 +86,7 @@ final class MultiModalAndChainingTests: XCTestCase {
         let message = SAOAIMessage(role: .user, text: "Continue the conversation")
         let request = SAOAIRequest(
             model: "gpt-4o",
-            input: [message],
+            input: [SAOAIInput.message(message)],
             maxOutputTokens: 200,
             temperature: 0.7,
             topP: 1.0,
@@ -107,7 +107,7 @@ final class MultiModalAndChainingTests: XCTestCase {
         let message = SAOAIMessage(role: .user, text: "Start a new conversation")
         let request = SAOAIRequest(
             model: "gpt-4o",
-            input: [message]
+            input: [SAOAIInput.message(message)]
         )
         
         XCTAssertEqual(request.model, "gpt-4o")
@@ -125,7 +125,7 @@ final class MultiModalAndChainingTests: XCTestCase {
         let message = SAOAIMessage(role: .user, text: "Test message")
         let request = SAOAIRequest(
             model: "gpt-4o",
-            input: [message],
+            input: [SAOAIInput.message(message)],
             maxOutputTokens: 100,
             temperature: 0.5,
             topP: 0.9,
@@ -149,7 +149,7 @@ final class MultiModalAndChainingTests: XCTestCase {
         let message = SAOAIMessage(role: .user, text: "Test message")
         let request = SAOAIRequest(
             model: "gpt-4o",
-            input: [message]
+            input: [SAOAIInput.message(message)]
         )
         
         let encoder = JSONEncoder()
@@ -208,7 +208,7 @@ final class MultiModalAndChainingTests: XCTestCase {
         
         let request = SAOAIRequest(
             model: "gpt-4o",
-            input: [message],
+            input: [SAOAIInput.message(message)],
             maxOutputTokens: 300,
             temperature: 0.7,
             previousResponseId: "resp_previous123"
@@ -221,9 +221,13 @@ final class MultiModalAndChainingTests: XCTestCase {
         XCTAssertEqual(request.temperature, 0.7)
         XCTAssertEqual(request.previousResponseId, "resp_previous123")
         
-        let messageContent = request.input[0]
-        XCTAssertEqual(messageContent.role, .user)
-        XCTAssertEqual(messageContent.content.count, 2)
+        let messageInput = request.input[0]
+        if case .message(let message) = messageInput {
+            XCTAssertEqual(message.role, .user)
+            XCTAssertEqual(message.content.count, 2)
+        } else {
+            XCTFail("Expected message input type")
+        }
         
         // Test JSON serialization
         let encoder = JSONEncoder()
@@ -254,7 +258,7 @@ final class MultiModalAndChainingTests: XCTestCase {
         
         let request = SAOAIRequest(
             model: "gpt-4o",
-            input: [message],
+            input: [SAOAIInput.message(message)],
             maxOutputTokens: 200
         )
         

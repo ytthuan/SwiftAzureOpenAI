@@ -141,7 +141,7 @@ final class OptionalRoleMessageTests: XCTestCase {
         XCTAssertNoThrow {
             let request = SAOAIRequest(
                 model: mockConfig.deploymentName,
-                input: messages,
+                input: messages.map { SAOAIInput.message($0) },
                 maxOutputTokens: 100
             )
             
@@ -174,7 +174,7 @@ final class OptionalRoleMessageTests: XCTestCase {
         
         let request = SAOAIRequest(
             model: "gpt-4",
-            input: [toolOutput],
+            input: [SAOAIInput.message(toolOutput)],
             maxOutputTokens: 150
         )
         
