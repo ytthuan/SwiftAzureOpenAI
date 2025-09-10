@@ -580,7 +580,7 @@ struct ResponsesConsoleChatbotApp {
         print("  ResponsesConsoleChatbot [options]")
         print("")
         print("Options:")
-        print("  --model MODEL        Model to use (default: gpt-5-nano)")
+        print("  --model MODEL        Model to use (default: gpt-5-mini)")
         print("  --instructions TEXT  System instructions")
         print("  --reasoning EFFORT   Reasoning effort: low, medium, high")
         print("  --message TEXT       Single message to send (non-interactive)")
