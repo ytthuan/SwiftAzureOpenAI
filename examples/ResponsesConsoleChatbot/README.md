@@ -25,9 +25,15 @@ A Swift console chatbot implementation using Azure OpenAI Responses API, convert
    swift run
    ```
 
-3. **Test Function Calling**:
+3. **Test Function Calling** (from the original Python script conversion):
    ```
    You: can you use tool to calculate 10 plus 22
+   ```
+   Expected output: The assistant should use the sum_calculator tool and return 32.
+
+4. **Quick Demo**:
+   ```bash
+   ./demo.sh
    ```
 
 ## Configuration
