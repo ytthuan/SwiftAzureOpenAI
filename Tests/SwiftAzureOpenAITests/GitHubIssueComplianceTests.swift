@@ -176,7 +176,7 @@ final class GitHubIssueComplianceTests: XCTestCase {
         
         let request = SAOAIRequest(
             model: "gpt-4o",
-            input: [message],
+            input: [SAOAIInput.message(message)],
             maxOutputTokens: 200,
             temperature: 0.7,
             topP: 1.0,

@@ -179,7 +179,7 @@ final class ResponsesClientEnhancementTests: XCTestCase {
         // Example 3: Response chaining (from the issue)
         let request = SAOAIRequest(
             model: "gpt-4o",
-            input: [message1],
+            input: [SAOAIInput.message(message1)],
             previousResponseId: "resp_abc123"
         )
         
@@ -210,7 +210,7 @@ final class ResponsesClientEnhancementTests: XCTestCase {
         // Request without previousResponseId (existing functionality)
         let simpleRequest = SAOAIRequest(
             model: "gpt-4o",
-            input: [simpleMessage],
+            input: [SAOAIInput.message(simpleMessage)],
             maxOutputTokens: 100
         )
         XCTAssertEqual(simpleRequest.model, "gpt-4o")
@@ -270,7 +270,7 @@ final class ResponsesClientEnhancementTests: XCTestCase {
         
         let request = SAOAIRequest(
             model: "o3-mini",
-            input: [message],
+            input: [SAOAIInput.message(message)],
             maxOutputTokens: 50,
             reasoning: reasoning
         )
