@@ -143,12 +143,26 @@ public final class OptimizedSSEParser: Sendable {
             return createDeltaResponse(event: event, contentType: "text")
         case "response.function_call_arguments.delta":
             return createDeltaResponse(event: event, contentType: "function_call_arguments")
+        case "response.reasoning.delta":
+            return createDeltaResponse(event: event, contentType: "reasoning")
+        case "response.reasoning_summary.delta":
+            return createDeltaResponse(event: event, contentType: "reasoning_summary")
+        case "response.reasoning_summary_text.delta":
+            return createDeltaResponse(event: event, contentType: "reasoning_summary_text")
+        case "response.reasoning.done":
+            return createDoneResponse(event: event, contentType: "reasoning")
+        case "response.reasoning_summary.done":
+            return createDoneResponse(event: event, contentType: "reasoning_summary")
+        case "response.reasoning_summary_text.done":
+            return createDoneResponse(event: event, contentType: "reasoning_summary_text")
         case "response.created", "response.in_progress", "response.completed":
             return createLifecycleResponse(event: event)
         case "response.output_item.added", "response.output_item.done":
             return createOutputItemResponse(event: event)
         case "response.function_call_arguments.done":
             return createArgumentsDoneResponse(event: event)
+        case "response.reasoning_summary_part.added", "response.reasoning_summary_part.done":
+            return createReasoningSummaryPartResponse(event: event)
         default:
             // Use the SSE parser helper for less common events  
             return SSEParser.convertLifecycleEvent(event)
@@ -298,6 +312,41 @@ extension OptimizedSSEParser {
             usage: nil,
             eventType: eventType,
             item: streamingItem
+        )
+    }
+
+    /// Fast reasoning done response creation
+    private static func createDoneResponse(event: AzureOpenAISSEEvent, contentType: String) -> SAOAIStreamingResponse? {
+        let content = SAOAIStreamingContent(type: contentType, text: event.arguments ?? "", index: event.outputIndex ?? 0)
+        let output = SAOAIStreamingOutput(content: [content], role: "assistant")
+        let eventType = SAOAIStreamingEventType(rawValue: event.type)
+        let item = event.item.map { SAOAIStreamingItem(from: $0) }
+        return SAOAIStreamingResponse(
+            id: event.itemId,
+            model: nil,
+            created: nil,
+            output: [output],
+            usage: nil,
+            eventType: eventType,
+            item: item
+        )
+    }
+
+    /// Fast reasoning summary part response creation
+    private static func createReasoningSummaryPartResponse(event: AzureOpenAISSEEvent) -> SAOAIStreamingResponse? {
+        let statusText = event.type.contains("added") ? "added" : "done"
+        let content = SAOAIStreamingContent(type: "reasoning_summary_part", text: "Reasoning summary part \(statusText)", index: event.outputIndex ?? 0)
+        let output = SAOAIStreamingOutput(content: [content], role: "assistant")
+        let eventType = SAOAIStreamingEventType(rawValue: event.type)
+        let item = event.item.map { SAOAIStreamingItem(from: $0) }
+        return SAOAIStreamingResponse(
+            id: event.itemId,
+            model: nil,
+            created: nil,
+            output: [output],
+            usage: nil,
+            eventType: eventType,
+            item: item
         )
     }
 }

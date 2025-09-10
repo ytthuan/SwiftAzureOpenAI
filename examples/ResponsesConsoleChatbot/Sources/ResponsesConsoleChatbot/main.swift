@@ -13,6 +13,7 @@ final class ResponsesConsoleManager {
     private let model: String
     private let instructions: String
     private let reasoningEffort: String?
+    private var lastResponseId: String?
     
     // Local function tool handlers implemented in this file only
     private var functionHandlers: [String: (String) async throws -> String] = [:]
@@ -29,13 +30,25 @@ final class ResponsesConsoleManager {
                     "your-api-key"
         
         let deploymentName = ProcessInfo.processInfo.environment["AZURE_OPENAI_DEPLOYMENT"] ?? model
+
+        let mainFileURL = URL(fileURLWithPath: #filePath)
+        let logDirectoryURL = mainFileURL.deletingLastPathComponent()
+        let logPath = logDirectoryURL.appendingPathComponent("sse_events.log").path
+        
+        // Enable SSE logger via configuration so core pipeline logs events
+        let sseConfig = SSELoggerConfiguration.enabled(
+            logFilePath: logPath,
+            includeTimestamp: true,
+            includeSequenceNumber: true
+        )
         
         // Create Azure configuration with "preview" API version as required
         let azureConfig = SAOAIAzureConfiguration(
             endpoint: azureEndpoint,
             apiKey: apiKey,
             deploymentName: deploymentName,
-            apiVersion: "preview"  // Required API version from issue
+            apiVersion: "preview",  // Required API version from issue
+            sseLoggerConfiguration: sseConfig
         )
         
         self.client = SAOAIClient(configuration: azureConfig)
@@ -79,10 +92,12 @@ extension ResponsesConsoleManager {
     
     private func handleSumCalculator(args: String) async throws -> String {
         do {
+            print("args: \(args)")
             guard let data = args.data(using: .utf8),
                   let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
                 return "{\"error\": \"Invalid JSON arguments\"}"
             }
+
             
             let a = json["a"] as? Double ?? 0
             let b = json["b"] as? Double ?? 0
@@ -142,10 +157,10 @@ extension ResponsesConsoleManager {
 extension ResponsesConsoleManager {
     
     func respondStreaming(userText: String) async throws {
-        var previousResponseId: String? = nil
+        var previousResponseId: String? = lastResponseId
         let tools = buildFunctionTools(includeCodeInterpreter: true)
         
-        var lastResponseId: String? = nil
+        var currentResponseId: String? = nil
         
         // Track function metadata and arguments across stream
         var functionMetaByItemId: [String: [String: String]] = [:]
@@ -160,12 +175,10 @@ extension ResponsesConsoleManager {
             let userMessage = SAOAIMessage(role: .user, text: userText)
             let inputMessages = [userMessage]
             
-            // Create reasoning configuration if needed
-            let reasoning: SAOAIReasoning?
-            if let effort = reasoningEffort, ["gpt-4o", "o1", "o1-preview", "o1-mini"].contains(model) {
-                reasoning = SAOAIReasoning(effort: effort)
-            } else {
-                reasoning = nil
+            // Create reasoning configuration if explicitly requested (do not restrict by model)
+            let reasoning: SAOAIReasoning? = reasoningEffort.map { SAOAIReasoning(effort: $0) }
+            if let effort = reasoningEffort {
+                print("[debug] reasoning enabled (effort=\(effort))")
             }
             
             // Start streaming
@@ -185,13 +198,13 @@ extension ResponsesConsoleManager {
                 processedFunctionCallIds: &processedFunctionCallIds,
                 outputsForModel: &outputsForModel,
                 assistantMessageCompleted: &assistantMessageCompleted,
-                lastResponseId: &lastResponseId
+                lastResponseId: &currentResponseId
             )
             
             // Handle function call outputs if any
             if !outputsForModel.isEmpty {
                 // Set up for next iteration with function outputs
-                previousResponseId = lastResponseId
+                previousResponseId = currentResponseId
                 
                 // Create a new stream with function outputs
                 let outputStream = client.responses.createStreaming(
@@ -203,13 +216,18 @@ extension ResponsesConsoleManager {
                 // Process the response to function calls
                 try await processFunctionResponseStream(
                     stream: outputStream,
-                    lastResponseId: &lastResponseId
+                    lastResponseId: &currentResponseId
                 )
+                
+                // Persist latest response id for future turns
+                self.lastResponseId = currentResponseId
                 
                 break // Exit after processing function responses
             }
             
             if assistantMessageCompleted {
+                // Persist latest response id for future turns
+                self.lastResponseId = currentResponseId
                 break
             }
             
@@ -226,8 +244,9 @@ extension ResponsesConsoleManager {
         assistantMessageCompleted: inout Bool,
         lastResponseId: inout String?
     ) async throws {
-        
+        // write to file
         for try await event in stream {
+            // print("event: \(event)\n")
             guard let eventType = event.eventType else { continue }
             
             switch eventType {
@@ -256,6 +275,20 @@ extension ResponsesConsoleManager {
                     print(text, terminator: "")
                     
                 }
+            
+            // Reasoning streams
+            case .responseReasoningDelta:
+                if let output = event.output?.first,
+                   let content = output.content?.first,
+                   let text = content.text, !text.isEmpty {
+                    print("[reasoning] \(text)", terminator: "")
+                }
+            case .responseReasoningSummaryDelta, .responseReasoningSummaryTextDelta:
+                if let output = event.output?.first,
+                   let content = output.content?.first,
+                   let text = content.text, !text.isEmpty {
+                    print("[reasoning-summary] \(text)", terminator: "")
+                }
                 
             case .responseCodeInterpreterCallCodeDelta, .responseFunctionCallArgumentsDelta:
                 if let output = event.output?.first,
@@ -263,11 +296,14 @@ extension ResponsesConsoleManager {
                    let text = content.text {
                     
                     if eventType == .responseFunctionCallArgumentsDelta {
-                        let itemId = event.item?.id ?? ""
-                        if functionArgsByItemId[itemId] == nil {
-                            functionArgsByItemId[itemId] = ""
+                        // Some delta events omit item; fall back to event.id which matches the function item id
+                        let idForArgs = event.item?.id ?? event.id ?? ""
+                        if !idForArgs.isEmpty {
+                            if functionArgsByItemId[idForArgs] == nil {
+                                functionArgsByItemId[idForArgs] = ""
+                            }
+                            functionArgsByItemId[idForArgs]! += text
                         }
-                        functionArgsByItemId[itemId]! += text
                     } else {
                         // Stream code being executed by the interpreter
                         print(text, terminator: "")
@@ -278,8 +314,14 @@ extension ResponsesConsoleManager {
             case .responseCodeInterpreterCallCompleted:
                 print("\n[tool] Code Interpreter completed")
                 
+            case .responseReasoningDone, .responseReasoningSummaryDone, .responseReasoningSummaryTextDone:
+                // Add a soft separator when reasoning sections complete
+                print("", terminator: "")
+                
             case .responseFunctionCallArgumentsDone:
-                if let itemId = event.item?.id,
+                // Use event.id fallback when item is omitted on 'arguments.done'
+                let itemId = event.item?.id ?? event.id ?? ""
+                if !itemId.isEmpty,
                    let meta = functionMetaByItemId[itemId],
                    let funcName = meta["name"] {
                     let argsStr = functionArgsByItemId[itemId] ?? ""
@@ -288,8 +330,9 @@ extension ResponsesConsoleManager {
                 }
                 
             case .responseOutputItemDone:
-                if let item = event.item, item.type == .functionCall {
-                    let itemId = item.id ?? ""
+                // Prefer explicit item.id; fall back to event.id when necessary
+                let itemId = event.item?.id ?? event.id ?? ""
+                if let item = event.item, item.type == .functionCall, !itemId.isEmpty {
                     if let meta = functionMetaByItemId[itemId],
                        let funcName = meta["name"],
                        let callIdForSubmit = meta["call_id"],
@@ -344,12 +387,28 @@ extension ResponsesConsoleManager {
                     print(text, terminator: "")
                     
                 }
+            // Reasoning streams in function response stage
+            case .responseReasoningDelta:
+                if let output = event.output?.first,
+                   let content = output.content?.first,
+                   let text = content.text, !text.isEmpty {
+                    print("[reasoning] \(text)", terminator: "")
+                }
+            case .responseReasoningSummaryDelta, .responseReasoningSummaryTextDelta:
+                if let output = event.output?.first,
+                   let content = output.content?.first,
+                   let text = content.text, !text.isEmpty {
+                    print("[reasoning-summary] \(text)", terminator: "")
+                }
                 
             case .responseCompleted:
                 if let responseId = event.id {
                     lastResponseId = responseId
                 }
                 print("") // New line after completion
+                
+            case .responseReasoningDone, .responseReasoningSummaryDone, .responseReasoningSummaryTextDone:
+                print("", terminator: "")
                 
             default:
                 break
@@ -416,7 +475,7 @@ struct ResponsesConsoleChatbotApp {
     static func main() async {
         // Parse command line arguments
         let arguments = CommandLine.arguments
-        var model = ProcessInfo.processInfo.environment["DEFAULT_MODEL"] ?? "gpt-4o"
+        var model = ProcessInfo.processInfo.environment["DEFAULT_MODEL"] ?? "gpt-5-mini"
         var instructions = ProcessInfo.processInfo.environment["DEFAULT_INSTRUCTIONS"] ?? ""
         var reasoningEffort: String? = ProcessInfo.processInfo.environment["DEFAULT_REASONING_EFFORT"]
         
@@ -474,7 +533,7 @@ struct ResponsesConsoleChatbotApp {
         print("  ResponsesConsoleChatbot [options]")
         print("")
         print("Options:")
-        print("  --model MODEL        Model to use (default: gpt-4o)")
+        print("  --model MODEL        Model to use (default: gpt-5-nano)")
         print("  --instructions TEXT  System instructions")
         print("  --reasoning EFFORT   Reasoning effort: low, medium, high")
         print("  --help              Show this help")
