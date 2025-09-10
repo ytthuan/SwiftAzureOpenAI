@@ -244,10 +244,22 @@ extension ResponsesConsoleManager {
         assistantMessageCompleted: inout Bool,
         lastResponseId: inout String?
     ) async throws {
+        
+        // Track reasoning state for enhanced display
+        var reasoningStartTime: Date?
+        var reasoningDotCount = 0
         // write to file
         for try await event in stream {
-            // print("event: \(event)\n")
             guard let eventType = event.eventType else { continue }
+            
+            // Show reasoning progress if reasoning is active
+            if let startTime = reasoningStartTime {
+                let elapsed = Date().timeIntervalSince(startTime)
+                if elapsed > Double(reasoningDotCount) * 0.5 { // Add dot every 0.5 seconds
+                    print(".", terminator: "")
+                    reasoningDotCount += 1
+                }
+            }
             
             switch eventType {
             case .responseOutputItemAdded:
@@ -264,7 +276,8 @@ extension ResponsesConsoleManager {
                         functionMetaByItemId[item.id ?? ""] = ["name": name, "call_id": callId]
                         print("\n[tool] Function started: \(name) (call_id: \(callId))")
                     case .reasoning:
-                        print("\n[reasoning] Reasoning started")
+                        print("\n[reasoning] Analyzing request", terminator: "")
+                        reasoningStartTime = Date()
                     default:
                         break
                     }
@@ -278,18 +291,18 @@ extension ResponsesConsoleManager {
                     
                 }
             
-            // Reasoning streams
+            // Reasoning streams - these should display actual reasoning content as it arrives
             case .responseReasoningDelta:
                 if let output = event.output?.first,
                    let content = output.content?.first,
                    let text = content.text, !text.isEmpty {
-                    print("[reasoning] \(text)", terminator: "")
+                    print(" \(text)", terminator: "")
                 }
             case .responseReasoningSummaryDelta, .responseReasoningSummaryTextDelta:
                 if let output = event.output?.first,
                    let content = output.content?.first,
                    let text = content.text, !text.isEmpty {
-                    print("[reasoning-summary] \(text)", terminator: "")
+                    print(" \(text)", terminator: "")
                 }
                 
             case .responseCodeInterpreterCallCodeDelta, .responseFunctionCallArgumentsDelta:
@@ -362,12 +375,13 @@ extension ResponsesConsoleManager {
                 }
                 
                 if let item = event.item, item.type == .reasoning {
+                    reasoningStartTime = nil // Reset reasoning tracking
                     // Display reasoning summary if available
                     if let summary = item.summary, !summary.isEmpty {
                         let summaryText = summary.joined(separator: " ")
-                        print("[reasoning] \(summaryText)")
+                        print("\n[reasoning] \(summaryText)")
                     } else {
-                        print("[reasoning] Reasoning completed")
+                        print("\n[reasoning] Analysis complete")
                     }
                 }
                 
@@ -433,7 +447,7 @@ extension ResponsesConsoleManager {
 
 extension ResponsesConsoleManager {
     
-    static func console(model: String, instructions: String = "", reasoningEffort: String? = nil) async throws {
+    static func console(model: String, instructions: String = "", reasoningEffort: String? = nil, inputMessage: String? = nil) async throws {
         let manager = try ResponsesConsoleManager(
             model: model,
             instructions: instructions,
@@ -442,6 +456,18 @@ extension ResponsesConsoleManager {
         
         print("Model: \(model)")
         
+        // If input message is provided, use it once and exit
+        if let message = inputMessage {
+            print("You: \(message)")
+            do {
+                try await manager.respondStreaming(userText: message)
+            } catch {
+                print("[error] \(error.localizedDescription)")
+            }
+            return
+        }
+        
+        // Interactive mode
         while true {
             print("You: ", terminator: "")
             
@@ -490,6 +516,7 @@ struct ResponsesConsoleChatbotApp {
         var model = ProcessInfo.processInfo.environment["DEFAULT_MODEL"] ?? "gpt-5-mini"
         var instructions = ProcessInfo.processInfo.environment["DEFAULT_INSTRUCTIONS"] ?? ""
         var reasoningEffort: String? = ProcessInfo.processInfo.environment["DEFAULT_REASONING_EFFORT"]
+        var inputMessage: String? = nil
         
         // Simple argument parsing
         var i = 1
@@ -511,6 +538,11 @@ struct ResponsesConsoleChatbotApp {
                     reasoningEffort = ["low", "medium", "high"].contains(value) ? value : nil
                     i += 1
                 }
+            case "--message":
+                if i + 1 < arguments.count {
+                    inputMessage = arguments[i + 1]
+                    i += 1
+                }
             case "--help":
                 printHelp()
                 return
@@ -523,15 +555,18 @@ struct ResponsesConsoleChatbotApp {
         print("🤖 SwiftAzureOpenAI Responses Console Chatbot")
         print("=============================================")
         print("Console chat using Azure Responses API (no UI)")
-        print("Type 'exit' or 'quit' to stop.")
-        print("Try: 'can you use tool to calculate 10 plus 22'")
+        if inputMessage == nil {
+            print("Type 'exit' or 'quit' to stop.")
+            print("Try: 'can you use tool to calculate 10 plus 22'")
+        }
         print("=============================================")
         
         do {
             try await ResponsesConsoleManager.console(
                 model: model,
                 instructions: instructions,
-                reasoningEffort: reasoningEffort
+                reasoningEffort: reasoningEffort,
+                inputMessage: inputMessage
             )
         } catch {
             print("Failed to start console: \(error.localizedDescription)")
@@ -548,6 +583,7 @@ struct ResponsesConsoleChatbotApp {
         print("  --model MODEL        Model to use (default: gpt-5-nano)")
         print("  --instructions TEXT  System instructions")
         print("  --reasoning EFFORT   Reasoning effort: low, medium, high")
+        print("  --message TEXT       Single message to send (non-interactive)")
         print("  --help              Show this help")
         print("")
         print("Environment Variables:")
@@ -557,5 +593,9 @@ struct ResponsesConsoleChatbotApp {
         print("  DEFAULT_MODEL             Default model name")
         print("  DEFAULT_INSTRUCTIONS      Default system instructions")
         print("  DEFAULT_REASONING_EFFORT  Default reasoning effort")
+        print("")
+        print("Examples:")
+        print("  ResponsesConsoleChatbot --reasoning medium --message \"Calculate the square root of 144\"")
+        print("  ResponsesConsoleChatbot --model gpt-5-nano --instructions \"You are a helpful assistant\"")
     }
 }
