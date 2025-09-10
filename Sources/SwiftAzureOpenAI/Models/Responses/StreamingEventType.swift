@@ -127,6 +127,7 @@ public enum SAOAIStreamingItemType: String, CaseIterable, Codable, Sendable {
     case functionCall = "function_call"
     case fileSearchCall = "file_search_call"
     case mcpCall = "mcp_call"
+    case reasoning = "reasoning"
     
     /// Human-readable description of the item type
     public var description: String {
@@ -141,6 +142,8 @@ public enum SAOAIStreamingItemType: String, CaseIterable, Codable, Sendable {
             return "File Search Call"
         case .mcpCall:
             return "MCP Call"
+        case .reasoning:
+            return "Reasoning"
         }
     }
 }
