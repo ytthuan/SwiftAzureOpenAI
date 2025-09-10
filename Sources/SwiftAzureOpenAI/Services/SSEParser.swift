@@ -201,11 +201,8 @@ public final class SSEParser: Sendable {
     /// Handle delta events containing incremental streaming content
     private static func handleDeltaEvent(event: AzureOpenAISSEEvent, contentType: String) -> SAOAIStreamingResponse? {
         guard let delta = event.delta else { 
-            print("🔍 DEBUG: handleDeltaEvent - no delta for type: \(event.type)")
             return nil 
         }
-        
-        print("🔍 DEBUG: handleDeltaEvent - type: \(event.type), delta: '\(delta)', itemId: \(event.itemId ?? "nil"), hasItem: \(event.item != nil)")
         
         let content = SAOAIStreamingContent(type: contentType, text: delta, index: event.outputIndex ?? 0)
         let output = SAOAIStreamingOutput(content: [content], role: "assistant")
@@ -216,10 +213,8 @@ public final class SSEParser: Sendable {
         // Convert item if present, or create minimal item from itemId for delta events
         let item: SAOAIStreamingItem? = {
             if let eventItem = event.item {
-                print("🔍 DEBUG: handleDeltaEvent - using existing item with id: \(eventItem.id ?? "nil")")
                 return SAOAIStreamingItem(from: eventItem)
             } else if let itemId = event.itemId {
-                print("🔍 DEBUG: handleDeltaEvent - creating minimal item with id: \(itemId)")
                 // Create minimal streaming item for delta events that only have itemId
                 return SAOAIStreamingItem(
                     type: nil,  // We don't know the type from delta events
@@ -232,7 +227,6 @@ public final class SSEParser: Sendable {
                     containerId: nil
                 )
             } else {
-                print("🔍 DEBUG: handleDeltaEvent - no item data available")
                 return nil
             }
         }()
@@ -247,7 +241,6 @@ public final class SSEParser: Sendable {
             item: item
         )
         
-        print("🔍 DEBUG: handleDeltaEvent - created response with item.id: \(result.item?.id ?? "nil")")
         return result
     }
     

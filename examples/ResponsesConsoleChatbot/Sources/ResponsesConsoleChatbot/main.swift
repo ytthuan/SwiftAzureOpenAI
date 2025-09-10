@@ -263,6 +263,8 @@ extension ResponsesConsoleManager {
                         let callId = item.callId ?? ""
                         functionMetaByItemId[item.id ?? ""] = ["name": name, "call_id": callId]
                         print("\n[tool] Function started: \(name) (call_id: \(callId))")
+                    case .reasoning:
+                        print("\n[reasoning] Reasoning started")
                     default:
                         break
                     }
@@ -357,6 +359,16 @@ extension ResponsesConsoleManager {
                    item.status == "completed" {
                     assistantMessageCompleted = true
                     print("")
+                }
+                
+                if let item = event.item, item.type == .reasoning {
+                    // Display reasoning summary if available
+                    if let summary = item.summary, !summary.isEmpty {
+                        let summaryText = summary.joined(separator: " ")
+                        print("[reasoning] \(summaryText)")
+                    } else {
+                        print("[reasoning] Reasoning completed")
+                    }
                 }
                 
             case .responseCompleted:
