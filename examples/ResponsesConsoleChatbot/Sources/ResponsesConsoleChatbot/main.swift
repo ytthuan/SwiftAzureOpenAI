@@ -281,6 +281,13 @@ extension ResponsesConsoleManager {
             }
             
             switch eventType {
+            case .responseCreated:
+                // Capture response ID as early as possible from responseCreated event
+                // This ensures we have the response ID even if responseCompleted event is not received
+                if let responseId = event.id {
+                    lastResponseId = responseId
+                }
+                
             case .responseOutputItemAdded:
                 if let item = event.item {
                     switch item.type {
