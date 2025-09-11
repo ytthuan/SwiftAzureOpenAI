@@ -13,12 +13,14 @@ final class ResponsesConsoleManager {
     private let model: String
     private let instructions: String
     private let reasoningEffort: String?
+    private let reasoningSummary: String?
+    private let textVerbosity: String?
     private var lastResponseId: String?
     
     // Local function tool handlers implemented in this file only
     private var functionHandlers: [String: (String) async throws -> String] = [:]
     
-    init(model: String, instructions: String, reasoningEffort: String? = nil) throws {
+    init(model: String, instructions: String, reasoningEffort: String? = nil, reasoningSummary: String? = nil, textVerbosity: String? = nil) throws {
         // Get Azure OpenAI configuration from environment
         guard let azureEndpoint = ProcessInfo.processInfo.environment["AZURE_OPENAI_ENDPOINT"] else {
             throw RuntimeError("AZURE_OPENAI_ENDPOINT is not set")
@@ -55,6 +57,8 @@ final class ResponsesConsoleManager {
         self.model = model
         self.instructions = instructions
         self.reasoningEffort = reasoningEffort
+        self.reasoningSummary = reasoningSummary
+        self.textVerbosity = textVerbosity
         
         // Set up function handlers
         setupFunctionHandlers()
@@ -175,10 +179,22 @@ extension ResponsesConsoleManager {
             let userMessage = SAOAIMessage(role: .user, text: userText)
             let inputMessages = [userMessage]
             
-            // Create reasoning configuration if explicitly requested (do not restrict by model)
-            let reasoning: SAOAIReasoning? = reasoningEffort.map { SAOAIReasoning(effort: $0) }
+            // Create flexible reasoning configuration with new summary support
+            let reasoning: SAOAIReasoning? = reasoningEffort.map { effort in
+                if let summary = reasoningSummary {
+                    return SAOAIReasoning(effort: effort, summary: summary)
+                } else {
+                    return SAOAIReasoning(effort: effort)
+                }
+            }
+            
+            // Create text configuration for verbosity control
+            let text: SAOAIText? = textVerbosity.map { SAOAIText(verbosity: $0) }
+            
             if let effort = reasoningEffort {
-                print("[debug] reasoning enabled (effort=\(effort))")
+                let summaryText = reasoningSummary ?? "none"
+                let verbosityText = textVerbosity ?? "default"
+                print("[debug] flexible reasoning enabled (effort=\(effort), summary=\(summaryText), verbosity=\(verbosityText))")
             }
             
             // Start streaming
@@ -188,7 +204,8 @@ extension ResponsesConsoleManager {
                 maxOutputTokens: nil,
                 tools: tools,
                 previousResponseId: previousResponseId,
-                reasoning: reasoning
+                reasoning: reasoning,
+                text: text
             )
             
             try await processStreamingEvents(
@@ -447,11 +464,13 @@ extension ResponsesConsoleManager {
 
 extension ResponsesConsoleManager {
     
-    static func console(model: String, instructions: String = "", reasoningEffort: String? = nil, inputMessage: String? = nil) async throws {
+    static func console(model: String, instructions: String = "", reasoningEffort: String? = nil, reasoningSummary: String? = nil, textVerbosity: String? = nil, inputMessage: String? = nil) async throws {
         let manager = try ResponsesConsoleManager(
             model: model,
             instructions: instructions,
-            reasoningEffort: reasoningEffort
+            reasoningEffort: reasoningEffort,
+            reasoningSummary: reasoningSummary,
+            textVerbosity: textVerbosity
         )
         
         print("Model: \(model)")
@@ -516,6 +535,8 @@ struct ResponsesConsoleChatbotApp {
         var model = ProcessInfo.processInfo.environment["DEFAULT_MODEL"] ?? "gpt-5-mini"
         var instructions = ProcessInfo.processInfo.environment["DEFAULT_INSTRUCTIONS"] ?? ""
         var reasoningEffort: String? = ProcessInfo.processInfo.environment["DEFAULT_REASONING_EFFORT"]
+        var reasoningSummary: String? = ProcessInfo.processInfo.environment["DEFAULT_REASONING_SUMMARY"]
+        var textVerbosity: String? = ProcessInfo.processInfo.environment["DEFAULT_TEXT_VERBOSITY"]
         var inputMessage: String? = nil
         
         // Simple argument parsing
@@ -536,6 +557,18 @@ struct ResponsesConsoleChatbotApp {
                 if i + 1 < arguments.count {
                     let value = arguments[i + 1]
                     reasoningEffort = ["low", "medium", "high"].contains(value) ? value : nil
+                    i += 1
+                }
+            case "--reasoning-summary":
+                if i + 1 < arguments.count {
+                    let value = arguments[i + 1]
+                    reasoningSummary = ["auto", "concise", "detailed"].contains(value) ? value : nil
+                    i += 1
+                }
+            case "--text-verbosity":
+                if i + 1 < arguments.count {
+                    let value = arguments[i + 1]
+                    textVerbosity = ["low", "medium", "high"].contains(value) ? value : nil
                     i += 1
                 }
             case "--message":
@@ -566,6 +599,8 @@ struct ResponsesConsoleChatbotApp {
                 model: model,
                 instructions: instructions,
                 reasoningEffort: reasoningEffort,
+                reasoningSummary: reasoningSummary,
+                textVerbosity: textVerbosity,
                 inputMessage: inputMessage
             )
         } catch {
@@ -580,22 +615,27 @@ struct ResponsesConsoleChatbotApp {
         print("  ResponsesConsoleChatbot [options]")
         print("")
         print("Options:")
-        print("  --model MODEL        Model to use (default: gpt-5-mini)")
-        print("  --instructions TEXT  System instructions")
-        print("  --reasoning EFFORT   Reasoning effort: low, medium, high")
-        print("  --message TEXT       Single message to send (non-interactive)")
-        print("  --help              Show this help")
+        print("  --model MODEL            Model to use (default: gpt-5-mini)")
+        print("  --instructions TEXT      System instructions")
+        print("  --reasoning EFFORT       Reasoning effort: low, medium, high")
+        print("  --reasoning-summary TYPE Reasoning summary: auto, concise, detailed")
+        print("  --text-verbosity LEVEL   Text verbosity: low, medium, high")
+        print("  --message TEXT           Single message to send (non-interactive)")
+        print("  --help                   Show this help")
         print("")
         print("Environment Variables:")
-        print("  AZURE_OPENAI_ENDPOINT     Azure OpenAI endpoint (required)")
-        print("  AZURE_OPENAI_API_KEY      Azure OpenAI API key")
-        print("  AZURE_OPENAI_DEPLOYMENT   Azure OpenAI deployment name")
-        print("  DEFAULT_MODEL             Default model name")
-        print("  DEFAULT_INSTRUCTIONS      Default system instructions")
-        print("  DEFAULT_REASONING_EFFORT  Default reasoning effort")
+        print("  AZURE_OPENAI_ENDPOINT       Azure OpenAI endpoint (required)")
+        print("  AZURE_OPENAI_API_KEY        Azure OpenAI API key")
+        print("  AZURE_OPENAI_DEPLOYMENT     Azure OpenAI deployment name")
+        print("  DEFAULT_MODEL               Default model name")
+        print("  DEFAULT_INSTRUCTIONS        Default system instructions")
+        print("  DEFAULT_REASONING_EFFORT    Default reasoning effort")
+        print("  DEFAULT_REASONING_SUMMARY   Default reasoning summary")
+        print("  DEFAULT_TEXT_VERBOSITY      Default text verbosity")
         print("")
         print("Examples:")
-        print("  ResponsesConsoleChatbot --reasoning medium --message \"Calculate the square root of 144\"")
+        print("  ResponsesConsoleChatbot --reasoning high --reasoning-summary detailed --text-verbosity low --message \"Explain quantum physics\"")
+        print("  ResponsesConsoleChatbot --reasoning medium --reasoning-summary auto --message \"Calculate the square root of 144\"")
         print("  ResponsesConsoleChatbot --model gpt-5-nano --instructions \"You are a helpful assistant\"")
     }
 }
