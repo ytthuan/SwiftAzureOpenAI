@@ -199,7 +199,84 @@ public final class ResponsesClient {
     }
     
     /// Create a streaming response with function call outputs (for tool results)
+    /// This method only sends minimal parameters to match Azure OpenAI requirements
     public func createStreaming(
+        model: String,
+        functionCallOutputs: [SAOAIInputContent.FunctionCallOutput],
+        previousResponseId: String? = nil
+    ) -> AsyncThrowingStream<SAOAIStreamingResponse, Error> {
+        let inputArray = functionCallOutputs.map { SAOAIInput.functionCallOutput($0) }
+        
+        // Create a minimal request with only required fields
+        var request = SAOAIMinimalRequest(
+            model: model,
+            input: inputArray,
+            stream: true
+        )
+        
+        // Only add previousResponseId if it's not nil
+        if let previousResponseId = previousResponseId {
+            request.previousResponseId = previousResponseId
+        }
+        
+        return sendMinimalStreamingRequest(request)
+    }
+    
+    /// Send minimal streaming request with only essential parameters
+    private func sendMinimalStreamingRequest(_ request: SAOAIMinimalRequest) -> AsyncThrowingStream<SAOAIStreamingResponse, Error> {
+        // Pre-encode the request to avoid capturing it in the closure
+        let requestData: Data
+        do {
+            requestData = try JSONEncoder().encode(request)
+        } catch {
+            return AsyncThrowingStream { continuation in
+                continuation.finish(throwing: error)
+            }
+        }
+        
+        // Capture needed values outside the stream
+        let baseURL = self.configuration.baseURL
+        let httpClient = self.httpClient
+        let configHeaders = self.configuration.headers
+        
+        return AsyncThrowingStream { continuation in
+            Task {
+                do {
+                    // Merge configuration headers with streaming-specific headers
+                    var streamingHeaders = configHeaders
+                    streamingHeaders["Accept"] = "text/event-stream"
+                    
+                    let apiRequest = APIRequest(
+                        method: "POST",
+                        url: baseURL,
+                        headers: streamingHeaders,
+                        body: requestData
+                    )
+                    
+                    let stream = httpClient.sendStreaming(apiRequest)
+                    
+                    for try await chunk in stream {
+                        if let response = try OptimizedSSEParser.parseSSEChunkOptimized(chunk) {
+                            continuation.yield(response)
+                        }
+                        
+                        if OptimizedSSEParser.isCompletionChunkOptimized(chunk) {
+                            continuation.finish()
+                            return
+                        }
+                    }
+                    
+                    continuation.finish()
+                } catch {
+                    continuation.finish(throwing: error)
+                }
+            }
+        }
+    }
+    
+    /// Create a streaming response with function call outputs (for tool results) - Extended version
+    /// This method allows all parameters but should be used carefully
+    public func createStreamingWithAllParameters(
         model: String,
         functionCallOutputs: [SAOAIInputContent.FunctionCallOutput],
         maxOutputTokens: Int? = nil,

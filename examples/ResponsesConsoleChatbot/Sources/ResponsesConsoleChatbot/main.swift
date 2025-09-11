@@ -224,10 +224,10 @@ extension ResponsesConsoleManager {
                 previousResponseId = currentResponseId
                 
                 // Create a new stream with function outputs
+                // Use minimal parameters method to match Python example (only model, functionCallOutputs, previousResponseId)
                 let outputStream = client.responses.createStreaming(
                     model: model,
                     functionCallOutputs: outputsForModel,
-                    tools: tools,
                     previousResponseId: previousResponseId
                 )
                 
