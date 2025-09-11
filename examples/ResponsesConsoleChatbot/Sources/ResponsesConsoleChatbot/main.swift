@@ -20,6 +20,19 @@ final class ResponsesConsoleManager {
     // Local function tool handlers implemented in this file only
     private var functionHandlers: [String: (String) async throws -> String] = [:]
     
+    // Reasoning text buffering for better formatting
+    private var reasoningBuffer = ""
+    private var reasoningSummaryBuffer = ""
+    
+    // Helper function to format reasoning text and reduce spacing issues
+    private func formatReasoningText(_ text: String) -> String {
+        // Clean up extra spaces and formatting issues
+        return text
+            .replacingOccurrences(of: "\\s{2,}", with: " ", options: .regularExpression) // Multiple spaces -> single space
+            .replacingOccurrences(of: "\\s+([.,!?;:])", with: "$1", options: .regularExpression) // Remove space before punctuation
+            .replacingOccurrences(of: "([.,!?;:])([a-zA-Z])", with: "$1 $2", options: .regularExpression) // Add space after punctuation if missing
+    }
+    
     init(model: String, instructions: String, reasoningEffort: String? = nil, reasoningSummary: String? = nil, textVerbosity: String? = nil) throws {
         // Get Azure OpenAI configuration from environment
         guard let azureEndpoint = ProcessInfo.processInfo.environment["AZURE_OPENAI_ENDPOINT"] else {
@@ -322,13 +335,25 @@ extension ResponsesConsoleManager {
                 if let output = event.output?.first,
                    let content = output.content?.first,
                    let text = content.text, !text.isEmpty {
-                    print(" \(text)", terminator: "")
+                    reasoningBuffer += text
+                    // Print formatted text in chunks when we have word boundaries
+                    if text.hasSuffix(" ") || text.hasSuffix(".") || text.hasSuffix(",") || text.hasSuffix("!") || text.hasSuffix("?") {
+                        let formatted = formatReasoningText(reasoningBuffer)
+                        print(formatted, terminator: "")
+                        reasoningBuffer = ""
+                    }
                 }
             case .responseReasoningSummaryDelta, .responseReasoningSummaryTextDelta:
                 if let output = event.output?.first,
                    let content = output.content?.first,
                    let text = content.text, !text.isEmpty {
-                    print(" \(text)", terminator: "")
+                    reasoningSummaryBuffer += text
+                    // Print formatted text in chunks when we have word boundaries
+                    if text.hasSuffix(" ") || text.hasSuffix(".") || text.hasSuffix(",") || text.hasSuffix("!") || text.hasSuffix("?") {
+                        let formatted = formatReasoningText(reasoningSummaryBuffer)
+                        print(formatted, terminator: "")
+                        reasoningSummaryBuffer = ""
+                    }
                 }
                 
             case .responseCodeInterpreterCallCodeDelta, .responseFunctionCallArgumentsDelta:
@@ -356,8 +381,18 @@ extension ResponsesConsoleManager {
                 print("\n[tool] Code Interpreter completed")
                 
             case .responseReasoningDone, .responseReasoningSummaryDone, .responseReasoningSummaryTextDone:
-                // Add a soft separator when reasoning sections complete
-                print("", terminator: "")
+                // Flush any remaining buffered text when reasoning sections complete
+                if !reasoningBuffer.isEmpty {
+                    let formatted = formatReasoningText(reasoningBuffer)
+                    print(formatted, terminator: "")
+                    reasoningBuffer = ""
+                }
+                if !reasoningSummaryBuffer.isEmpty {
+                    let formatted = formatReasoningText(reasoningSummaryBuffer)
+                    print(formatted, terminator: "")
+                    reasoningSummaryBuffer = ""
+                }
+                print("") // Add line break after reasoning section
                 
             case .responseFunctionCallArgumentsDone:
                 // Use event.id fallback when item is omitted on 'arguments.done'
@@ -402,6 +437,19 @@ extension ResponsesConsoleManager {
                 
                 if let item = event.item, item.type == .reasoning {
                     reasoningStartTime = nil // Reset reasoning tracking
+                    
+                    // Flush any remaining buffered text
+                    if !reasoningBuffer.isEmpty {
+                        let formatted = formatReasoningText(reasoningBuffer)
+                        print(formatted, terminator: "")
+                        reasoningBuffer = ""
+                    }
+                    if !reasoningSummaryBuffer.isEmpty {
+                        let formatted = formatReasoningText(reasoningSummaryBuffer)
+                        print(formatted, terminator: "")
+                        reasoningSummaryBuffer = ""
+                    }
+                    
                     // Display reasoning summary if available
                     if let summary = item.summary, !summary.isEmpty {
                         let summaryText = summary.joined(separator: " ")
@@ -439,18 +487,30 @@ extension ResponsesConsoleManager {
                     print(text, terminator: "")
                     
                 }
-            // Reasoning streams in function response stage
+            // Reasoning streams in function response stage - use same buffering approach
             case .responseReasoningDelta:
                 if let output = event.output?.first,
                    let content = output.content?.first,
                    let text = content.text, !text.isEmpty {
-                    print("[reasoning] \(text)", terminator: "")
+                    reasoningBuffer += text
+                    // Print formatted text in chunks when we have word boundaries
+                    if text.hasSuffix(" ") || text.hasSuffix(".") || text.hasSuffix(",") || text.hasSuffix("!") || text.hasSuffix("?") {
+                        let formatted = formatReasoningText(reasoningBuffer)
+                        print(formatted, terminator: "")
+                        reasoningBuffer = ""
+                    }
                 }
             case .responseReasoningSummaryDelta, .responseReasoningSummaryTextDelta:
                 if let output = event.output?.first,
                    let content = output.content?.first,
                    let text = content.text, !text.isEmpty {
-                    print("[reasoning-summary] \(text)", terminator: "")
+                    reasoningSummaryBuffer += text
+                    // Print formatted text in chunks when we have word boundaries
+                    if text.hasSuffix(" ") || text.hasSuffix(".") || text.hasSuffix(",") || text.hasSuffix("!") || text.hasSuffix("?") {
+                        let formatted = formatReasoningText(reasoningSummaryBuffer)
+                        print(formatted, terminator: "")
+                        reasoningSummaryBuffer = ""
+                    }
                 }
                 
             case .responseCompleted:
@@ -460,7 +520,18 @@ extension ResponsesConsoleManager {
                 print("") // New line after completion
                 
             case .responseReasoningDone, .responseReasoningSummaryDone, .responseReasoningSummaryTextDone:
-                print("", terminator: "")
+                // Flush any remaining buffered text when reasoning sections complete
+                if !reasoningBuffer.isEmpty {
+                    let formatted = formatReasoningText(reasoningBuffer)
+                    print(formatted, terminator: "")
+                    reasoningBuffer = ""
+                }
+                if !reasoningSummaryBuffer.isEmpty {
+                    let formatted = formatReasoningText(reasoningSummaryBuffer)
+                    print(formatted, terminator: "")
+                    reasoningSummaryBuffer = ""
+                }
+                print("") // Add line break after reasoning section
                 
             default:
                 break
