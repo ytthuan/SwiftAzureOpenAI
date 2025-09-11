@@ -227,6 +227,7 @@ extension ResponsesConsoleManager {
                 let outputStream = client.responses.createStreaming(
                     model: model,
                     functionCallOutputs: outputsForModel,
+                    tools: tools,
                     previousResponseId: previousResponseId
                 )
                 

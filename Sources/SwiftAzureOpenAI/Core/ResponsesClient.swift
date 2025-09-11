@@ -205,6 +205,7 @@ public final class ResponsesClient {
         maxOutputTokens: Int? = nil,
         temperature: Double? = nil,
         topP: Double? = nil,
+        tools: [SAOAITool]? = nil,
         previousResponseId: String? = nil,
         reasoning: SAOAIReasoning? = nil,
         text: SAOAIText? = nil
@@ -216,7 +217,7 @@ public final class ResponsesClient {
             maxOutputTokens: maxOutputTokens,
             temperature: temperature,
             topP: topP,
-            tools: nil, // No tools needed for function output responses
+            tools: tools, // Include tools for function output responses
             previousResponseId: previousResponseId,
             reasoning: reasoning,
             text: text,
