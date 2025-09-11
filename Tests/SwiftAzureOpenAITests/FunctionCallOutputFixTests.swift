@@ -40,4 +40,65 @@ final class FunctionCallOutputFixTests: XCTestCase {
         // Role should be omitted (not included in JSON) for function call outputs
         XCTAssertFalse(jsonString.contains("\"role\""), "Role should be omitted for function call outputs")
     }
+    
+    func testBothApproachesProduceSameRequestStructure() throws {
+        // This test ensures that both the old functionCallOutputs approach
+        // and the new message-based approach produce the same request structure
+        let functionOutput = SAOAIInputContent.FunctionCallOutput(
+            callId: "call_abc123",
+            output: "{\"temperature\":\"70 degrees\"}"
+        )
+        
+        // New approach: Use messages
+        let functionCallMessages = [SAOAIMessage(functionCallOutput: functionOutput)]
+        let newRequest = SAOAIRequest(
+            model: "gpt-4o",
+            input: functionCallMessages.map { SAOAIInput.message($0) },
+            previousResponseId: "resp_test123"
+        )
+        
+        // Old approach would create: [SAOAIInput.functionCallOutput(functionOutput)]
+        let oldRequest = SAOAIRequest(
+            model: "gpt-4o", 
+            input: [SAOAIInput.functionCallOutput(functionOutput)],
+            previousResponseId: "resp_test123"
+        )
+        
+        // Encode both and compare structure
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .sortedKeys
+        
+        let newData = try encoder.encode(newRequest)
+        let newString = String(data: newData, encoding: .utf8)!
+        
+        let oldData = try encoder.encode(oldRequest)
+        let oldString = String(data: oldData, encoding: .utf8)!
+        
+        print("New approach (messages):")
+        print(newString)
+        print("\nOld approach (direct):")
+        print(oldString)
+        
+        // Both should contain the essential function call output information
+        XCTAssertTrue(newString.contains("function_call_output"))
+        XCTAssertTrue(oldString.contains("function_call_output"))
+        XCTAssertTrue(newString.contains("call_abc123"))
+        XCTAssertTrue(oldString.contains("call_abc123"))
+        XCTAssertTrue(newString.contains("temperature"))
+        XCTAssertTrue(oldString.contains("temperature"))
+        
+        // Both should have the same model and previousResponseId
+        XCTAssertTrue(newString.contains("\"model\":\"gpt-4o\""))
+        XCTAssertTrue(oldString.contains("\"model\":\"gpt-4o\""))
+        XCTAssertTrue(newString.contains("resp_test123"))
+        XCTAssertTrue(oldString.contains("resp_test123"))
+    }
+}
+
+// MARK: - Test Configuration Helper
+
+private struct TestableConfiguration: SAOAIConfiguration {
+    var baseURL: URL { URL(string: "https://test.example.com")! }
+    var headers: [String: String] { ["Authorization": "Bearer test"] }
+    var sseLoggerConfiguration: SSELoggerConfiguration { .disabled }
 }
