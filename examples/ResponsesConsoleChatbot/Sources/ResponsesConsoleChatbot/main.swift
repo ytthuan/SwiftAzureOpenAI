@@ -223,13 +223,10 @@ extension ResponsesConsoleManager {
                 // Set up for next iteration with function outputs
                 previousResponseId = currentResponseId
                 
-                // Create function call output messages (explicit approach as per Azure docs)
-                let functionCallMessages = outputsForModel.map { SAOAIMessage(functionCallOutput: $0) }
-                
-                // Create a new stream with function outputs as input
+                // Create a new stream with function outputs
                 let outputStream = client.responses.createStreaming(
                     model: model,
-                    input: functionCallMessages,
+                    functionCallOutputs: outputsForModel,
                     previousResponseId: previousResponseId
                 )
                 
