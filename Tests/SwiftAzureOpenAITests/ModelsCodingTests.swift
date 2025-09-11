@@ -54,8 +54,50 @@ final class ModelsCodingTests: XCTestCase {
         XCTAssertNotNil(json["reasoning"])
         if let reasoningDict = json["reasoning"] as? [String: Any] {
             XCTAssertEqual(reasoningDict["effort"] as? String, "medium")
+            XCTAssertNil(reasoningDict["summary"]) // Should be nil for backward compatibility
         } else {
             XCTFail("Expected reasoning to be a dictionary")
+        }
+    }
+
+    func testSAOAIRequestWithFlexibleReasoningAndTextParameters() throws {
+        let message = SAOAIMessage(
+            role: .user,
+            content: [.inputText(.init(text: "Explain quantum physics"))]
+        )
+        let reasoning = SAOAIReasoning(effort: "high", summary: "detailed")
+        let text = SAOAIText(verbosity: "low")
+        let req = SAOAIRequest(
+            model: "o4-mini",
+            input: [SAOAIInput.message(message)],
+            maxOutputTokens: 200,
+            temperature: 0.3,
+            reasoning: reasoning,
+            text: text
+        )
+
+        let data = try JSONEncoder().encode(req)
+        let json = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        XCTAssertEqual(json["model"] as? String, "o4-mini")
+        XCTAssertNotNil(json["input"])
+        XCTAssertEqual(json["max_output_tokens"] as? Int, 200)
+        XCTAssertEqual(json["temperature"] as? Double, 0.3)
+        
+        // Verify reasoning parameter with summary
+        XCTAssertNotNil(json["reasoning"])
+        if let reasoningDict = json["reasoning"] as? [String: Any] {
+            XCTAssertEqual(reasoningDict["effort"] as? String, "high")
+            XCTAssertEqual(reasoningDict["summary"] as? String, "detailed")
+        } else {
+            XCTFail("Expected reasoning to be a dictionary")
+        }
+        
+        // Verify text parameter
+        XCTAssertNotNil(json["text"])
+        if let textDict = json["text"] as? [String: Any] {
+            XCTAssertEqual(textDict["verbosity"] as? String, "low")
+        } else {
+            XCTFail("Expected text to be a dictionary")
         }
     }
 

@@ -141,7 +141,7 @@ final class FunctionCallingTests: XCTestCase {
         let client = SAOAIClient(configuration: config)
         
         // Test that the method exists and compiles correctly
-        let createMethod = client.responses.create(model:input:tools:maxOutputTokens:temperature:topP:previousResponseId:reasoning:)
+        let createMethod = client.responses.create(model:input:tools:maxOutputTokens:temperature:topP:previousResponseId:reasoning:text:)
         XCTAssertNotNil(createMethod)
     }
     

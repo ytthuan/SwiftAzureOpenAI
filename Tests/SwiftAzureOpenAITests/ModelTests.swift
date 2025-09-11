@@ -262,14 +262,58 @@ final class ModelTests: XCTestCase {
         let decoded = try JSONDecoder().decode(SAOAIReasoning.self, from: encoded)
         
         XCTAssertEqual(decoded.effort, "high")
+        XCTAssertNil(decoded.summary) // Backward compatibility test
+    }
+    
+    func testSAOAIReasoningWithSummaryCodable() throws {
+        let reasoning = SAOAIReasoning(effort: "medium", summary: "auto")
+        
+        // Encode
+        let encoded = try JSONEncoder().encode(reasoning)
+        
+        // Decode
+        let decoded = try JSONDecoder().decode(SAOAIReasoning.self, from: encoded)
+        
+        XCTAssertEqual(decoded.effort, "medium")
+        XCTAssertEqual(decoded.summary, "auto")
     }
     
     func testSAOAIReasoningEquatable() {
         let reasoning1 = SAOAIReasoning(effort: "low")
         let reasoning2 = SAOAIReasoning(effort: "low")
         let reasoning3 = SAOAIReasoning(effort: "medium")
+        let reasoning4 = SAOAIReasoning(effort: "low", summary: "concise")
         
         XCTAssertEqual(reasoning1, reasoning2)
         XCTAssertNotEqual(reasoning1, reasoning3)
+        XCTAssertNotEqual(reasoning1, reasoning4) // Different summary should make them not equal
+    }
+    
+    // MARK: - SAOAIText Tests
+    
+    func testSAOAITextInitialization() {
+        let text = SAOAIText(verbosity: "low")
+        XCTAssertEqual(text.verbosity, "low")
+    }
+    
+    func testSAOAITextCodable() throws {
+        let text = SAOAIText(verbosity: "high")
+        
+        // Encode
+        let encoded = try JSONEncoder().encode(text)
+        
+        // Decode
+        let decoded = try JSONDecoder().decode(SAOAIText.self, from: encoded)
+        
+        XCTAssertEqual(decoded.verbosity, "high")
+    }
+    
+    func testSAOAITextEquatable() {
+        let text1 = SAOAIText(verbosity: "low")
+        let text2 = SAOAIText(verbosity: "low")
+        let text3 = SAOAIText(verbosity: "medium")
+        
+        XCTAssertEqual(text1, text2)
+        XCTAssertNotEqual(text1, text3)
     }
 }

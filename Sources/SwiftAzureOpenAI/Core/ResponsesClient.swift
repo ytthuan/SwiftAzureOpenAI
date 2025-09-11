@@ -23,7 +23,8 @@ public final class ResponsesClient {
         temperature: Double? = nil,
         topP: Double? = nil,
         previousResponseId: String? = nil,
-        reasoning: SAOAIReasoning? = nil
+        reasoning: SAOAIReasoning? = nil,
+        text: SAOAIText? = nil
     ) async throws -> SAOAIResponse {
         let message = SAOAIMessage(
             role: .user,
@@ -37,7 +38,8 @@ public final class ResponsesClient {
             temperature: temperature,
             topP: topP,
             previousResponseId: previousResponseId,
-            reasoning: reasoning
+            reasoning: reasoning,
+            text: text
         )
         
         return try await sendRequest(request)
@@ -51,7 +53,8 @@ public final class ResponsesClient {
         temperature: Double? = nil,
         topP: Double? = nil,
         previousResponseId: String? = nil,
-        reasoning: SAOAIReasoning? = nil
+        reasoning: SAOAIReasoning? = nil,
+        text: SAOAIText? = nil
     ) -> AsyncThrowingStream<SAOAIStreamingResponse, Error> {
         let message = SAOAIMessage(
             role: .user,
@@ -66,6 +69,7 @@ public final class ResponsesClient {
             topP: topP,
             previousResponseId: previousResponseId,
             reasoning: reasoning,
+            text: text,
             stream: true
         )
         
@@ -81,7 +85,8 @@ public final class ResponsesClient {
         temperature: Double? = nil,
         topP: Double? = nil,
         previousResponseId: String? = nil,
-        reasoning: SAOAIReasoning? = nil
+        reasoning: SAOAIReasoning? = nil,
+        text: SAOAIText? = nil
     ) async throws -> SAOAIResponse {
         let message = SAOAIMessage(
             role: .user,
@@ -96,7 +101,8 @@ public final class ResponsesClient {
             topP: topP,
             tools: tools,
             previousResponseId: previousResponseId,
-            reasoning: reasoning
+            reasoning: reasoning,
+            text: text
         )
         
         return try await sendRequest(request)
@@ -111,7 +117,8 @@ public final class ResponsesClient {
         temperature: Double? = nil,
         topP: Double? = nil,
         previousResponseId: String? = nil,
-        reasoning: SAOAIReasoning? = nil
+        reasoning: SAOAIReasoning? = nil,
+        text: SAOAIText? = nil
     ) -> AsyncThrowingStream<SAOAIStreamingResponse, Error> {
         let message = SAOAIMessage(
             role: .user,
@@ -127,6 +134,7 @@ public final class ResponsesClient {
             tools: tools,
             previousResponseId: previousResponseId,
             reasoning: reasoning,
+            text: text,
             stream: true
         )
         
@@ -142,7 +150,8 @@ public final class ResponsesClient {
         topP: Double? = nil,
         tools: [SAOAITool]? = nil,
         previousResponseId: String? = nil,
-        reasoning: SAOAIReasoning? = nil
+        reasoning: SAOAIReasoning? = nil,
+        text: SAOAIText? = nil
     ) async throws -> SAOAIResponse {
         let inputArray = input.map { SAOAIInput.message($0) }
         let request = SAOAIRequest(
@@ -153,7 +162,8 @@ public final class ResponsesClient {
             topP: topP,
             tools: tools,
             previousResponseId: previousResponseId,
-            reasoning: reasoning
+            reasoning: reasoning,
+            text: text
         )
         
         return try await sendRequest(request)
@@ -168,7 +178,8 @@ public final class ResponsesClient {
         topP: Double? = nil,
         tools: [SAOAITool]? = nil,
         previousResponseId: String? = nil,
-        reasoning: SAOAIReasoning? = nil
+        reasoning: SAOAIReasoning? = nil,
+        text: SAOAIText? = nil
     ) -> AsyncThrowingStream<SAOAIStreamingResponse, Error> {
         let inputArray = input.map { SAOAIInput.message($0) }
         let request = SAOAIRequest(
@@ -180,6 +191,7 @@ public final class ResponsesClient {
             tools: tools,
             previousResponseId: previousResponseId,
             reasoning: reasoning,
+            text: text,
             stream: true
         )
         
@@ -194,7 +206,8 @@ public final class ResponsesClient {
         temperature: Double? = nil,
         topP: Double? = nil,
         previousResponseId: String? = nil,
-        reasoning: SAOAIReasoning? = nil
+        reasoning: SAOAIReasoning? = nil,
+        text: SAOAIText? = nil
     ) -> AsyncThrowingStream<SAOAIStreamingResponse, Error> {
         let inputArray = functionCallOutputs.map { SAOAIInput.functionCallOutput($0) }
         let request = SAOAIRequest(
@@ -206,6 +219,7 @@ public final class ResponsesClient {
             tools: nil, // No tools needed for function output responses
             previousResponseId: previousResponseId,
             reasoning: reasoning,
+            text: text,
             stream: true
         )
         
