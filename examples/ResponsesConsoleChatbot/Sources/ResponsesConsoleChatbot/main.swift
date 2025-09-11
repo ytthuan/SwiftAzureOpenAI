@@ -224,10 +224,11 @@ extension ResponsesConsoleManager {
                 previousResponseId = currentResponseId
                 
                 // Create a new stream with function outputs
-                // Use minimal parameters method to match Python example (only model, functionCallOutputs, previousResponseId)
-                let outputStream = client.responses.createStreaming(
+                // IMPORTANT: Include tools parameter to prevent Bad Request errors from Azure OpenAI
+                let outputStream = client.responses.createStreamingWithAllParameters(
                     model: model,
                     functionCallOutputs: outputsForModel,
+                    tools: tools,
                     previousResponseId: previousResponseId
                 )
                 
