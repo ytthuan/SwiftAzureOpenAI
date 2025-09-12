@@ -4,22 +4,22 @@ A Swift package focused on the Azure OpenAI/OpenAI Responses API for iOS, macOS,
 
 ## Overview
 
-SwiftAzureOpenAI provides Swift-native models and utilities for working with the Azure OpenAI Responses API. The Responses API is a stateful API from Azure OpenAI that brings together the best capabilities from the chat completions and assistants API in one unified experience.
+SwiftAzureOpenAI provides Swift-native models and utilities for working with the Azure/OpenAI Responses API, a unified, stateful API that combines chat, tools, and assistants patterns.
 
 This package emphasizes strongly typed request/response models, response metadata extraction, and streaming-friendly types, designed specifically for Apple platforms and Swift development.
 
 ## Features
 
-- 🚀 **Azure OpenAI Responses API**: Unified request/response models aligned with the latest Azure OpenAI Responses API
-- 🔄 **Full Async/Await Support**: Modern Swift concurrency with async response processing and streaming
-- 📡 **Real-time Streaming**: Built-in support for streaming responses with `StreamingResponseChunk` and SSE parsing
-- 🎯 **Python-style API**: Simple, intuitive API similar to OpenAI Python SDK for quick integration
-- 🛡️ **Typed errors**: Clear error modeling with `OpenAIError` and `ErrorResponse`
-- 🧩 **Structured content**: Input and output content parts (text, images, multi-modal support)
-- 📊 **Metadata extraction**: Built-in support for response metadata and rate limits
-- 🌐 **Cross-platform**: Works with both Azure OpenAI and OpenAI services
-- 📦 **Swift Package Manager**: Easy integration with SPM
-- 🔐 **Secure**: Support for Azure authentication patterns
+- 🚀 **Responses API-first**: Unified request/response models aligned with Azure/OpenAI Responses API
+- 🔄 **Async/Await**: Modern Swift concurrency for non-streaming and streaming
+- 📡 **Real-time Streaming**: Native SSE handling with optimized parsing
+- 🎯 **Python-style API**: `client.responses.create(...)` for fast adoption
+- 🛡️ **Typed errors**: Clear error modeling with `SAOAIError` and `ErrorResponse`
+- 🧩 **Structured content**: Text, images, and tool/function calling
+- 📊 **Metadata extraction**: Request id, rate limits, processing time
+- 🌐 **Azure + OpenAI**: Works with both services via `SAOAIConfiguration`
+- 📦 **Swift Package Manager**: First-class SPM support
+- ⚡ **Optimized services**: High-performance parsing/streaming and optional response caching
 
 ## Requirements
 
@@ -29,36 +29,9 @@ This package emphasizes strongly typed request/response models, response metadat
 
 ## API Support
 
-This package is designed for the Azure OpenAI Responses API (Preview) and OpenAI Responses API. The Responses API provides a unified experience that combines the best capabilities from chat completions and assistants APIs.
+This package targets the Azure/OpenAI Responses API. It is model-agnostic; use the deployment or model name appropriate for your account. Examples below use `gpt-4o`/`gpt-4o-mini`.
 
-### Supported Models
-
-The Responses API supports a wide range of models including:
-
-**GPT-5 Series:**
-- `gpt-5` (Version: `2025-08-07`)
-- `gpt-5-mini` (Version: `2025-08-07`)
-- `gpt-5-nano` (Version: `2025-08-07`)
-- `gpt-5-chat` (Version: `2025-08-07`)
-
-**GPT-4 Series:**
-- `gpt-4o` (Versions: `2024-11-20`, `2024-08-06`, `2024-05-13`)
-- `gpt-4o-mini` (Version: `2024-07-18`)
-- `gpt-4.1` (Version: `2025-04-14`)
-- `gpt-4.1-nano` (Version: `2025-04-14`)
-- `gpt-4.1-mini` (Version: `2025-04-14`)
-
-**Reasoning Models:**
-- `o1` (Version: `2024-12-17`)
-- `o3-mini` (Version: `2025-01-31`)
-- `o3` (Version: `2025-04-16`)
-- `o4-mini` (Version: `2025-04-16`)
-
-**Specialized Models:**
-- `computer-use-preview`
-- `gpt-image-1` (Version: `2025-04-15`)
-
-> **Note:** Model availability varies by region. Check the [Azure OpenAI models documentation](https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/models) for the latest model and region availability.
+> Check the Azure models documentation for availability: https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/models
 
 ## Installation
 
@@ -91,9 +64,9 @@ Then add it to your target dependencies:
 ## Quick Start
 
 SwiftAzureOpenAI provides modern async/await support with comprehensive streaming capabilities:
-- **🎉 Simple Python-style API** (Recommended) - For easy, quick async usage
-- **📡 Full Streaming Support** - Real-time response streaming with built-in SSE parsing
-- **Advanced API** - For complex scenarios requiring full control
+- **🎉 Python-style API (Recommended)** - `client.responses.create(...)`
+- **📡 Streaming API** - `client.responses.createStreaming(...)`
+- **Advanced API** - Build `SAOAIRequest` and use your own HTTP stack
 
 ### Import the Package
 
@@ -101,29 +74,17 @@ SwiftAzureOpenAI provides modern async/await support with comprehensive streamin
 import SwiftAzureOpenAI
 ```
 
-### 🆕 Improved Class Names (v2.0+)
+### API Surface (SAOAI-prefixed types)
 
-SwiftAzureOpenAI v2.0 introduces improved class names with the `SAOAI` prefix to resolve naming conflicts and improve clarity:
-
-**New Recommended Names:**
-- `SAOAIClient` (main client class)
-- `SAOAIResponse` (fixes confusing "ResponsesResponse" name)
-- `SAOAIRequest`, `SAOAIMessage`, `SAOAIOutput`
-- `SAOAIConfiguration`, `SAOAIAzureConfiguration`, `SAOAIOpenAIConfiguration`
-- `SAOAIError`, `SAOAIJSONValue` (prevents conflicts with Foundation/other libraries)
-
-**Full Backward Compatibility:**
-All old class names are still supported via deprecated aliases, so existing code continues to work without changes.
-
-```swift
-// ✅ New recommended syntax
-let client = SAOAIClient(configuration: SAOAIAzureConfiguration(...))
-let response: SAOAIResponse = try await client.responses.create(...)
-
-// ✅ Legacy syntax (still works, shows deprecation warnings)
-let client = SwiftAzureOpenAI(configuration: AzureOpenAIConfiguration(...))
-let response: ResponsesResponse = try await client.responses.create(...)
-```
+- `SAOAIClient` (main client)
+- `ResponsesClient` (Python-style client at `client.responses`)
+- `SAOAIAzureConfiguration`, `SAOAIOpenAIConfiguration`
+- `SAOAIRequest`, `SAOAIMessage`, `SAOAIInputContent`
+- `SAOAIResponse`, `SAOAIOutput`, `SAOAIOutputContent`
+- `SAOAIStreamingResponse` (SSE events)
+- `SAOAIReasoning`, `SAOAIText`
+- `SAOAITool`, `SAOAIJSONValue`
+- `APIResponse<T>`, `ResponseMetadata`, `RateLimitInfo`, `SAOAIError`, `ErrorResponse`
 
 ### Simple Python-style API (Recommended)
 
@@ -142,17 +103,22 @@ let client = SAOAIClient(configuration: config)
 
 // Simple string input - just like Python!
 let response = try await client.responses.create(
-    model: "gpt-4o-mini",
+    model: config.deploymentName,
     input: "Write a haiku about Swift programming.",
     maxOutputTokens: 200,
     temperature: 0.7
 )
 
 // Extract the response text
-if let output = response.output.first,
-   let content = output.content.first,
-   case let .outputText(text) = content {
-    print(text.text)
+for output in response.output {
+    for part in output.content ?? [] {
+        switch part {
+        case .outputText(let text):
+            print(text.text)
+        case .functionCall(let call):
+            print("Function call: \(call.name) args=\(call.arguments)")
+        }
+    }
 }
 ```
 
@@ -170,7 +136,7 @@ let messages = [
 ]
 
 let response = try await client.responses.create(
-    model: "gpt-4o-mini",
+    model: config.deploymentName,
     input: messages,
     maxOutputTokens: 300
 )
@@ -178,23 +144,24 @@ let response = try await client.responses.create(
 
 ### 📡 Streaming Responses
 
-SwiftAzureOpenAI provides full support for real-time streaming responses:
+SwiftAzureOpenAI provides full support for real-time streaming responses via SSE:
 
 ```swift
-// Enable streaming for real-time response processing
-let response = try await client.responses.create(
-    model: "gpt-4o-mini",
+// Create a streaming call
+let stream = client.responses.createStreaming(
+    model: config.deploymentName,
     input: "Write a story about space exploration",
     maxOutputTokens: 500,
-    stream: true  // Enable streaming
+    temperature: 0.7
 )
 
-// Process streaming chunks as they arrive
-for try await chunk in response.stream {
-    if let content = chunk.chunk.output.first?.content.first,
-       case let .outputText(text) = content {
-        print(text.text, terminator: "")  // Print text as it streams
-        fflush(stdout)  // Flush output for real-time display
+// Process events as they arrive
+for try await event in stream {
+    if let parts = event.output?.first?.content {
+        for part in parts {
+            if let text = part.text, !text.isEmpty { print(text, terminator: "") }
+        }
+        fflush(stdout)
     }
 }
 ```
@@ -204,24 +171,51 @@ for try await chunk in response.stream {
 For reasoning models like `o1`, `o3-mini`, `o4-mini`, you can specify reasoning effort:
 
 ```swift
-// Create reasoning configuration
-let reasoning = Reasoning(effort: "medium") // "low", "medium", "high"
+// Reasoning configuration (effort and optional summary)
+let reasoning = SAOAIReasoning(effort: "medium", summary: "concise")
+let text = SAOAIText.low()
 
-// Use with simple string input
 let response = try await client.responses.create(
-    model: "o4-mini",
-    input: "What is the weather like today?",
-    maxOutputTokens: 100,
-    reasoning: reasoning
+    model: config.deploymentName,
+    input: "Explain BFS vs DFS",
+    maxOutputTokens: 200,
+    reasoning: reasoning,
+    text: text
+)
+```
+
+### Function Calling (tools)
+
+```swift
+// Define a function tool using SAOAIJSONValue
+let sumTool = SAOAITool.function(
+    name: "sum_calculator",
+    description: "Return the sum of two integers",
+    parameters: .object([
+        "type": .string("object"),
+        "properties": .object([
+            "a": .object(["type": .string("integer")]),
+            "b": .object(["type": .string("integer")])
+        ]),
+        "required": .array([.string("a"), .string("b")])
+    ])
 )
 
-// Or with message arrays
-let response = try await client.responses.create(
-    model: "o3-mini", 
-    input: messages,
-    maxOutputTokens: 300,
-    reasoning: Reasoning(effort: "high")
+// Pass tool definitions in the request
+let toolResponse = try await client.responses.create(
+    model: config.deploymentName,
+    input: "What's 15 + 27?",
+    tools: [sumTool]
 )
+
+// If the model asks to call a tool in streaming, send function outputs back (minimal form)
+let functionOutput = SAOAIInputContent.FunctionCallOutput(callId: "call_123", output: "{\"result\": 42}")
+let functionStream = client.responses.createStreaming(
+    model: config.deploymentName,
+    functionCallOutputs: [functionOutput],
+    previousResponseId: "resp_abc123"
+)
+for try await _ in functionStream { /* handle follow-up events */ }
 ```
 
 ### Retrieve and Delete Responses
@@ -234,13 +228,13 @@ let retrieved = try await client.responses.retrieve("resp_abc123")
 let deleted = try await client.responses.delete("resp_abc123")
 ```
 
-### Advanced: Build a Responses API request (Legacy)
+### Advanced: Build a Responses API request
 
 For advanced use cases, you can still use the detailed API:
 
 ```swift
 let request = SAOAIRequest(
-    model: "gpt-4o-mini", // Azure: deployment name; OpenAI: model name
+    model: config.deploymentName, // Azure: deployment name; OpenAI: model name
     input: [
         SAOAIMessage(
             role: .system,
@@ -256,7 +250,7 @@ let request = SAOAIRequest(
 )
 ```
 
-The `input` parameter uses an array of `SAOAIMessage` objects, each containing structured content parts. This unified approach replaces the separate `messages` parameter from the legacy chat completions API.
+The `input` parameter uses an array of `SAOAIMessage` objects, each containing structured content parts. This unified approach replaces the separate `messages` parameter from legacy chat completions APIs.
 
 ### Decode a Responses API response
 
@@ -295,34 +289,20 @@ func handleResponse(data: Data, httpResponse: HTTPURLResponse) throws -> APIResp
 let apiResponse: APIResponse<SAOAIResponse> = /* from your network layer */
 let outputs = apiResponse.data.output
 for output in outputs {
-    for part in output.content {
+    for part in output.content ?? [] {
         switch part {
         case .outputText(let text):
             print(text.text)
+        case .functionCall(let call):
+            print("Function call: \(call.name) \narguments: \(call.arguments)")
         }
     }
 }
 ```
 
-### Streaming model support (types)
+### Streaming model support (low-level types)
 
-This package provides `StreamingResponseChunk<T>` for representing streamed decoding results. You can adapt your networking layer (e.g., SSE) to yield `StreamingResponseChunk<SAOAIResponse>` items as they become available.
-
-```swift
-func processStream(chunks: AsyncThrowingStream<Data, Error>) async throws {
-    var sequence = 0
-    for try await data in chunks {
-        let partial = try JSONDecoder().decode(SAOAIResponse.self, from: data)
-        let chunk = StreamingResponseChunk(
-            chunk: partial,
-            isComplete: false, // set true when your parser detects completion
-            sequenceNumber: sequence
-        )
-        sequence += 1
-        // handle chunk
-    }
-}
-```
+For advanced scenarios, the core includes `StreamingResponseChunk<T>` and services to process arbitrary streams of `Data`. Prefer the high-level `client.responses.createStreaming(...)` for Responses API.
 
 ## Data Models
 
@@ -332,38 +312,45 @@ The Responses API uses a unified data model structure that consolidates the best
 
 - **`SAOAIRequest`** - Main request payload for the Responses API
   - `model: String?` — Azure deployment name or OpenAI model name
-  - `input: [SAOAIMessage]` — Unified message array with structured content parts
+  - `input: [SAOAIInput]` — Unified input array (messages and/or function call outputs)
   - `maxOutputTokens: Int?` — Maximum tokens to generate in the response
   - `temperature: Double?`, `topP: Double?` — Sampling parameters
   - `tools: [SAOAITool]?` — Optional tool definitions for function calling
-  - `reasoning: SAOAIReasoning?` — Reasoning configuration for reasoning models
+  - `previousResponseId: String?` — Chain follow-ups to a prior response
+  - `reasoning: SAOAIReasoning?` — Reasoning configuration
+  - `text: SAOAIText?` — Text verbosity configuration
+  - `stream: Bool?` — Enable streaming
 
-- **`SAOAIReasoning`** - Reasoning configuration for reasoning models
+- **`SAOAIReasoning`** - Reasoning configuration
   - `effort: String` — Reasoning effort level: "low", "medium", or "high"
+  - `summary: String?` — Optional summary style: e.g. "concise", "detailed"
 
-- **`SAOAIMessage`** - Individual message in the conversation
-  - `role: SAOAIMessageRole` — Message role: `.system`, `.user`, `.assistant`, or `.tool`
-  - `content: [SAOAIInputContent]` — Array of structured content parts
+- **`SAOAIMessage`** - Conversation message
+  - `role: SAOAIMessageRole?` — `.system`, `.user`, `.assistant`, or omitted for tool outputs
+  - `content: [SAOAIInputContent]` — Structured content parts
 
 - **`SAOAIInputContent`** - Structured input content
-  - `.inputText(SAOAIInputText)` — Text content: `{ type: "input_text", text: "..." }`
-  - `.inputImage(SAOAIInputImage)` — Image content: `{ type: "input_image", image_url: "..." }`
+  - `.inputText(InputText)` — `{ type: "input_text", text }`
+  - `.inputImage(InputImage)` — `{ type: "input_image", image_url }` or base64 data URI
+  - `.functionCallOutput(FunctionCallOutput)` — `{ type: "function_call_output", call_id, output }`
 
 ### Response Models
 
-- **`SAOAIResponse`** - Main response payload from the Responses API
-  - `id: String?` — Unique response identifier
-  - `model: String?` — Model used for the response
-  - `created: Int?` — Creation timestamp
-  - `output: [SAOAIOutput]` — Array of output content from the assistant
-  - `usage: SAOAITokenUsage?` — Token consumption details
+- **`SAOAIResponse`** - Top-level response
+  - `id: String?`
+  - `model: String?`
+  - `created: Int?` (mapped from `created_at`)
+  - `output: [SAOAIOutput]`
+  - `usage: SAOAITokenUsage?`
 
-- **`SAOAIOutput`** - Assistant's output content
-  - `content: [SAOAIOutputContent]` — Array of output content parts
-  - `role: String?` — Output role (typically "assistant")
+- **`SAOAIOutput`** - Output item
+  - `content: [SAOAIOutputContent]?`
+  - `role: String?`
+  - Function call fields for tool use (e.g., `type`, `name`, `callId`, `arguments`, `status`)
 
-- **`SAOAIOutputContent`** - Structured output content
-  - `.outputText(SAOAIOutputText)` — Text output: `{ type: "output_text", text: "..." }`
+- **`SAOAIOutputContent`**
+  - `.outputText(OutputText)` — `{ type: "output_text", text }`
+  - `.functionCall(FunctionCall)` — `{ type: "function_call", call_id, name, arguments }`
 
 ### Supporting Models
 
@@ -385,8 +372,8 @@ The Responses API uses a unified data model structure that consolidates the best
 - **`RateLimitInfo`** - Rate limiting details
   - `remaining: Int?`, `resetTime: Date?`, `limit: Int?`
 
-- **`OpenAIError`**, **`ErrorResponse`** - Error handling
-  - Typed errors for network, decoding, and server-reported issues
+- **`SAOAIError`**, **`ErrorResponse`** - Error handling
+  - Typed errors for network, decoding, status, and server-reported issues
 
 ## Usage with Azure OpenAI and OpenAI
 
@@ -404,7 +391,7 @@ let azureConfig = SAOAIAzureConfiguration(
     endpoint: "https://your-resource.openai.azure.com",
     apiKey: "your-azure-api-key",
     deploymentName: "gpt-4o-mini", // Your deployment name
-    apiVersion: "preview" // Latest preview API version for Responses API
+    apiVersion: "preview" // Responses API version (default: "preview")
 )
 
 // Build your request
@@ -431,7 +418,7 @@ For OpenAI, use the standard Responses API endpoint:
 
 ```swift
 // Configure OpenAI
-let openaiConfig = OpenAIServiceConfiguration(
+let openaiConfig = SAOAIOpenAIConfiguration(
     apiKey: "sk-your-openai-api-key",
     organization: "org-your-organization" // Optional
 )
@@ -489,12 +476,12 @@ func sendResponsesRequest() async throws -> APIResponse<SAOAIResponse> {
 ```swift
 do {
     // ... perform request and decode ...
-} catch let error as OpenAIError {
+} catch let error as SAOAIError {
     print(error.localizedDescription)
 } catch let error as DecodingError {
-    throw OpenAIError.decodingError(error)
+    throw SAOAIError.decodingError(error)
 } catch {
-    throw OpenAIError.networkError(error)
+    throw SAOAIError.networkError(error)
 }
 ```
 
@@ -574,4 +561,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Note:** This package is community-maintained and not officially affiliated with OpenAI or Microsoft. It provides Swift-native data models specifically designed for the Azure OpenAI Responses API and OpenAI Responses API. The Responses API represents the latest unified approach that combines the best capabilities from chat completions and assistants APIs.
+**Note:** This package is community-maintained and not officially affiliated with OpenAI or Microsoft. It provides Swift-native data models and client utilities designed for the Azure/OpenAI Responses API.
