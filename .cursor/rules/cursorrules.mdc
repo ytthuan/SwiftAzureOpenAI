@@ -1,3 +1,9 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+
 # Swift Azure OpenAI SDK Development Rules
 
 ## Project Overview
