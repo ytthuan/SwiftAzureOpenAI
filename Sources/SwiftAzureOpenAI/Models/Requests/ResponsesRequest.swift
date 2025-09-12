@@ -91,3 +91,46 @@ public struct SAOAIRequest: Codable, Equatable {
     }
 }
 
+/// Minimal request payload for function call outputs to match Python API exactly
+public struct SAOAIMinimalRequest: Codable, Equatable {
+    /// Model or deployment name. For Azure, this is the deployment name.
+    public let model: String
+    /// Unified input for the Responses API. Supports both messages and raw input objects.
+    public let input: [SAOAIInput]
+    /// Whether to stream the response using Server-Sent Events (SSE).
+    public let stream: Bool
+    /// Previous response ID for chaining responses.
+    public var previousResponseId: String?
+
+    public init(
+        model: String,
+        input: [SAOAIInput],
+        stream: Bool,
+        previousResponseId: String? = nil
+    ) {
+        self.model = model
+        self.input = input
+        self.stream = stream
+        self.previousResponseId = previousResponseId
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case model
+        case input
+        case stream
+        case previousResponseId = "previous_response_id"
+    }
+    
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(model, forKey: .model)
+        try container.encode(input, forKey: .input)
+        try container.encode(stream, forKey: .stream)
+        
+        // Only encode previousResponseId if it's not nil
+        if let previousResponseId = previousResponseId {
+            try container.encode(previousResponseId, forKey: .previousResponseId)
+        }
+    }
+}
+
