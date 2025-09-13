@@ -22,10 +22,44 @@ public final class HTTPClient: @unchecked Sendable {
     private let urlSession: URLSession
     private let maxRetries: Int
 
-    public init(configuration: SAOAIConfiguration, session: URLSession = .shared, maxRetries: Int = 2) {
+    public init(configuration: SAOAIConfiguration, session: URLSession = HTTPClient.makeDefaultSession(), maxRetries: Int = 2) {
         self.configuration = configuration
         self.urlSession = session
         self.maxRetries = maxRetries
+    }
+
+    /// Create a tuned default URLSession for high-throughput workloads
+    public static func makeDefaultSession() -> URLSession {
+        #if canImport(FoundationNetworking)
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 60
+        config.timeoutIntervalForResource = 120
+        config.httpMaximumConnectionsPerHost = 8
+        config.waitsForConnectivity = false
+        config.requestCachePolicy = .reloadIgnoringLocalCacheData
+        config.httpShouldUsePipelining = true
+        // Prefer compressed responses when server supports it
+        var headers = config.httpAdditionalHeaders ?? [:]
+        headers["Accept-Encoding"] = "br, gzip, deflate"
+        config.httpAdditionalHeaders = headers
+        return URLSession(configuration: config)
+        #else
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 60
+        config.timeoutIntervalForResource = 120
+        config.httpMaximumConnectionsPerHost = 8
+        config.waitsForConnectivity = false
+        config.allowsExpensiveNetworkAccess = true
+        config.allowsConstrainedNetworkAccess = true
+        config.requestCachePolicy = .reloadIgnoringLocalCacheData
+        config.httpShouldUsePipelining = true
+        config.networkServiceType = .responsiveData
+        // Prefer compressed responses when server supports it
+        var headers = config.httpAdditionalHeaders ?? [:]
+        headers["Accept-Encoding"] = "br, gzip, deflate"
+        config.httpAdditionalHeaders = headers
+        return URLSession(configuration: config)
+        #endif
     }
 
     public func send(_ request: APIRequest) async throws -> (Data, HTTPURLResponse) {
@@ -56,13 +90,14 @@ public final class HTTPClient: @unchecked Sendable {
         let configuration = self.configuration
         let urlSession = self.urlSession
         
-        return AsyncThrowingStream { continuation in
+        return AsyncThrowingStream(bufferingPolicy: .bufferingOldest(64)) { continuation in
             Task {
                 do {
                     var urlRequest = URLRequest(url: request.url)
                     urlRequest.httpMethod = request.method
                     var finalHeaders = configuration.headers
                     request.headers.forEach { finalHeaders[$0.key] = $0.value }
+                    // Avoid enabling compression for SSE streams to prevent issues on some platforms
                     for (key, value) in finalHeaders { urlRequest.setValue(value, forHTTPHeaderField: key) }
                     urlRequest.httpBody = request.body
                     urlRequest.timeoutInterval = 60
@@ -75,7 +110,7 @@ public final class HTTPClient: @unchecked Sendable {
                     }
                     
                     #if canImport(FoundationNetworking)
-                    // For Linux/FoundationNetworking, use data(for:) and simulate streaming
+                    // For Linux/FoundationNetworking, use data(for:) and simulate streaming with byte-level parsing
                     let (data, response) = try await urlSession.data(for: urlRequest)
                     guard let httpResponse = response as? HTTPURLResponse else {
                         continuation.finish(throwing: SAOAIError.networkError(URLError(.badServerResponse)))
@@ -88,27 +123,27 @@ public final class HTTPClient: @unchecked Sendable {
                         return
                     }
                     
-                    // Optimized streaming simulation for better performance
-                    if let responseString = String(data: data, encoding: .utf8) {
-                        // Use optimized line processing
-                        let lines = responseString.components(separatedBy: .newlines)
-                        var buffer = Data()
-                        buffer.reserveCapacity(4096) // Pre-allocate buffer
-                        
-                        for line in lines {
-                            if !line.isEmpty {
-                                // Use optimized completion check first
-                                let lineData = line.data(using: .utf8)! + "\n\n".data(using: .utf8)!
-                                if OptimizedSSEParser.isCompletionChunkOptimized(lineData) {
-                                    continuation.finish()
-                                    return
-                                }
-                                
-                                continuation.yield(lineData)
+                    // Optimized streaming simulation with byte-level delimiter scanning
+                    let delimiter = "\n\n".data(using: .utf8)!
+                    var buffer = data
+                    while let range = buffer.range(of: delimiter) {
+                        let chunkData = buffer[..<range.upperBound]
+                        buffer.removeSubrange(..<range.upperBound)
+                        if !chunkData.isEmpty {
+                            if OptimizedSSEParser.isCompletionChunkOptimized(chunkData) {
+                                continuation.finish()
+                                return
                             }
+                            continuation.yield(chunkData)
                         }
-                    } else {
-                        continuation.yield(data)
+                    }
+                    if !buffer.isEmpty {
+                        let finalChunk = buffer + delimiter
+                        if OptimizedSSEParser.isCompletionChunkOptimized(finalChunk) {
+                            continuation.finish()
+                            return
+                        }
+                        continuation.yield(finalChunk)
                     }
                     continuation.finish()
                     #else
@@ -215,6 +250,10 @@ public final class HTTPClient: @unchecked Sendable {
         urlRequest.httpMethod = request.method
         var finalHeaders = configuration.headers
         request.headers.forEach { finalHeaders[$0.key] = $0.value }
+        // Prefer compressed responses for improved performance on non-streaming
+        if (finalHeaders["Accept"]?.lowercased() != "text/event-stream") && finalHeaders["Accept-Encoding"] == nil {
+            finalHeaders["Accept-Encoding"] = "br, gzip, deflate"
+        }
         for (key, value) in finalHeaders { urlRequest.setValue(value, forHTTPHeaderField: key) }
         urlRequest.httpBody = request.body
         urlRequest.timeoutInterval = 60

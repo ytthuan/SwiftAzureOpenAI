@@ -15,7 +15,9 @@ public final class SAOAIClient: @unchecked Sendable {
 
     public init(configuration: SAOAIConfiguration, cache: ResponseCache? = nil, useOptimizedService: Bool = true) {
         self.configuration = configuration
-        self.httpClient = HTTPClient(configuration: configuration)
+        // Use a tuned default URLSession for better performance
+        let session = HTTPClient.makeDefaultSession()
+        self.httpClient = HTTPClient(configuration: configuration, session: session)
         
         // Use optimized service by default for better performance
         if useOptimizedService {
@@ -31,7 +33,12 @@ public final class SAOAIClient: @unchecked Sendable {
     }
 
     public func processStreamingResponse<T: Codable>(from stream: AsyncThrowingStream<Data, Error>, type: T.Type) -> AsyncThrowingStream<StreamingResponseChunk<T>, Error> {
-        OptimizedStreamingResponseService().processStreamOptimized(stream, type: type)
+        // Use optimized streaming parser and bounded buffering by default
+        return OptimizedStreamingResponseService(
+            parser: OptimizedStreamingResponseParser(),
+            bufferSize: 8192,
+            enableBatching: true
+        ).processStreamOptimized(stream, type: type)
     }
 
     public func handleResponse<T: Codable>(data: Data, response: URLResponse) async throws -> APIResponse<T> {
