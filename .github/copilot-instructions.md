@@ -23,10 +23,22 @@ SwiftAzureOpenAI is a Swift Package Manager library providing seamless integrati
 
 Default configuration:
 ```swift
+guard let endpoint = ProcessInfo.processInfo.environment["AZURE_OPENAI_ENDPOINT"] else {
+            throw RuntimeError("AZURE_OPENAI_ENDPOINT is not set")
+        }
+
+// Use API key authentication as specified in the issue
+let apiKey = ProcessInfo.processInfo.environment["AZURE_OPENAI_API_KEY"] ??
+                    ProcessInfo.processInfo.environment["COPILOT_AGENT_AZURE_OPENAI_API_KEY"] ??
+                    "your-api-key"
+        
+let deploymentName = ProcessInfo.processInfo.environment["AZURE_OPENAI_DEPLOYMENT"] ?? "gpt-5-nano"
+
+
 SAOAIAzureConfiguration(
-    endpoint: "https://your-resource.openai.azure.com",
-    apiKey: "your-api-key", 
-    deploymentName: "your-deployment-name",
+    endpoint: endpoint,
+    apiKey: apiKey, 
+    deploymentName: deploymentName,
     apiVersion: "preview"  // ✅ Used as query parameter
 )
 ```
@@ -58,20 +70,21 @@ swift package clean               # Clean build artifacts
 swift package resolve             # Resolve dependencies (instant - zero deps)
 ```
 
-### Environment Variables for Live API Testing
+### Environment Variables for Live API Testing - already set below variables and secret: 
+
+Variables: AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_DEPLOYMENT
+Secret: COPILOT_AGENT_AZURE_OPENAI_API_KEY
 ```bash
-export AZURE_OPENAI_ENDPOINT="https://your-resource.openai.azure.com"
-export AZURE_OPENAI_API_KEY="your-api-key"
-export AZURE_OPENAI_DEPLOYMENT="your-deployment-name"
 swift test  # Enables live API tests
 ```
 
-### RawApiTesting.swift - Standalone API Testing Tool
-```bash
+### RawApiTesting.swift - Standalone API Testing Tool - already set below variables and secret, use them
+
 # Direct Azure OpenAI endpoint testing (captures real response data)
-export AZURE_OPENAI_ENDPOINT="https://your-resource.openai.azure.com"
-export COPILOT_AGENT_AZURE_OPENAI_API_KEY="your-api-key"  # or AZURE_OPENAI_API_KEY
-export AZURE_OPENAI_DEPLOYMENT="your-deployment-name"
+Variables: AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_DEPLOYMENT
+Secret: COPILOT_AGENT_AZURE_OPENAI_API_KEY
+
+```bash
 swift RawApiTesting.swift           # Direct endpoint validation
 ```
 
@@ -186,6 +199,7 @@ The repository includes detailed documentation in the `docs/` directory:
 - **`docs/CI-CD.md`**: Detailed CI/CD workflow documentation and GitHub Actions
 - **`docs/Release-Guide.md`**: Release process and versioning guidelines
 - **`docs/Best-Practices-Analysis.md`**: Development best practices and analysis
+- **`AGENTS.md`**: Coding Agent instruction
 
 ## Quick Reference
 
