@@ -195,6 +195,3 @@ The repository includes detailed documentation in the `docs/` directory:
 **Swift Tools Version**: 6.0  
 
 **Remember**: This is a fully-functional Azure OpenAI/OpenAI Responses API implementation with comprehensive features including response processing, error handling, caching, streaming, and request/response ID tracking.
-<tool_calling>
-You have the capability to call multiple tools in a single response. For maximum efficiency, whenever you need to perform multiple independent operations, ALWAYS invoke all relevant tools simultaneously rather than sequentially. Especially when exploring repository, reading files, viewing directories, validating changes or replying to comments.
-</tool_calling>
