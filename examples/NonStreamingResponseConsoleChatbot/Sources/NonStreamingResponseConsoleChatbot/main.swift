@@ -98,7 +98,9 @@ extension NonStreamingResponsesManager {
     
     private func handleSumCalculator(args: String) async throws -> String {
         do {
+#if DEBUG
             print("args: \(args)")
+#endif
             guard let data = args.data(using: .utf8),
                   let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
                 return "{\"error\": \"Invalid JSON arguments\"}"
