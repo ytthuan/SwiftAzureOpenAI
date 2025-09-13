@@ -20,12 +20,32 @@ swift run
 ```
 
 ### 2. [ResponsesConsoleChatbot](ResponsesConsoleChatbot/)
-A console chatbot using the Responses API with streaming and tool calling.
+A console chatbot using the Responses API with both streaming and non-streaming modes, featuring user-controlled function calling:
+- Real-time streaming and blocking non-streaming modes (switchable via flags)
+- User-controlled function calling (no automatic loops)
+- Code interpreter and custom function tools
+- Flexible reasoning configuration
+- Complete feature parity between streaming/non-streaming
 
 **Usage:**
 ```bash
 cd ResponsesConsoleChatbot
-swift run
+swift run ResponsesConsoleChatbot --streaming      # Real-time mode (default)
+swift run ResponsesConsoleChatbot --non-streaming  # Blocking mode
+```
+
+### 3. [NonStreamingResponseConsoleChatbot](NonStreamingResponseConsoleChatbot/)
+A **simplified, non-streaming only** version of the Responses API console chatbot:
+- Non-streaming mode only (no streaming complexity)
+- User-controlled function calling with max 5 rounds
+- Same tools and features as ResponsesConsoleChatbot but focused on blocking responses
+- Easier to understand and customize for non-streaming use cases
+
+**Usage:**
+```bash
+cd NonStreamingResponseConsoleChatbot
+swift run NonStreamingResponseConsoleChatbot
+swift run NonStreamingResponseConsoleChatbot --message "calculate 10 plus 22"
 ```
 
  
@@ -48,7 +68,9 @@ Each example is a complete Swift Package that:
 
 2. **Choose an example**:
    ```bash
-   cd ConsoleChatbot  # or cd ResponsesConsoleChatbot
+   cd ConsoleChatbot                        # Basic interactive chatbot
+   cd ResponsesConsoleChatbot              # Streaming + non-streaming modes
+   cd NonStreamingResponseConsoleChatbot   # Non-streaming only (simplified)
    ```
 
 3. **Build and run**:

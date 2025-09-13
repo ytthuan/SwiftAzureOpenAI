@@ -304,6 +304,36 @@ public final class ResponsesClient {
         return sendStreamingRequest(request)
     }
     
+    /// Create a non-streaming response with function call outputs (for tool results)
+    /// This is the non-streaming equivalent of `createStreamingWithAllParameters`
+    public func createWithFunctionCallOutputs(
+        model: String,
+        functionCallOutputs: [SAOAIInputContent.FunctionCallOutput],
+        maxOutputTokens: Int? = nil,
+        temperature: Double? = nil,
+        topP: Double? = nil,
+        tools: [SAOAITool]? = nil,
+        previousResponseId: String? = nil,
+        reasoning: SAOAIReasoning? = nil,
+        text: SAOAIText? = nil
+    ) async throws -> SAOAIResponse {
+        let inputArray = functionCallOutputs.map { SAOAIInput.functionCallOutput($0) }
+        let request = SAOAIRequest(
+            model: model,
+            input: inputArray,
+            maxOutputTokens: maxOutputTokens,
+            temperature: temperature,
+            topP: topP,
+            tools: tools, // Include tools for function output responses
+            previousResponseId: previousResponseId,
+            reasoning: reasoning,
+            text: text,
+            stream: false // Non-streaming
+        )
+        
+        return try await sendRequest(request)
+    }
+    
     /// Retrieve a response by ID
     public func retrieve(_ responseId: String) async throws -> SAOAIResponse {
         var retrieveURL = configuration.baseURL
