@@ -9,3 +9,4 @@ DerivedData/
 build.log
 Package.resolved
 *.log
+mcp.json
