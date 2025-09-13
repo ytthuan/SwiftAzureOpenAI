@@ -7,7 +7,7 @@ public final class OptimizedStreamingResponseService: Sendable {
     private let enableBatching: Bool
     
     public init(
-        parser: StreamingResponseParser = DefaultStreamingResponseParser(),
+        parser: StreamingResponseParser = OptimizedStreamingResponseParser(),
         bufferSize: Int = 8192,
         enableBatching: Bool = true
     ) {
