@@ -173,8 +173,8 @@ extension ResponsesConsoleManager {
 
 extension ResponsesConsoleManager {
     
-    func respondStreaming(userText: String) async throws {
-        var previousResponseId: String? = lastResponseId
+    func respondStreaming(userText: String) async throws -> [SAOAIInputContent.FunctionCallOutput]? {
+        let previousResponseId: String? = lastResponseId
         let tools = buildFunctionTools(includeCodeInterpreter: true)
         
         var currentResponseId: String? = nil
@@ -184,87 +184,228 @@ extension ResponsesConsoleManager {
         var functionArgsByItemId: [String: String] = [:]
         var processedFunctionCallIds: Set<String> = []
         
-        while true {
-            var outputsForModel: [SAOAIInputContent.FunctionCallOutput] = []
-            var assistantMessageCompleted = false
+        var outputsForModel: [SAOAIInputContent.FunctionCallOutput] = []
+        var assistantMessageCompleted = false
+        
+        // Create user message
+        let userMessage = SAOAIMessage(role: .user, text: userText)
+        let inputMessages = [userMessage]
+        
+        // Create flexible reasoning configuration with new summary support
+        let reasoning: SAOAIReasoning? = reasoningEffort.map { effort in
+            if let summary = reasoningSummary {
+                return SAOAIReasoning(effort: effort, summary: summary)
+            } else {
+                return SAOAIReasoning(effort: effort)
+            }
+        }
+        
+        // Create text configuration for verbosity control
+        let text: SAOAIText? = textVerbosity.map { SAOAIText(verbosity: $0) }
+        
+        if let effort = reasoningEffort {
+            let summaryText = reasoningSummary ?? "none"
+            let verbosityText = textVerbosity ?? "default"
+            print("[debug] flexible reasoning enabled (effort=\(effort), summary=\(summaryText), verbosity=\(verbosityText))")
+        }
+        
+        // Start streaming
+        let stream = client.responses.createStreaming(
+            model: model,
+            input: inputMessages,
+            maxOutputTokens: nil,
+            tools: tools,
+            previousResponseId: previousResponseId,
+            reasoning: reasoning,
+            text: text
+        )
+        
+        try await processStreamingEvents(
+            stream: stream,
+            functionMetaByItemId: &functionMetaByItemId,
+            functionArgsByItemId: &functionArgsByItemId,
+            processedFunctionCallIds: &processedFunctionCallIds,
+            outputsForModel: &outputsForModel,
+            assistantMessageCompleted: &assistantMessageCompleted,
+            lastResponseId: &currentResponseId
+        )
+        
+        // Update last response ID
+        self.lastResponseId = currentResponseId
+        
+        // Return function call outputs for user to decide whether to continue
+        return outputsForModel.isEmpty ? nil : outputsForModel
+    }
+    
+    func continueStreamingWithFunctionOutputs(_ functionCallOutputs: [SAOAIInputContent.FunctionCallOutput]) async throws -> [SAOAIInputContent.FunctionCallOutput]? {
+        let tools = buildFunctionTools(includeCodeInterpreter: true)
+        var currentResponseId: String? = nil
+        
+        // Create a new stream with function outputs
+        // IMPORTANT: Include tools parameter to prevent Bad Request errors from Azure OpenAI
+        let outputStream = client.responses.createStreamingWithAllParameters(
+            model: model,
+            functionCallOutputs: functionCallOutputs,
+            tools: tools,
+            previousResponseId: lastResponseId
+        )
+        
+        // Process the response to function calls
+        try await processFunctionResponseStream(
+            stream: outputStream,
+            lastResponseId: &currentResponseId
+        )
+        
+        // Update last response id for future turns
+        self.lastResponseId = currentResponseId
+        
+        // For now, streaming continuation doesn't produce more function calls
+        // This could be extended in the future if needed
+        return nil
+    }
+    
+    func respondNonStreaming(userText: String) async throws -> [SAOAIInputContent.FunctionCallOutput]? {
+        let tools = buildFunctionTools(includeCodeInterpreter: true)
+        
+        // Create user message
+        let userMessage = SAOAIMessage(role: .user, text: userText)
+        let inputMessages = [userMessage]
+        
+        // Create flexible reasoning configuration with new summary support
+        let reasoning: SAOAIReasoning? = reasoningEffort.map { effort in
+            if let summary = reasoningSummary {
+                return SAOAIReasoning(effort: effort, summary: summary)
+            } else {
+                return SAOAIReasoning(effort: effort)
+            }
+        }
+        
+        // Create text configuration for verbosity control
+        let text: SAOAIText? = textVerbosity.map { SAOAIText(verbosity: $0) }
+        
+        if let effort = reasoningEffort {
+            let summaryText = reasoningSummary ?? "none"
+            let verbosityText = textVerbosity ?? "default"
+            print("[debug] flexible reasoning enabled (effort=\(effort), summary=\(summaryText), verbosity=\(verbosityText))")
+        }
+        
+        // Make non-streaming request
+        let response = try await client.responses.create(
+            model: model,
+            input: inputMessages,
+            maxOutputTokens: nil,
+            tools: tools,
+            previousResponseId: lastResponseId,
+            reasoning: reasoning,
+            text: text
+        )
+        
+        // Update last response ID
+        self.lastResponseId = response.id
+        
+        // Process the response and extract function calls
+        let functionCallOutputs = try await processNonStreamingResponse(response)
+        
+        return functionCallOutputs.isEmpty ? nil : functionCallOutputs
+    }
+    
+    func continueNonStreamingWithFunctionOutputs(_ functionCallOutputs: [SAOAIInputContent.FunctionCallOutput]) async throws -> [SAOAIInputContent.FunctionCallOutput]? {
+        let tools = buildFunctionTools(includeCodeInterpreter: true)
+        
+        // Make non-streaming request with function call outputs
+        let response = try await client.responses.createWithFunctionCallOutputs(
+            model: model,
+            functionCallOutputs: functionCallOutputs,
+            maxOutputTokens: nil,
+            tools: tools,
+            previousResponseId: lastResponseId
+        )
+        
+        // Update last response ID
+        self.lastResponseId = response.id
+        
+        // Process the response and extract any new function calls
+        let newFunctionCallOutputs = try await processNonStreamingResponse(response)
+        
+        return newFunctionCallOutputs.isEmpty ? nil : newFunctionCallOutputs
+    }
+    
+    private func processNonStreamingResponse(_ response: SAOAIResponse) async throws -> [SAOAIInputContent.FunctionCallOutput] {
+        var functionCallOutputs: [SAOAIInputContent.FunctionCallOutput] = []
+        
+        // Process each output item in the response
+        for output in response.output {
             
-            // Create user message
-            let userMessage = SAOAIMessage(role: .user, text: userText)
-            let inputMessages = [userMessage]
-            
-            // Create flexible reasoning configuration with new summary support
-            let reasoning: SAOAIReasoning? = reasoningEffort.map { effort in
-                if let summary = reasoningSummary {
-                    return SAOAIReasoning(effort: effort, summary: summary)
-                } else {
-                    return SAOAIReasoning(effort: effort)
+            // Handle different output types based on the type field
+            if let type = output.type {
+                switch type {
+                case "reasoning":
+                    // Display reasoning summary if available
+                    if let summary = output.summary, !summary.isEmpty {
+                        let summaryText = summary.joined(separator: " ")
+                        print("\n[reasoning] \(summaryText)")
+                    }
+                    
+                case "function_call":
+                    // Handle function call at the output level
+                    if let name = output.name,
+                       let callId = output.callId,
+                       let arguments = output.arguments {
+                        
+                        print("\n[tool] Function started: \(name) (call_id: \(callId))")
+                        let snippet = arguments.count > 300 ? "\(arguments.prefix(200)) ... \(arguments.suffix(80))" : arguments
+                        print("[tool] \(name) arguments: \(snippet)")
+                        
+                        // Execute the function call
+                        let resultStr = await runFunctionCall(funcName: name, rawArgs: arguments)
+                        let preview = resultStr.count > 4000 ? "\(resultStr.prefix(2000)) ... \(resultStr.suffix(1500))" : resultStr
+                        print("[tool] \(name) result: \(preview)")
+                        
+                        // Add to function call outputs for potential continuation
+                        functionCallOutputs.append(SAOAIInputContent.FunctionCallOutput(
+                            callId: callId,
+                            output: resultStr
+                        ))
+                    }
+                    
+                default:
+                    // Handle other output types at the content level
+                    break
                 }
             }
             
-            // Create text configuration for verbosity control
-            let text: SAOAIText? = textVerbosity.map { SAOAIText(verbosity: $0) }
-            
-            if let effort = reasoningEffort {
-                let summaryText = reasoningSummary ?? "none"
-                let verbosityText = textVerbosity ?? "default"
-                print("[debug] flexible reasoning enabled (effort=\(effort), summary=\(summaryText), verbosity=\(verbosityText))")
+            // Process content array if present
+            if let contentArray = output.content {
+                for content in contentArray {
+                    switch content {
+                    case .outputText(let textContent):
+                        print("[assistant]: \(textContent.text)")
+                        
+                    case .functionCall(let functionContent):
+                        print("\n[tool] Function started: \(functionContent.name) (call_id: \(functionContent.callId))")
+                        let snippet = functionContent.arguments.count > 300 ? "\(functionContent.arguments.prefix(200)) ... \(functionContent.arguments.suffix(80))" : functionContent.arguments
+                        print("[tool] \(functionContent.name) arguments: \(snippet)")
+                        
+                        // Execute the function call
+                        let resultStr = await runFunctionCall(funcName: functionContent.name, rawArgs: functionContent.arguments)
+                        let preview = resultStr.count > 4000 ? "\(resultStr.prefix(2000)) ... \(resultStr.suffix(1500))" : resultStr
+                        print("[tool] \(functionContent.name) result: \(preview)")
+                        
+                        // Add to function call outputs for potential continuation
+                        functionCallOutputs.append(SAOAIInputContent.FunctionCallOutput(
+                            callId: functionContent.callId,
+                            output: resultStr
+                        ))
+                    }
+                }
             }
-            
-            // Start streaming
-            let stream = client.responses.createStreaming(
-                model: model,
-                input: inputMessages,
-                maxOutputTokens: nil,
-                tools: tools,
-                previousResponseId: previousResponseId,
-                reasoning: reasoning,
-                text: text
-            )
-            
-            try await processStreamingEvents(
-                stream: stream,
-                functionMetaByItemId: &functionMetaByItemId,
-                functionArgsByItemId: &functionArgsByItemId,
-                processedFunctionCallIds: &processedFunctionCallIds,
-                outputsForModel: &outputsForModel,
-                assistantMessageCompleted: &assistantMessageCompleted,
-                lastResponseId: &currentResponseId
-            )
-            
-            // Handle function call outputs if any
-            if !outputsForModel.isEmpty {
-                // Set up for next iteration with function outputs
-                previousResponseId = currentResponseId
-                
-                // Create a new stream with function outputs
-                // IMPORTANT: Include tools parameter to prevent Bad Request errors from Azure OpenAI
-                let outputStream = client.responses.createStreamingWithAllParameters(
-                    model: model,
-                    functionCallOutputs: outputsForModel,
-                    tools: tools,
-                    previousResponseId: previousResponseId
-                )
-                
-                // Process the response to function calls
-                try await processFunctionResponseStream(
-                    stream: outputStream,
-                    lastResponseId: &currentResponseId
-                )
-                
-                // Persist latest response id for future turns
-                self.lastResponseId = currentResponseId
-                
-                break // Exit after processing function responses
-            }
-            
-            if assistantMessageCompleted {
-                // Persist latest response id for future turns
-                self.lastResponseId = currentResponseId
-                break
-            }
-            
-            break
         }
+        
+        if !functionCallOutputs.isEmpty {
+            print("") // Add line break after function calls
+        }
+        
+        return functionCallOutputs
     }
     
     private func processStreamingEvents(
@@ -544,7 +685,7 @@ extension ResponsesConsoleManager {
 
 extension ResponsesConsoleManager {
     
-    static func console(model: String, instructions: String = "", reasoningEffort: String? = nil, reasoningSummary: String? = nil, textVerbosity: String? = nil, inputMessage: String? = nil) async throws {
+    static func console(model: String, instructions: String = "", reasoningEffort: String? = nil, reasoningSummary: String? = nil, textVerbosity: String? = nil, inputMessage: String? = nil, useNonStreaming: Bool = false) async throws {
         let manager = try ResponsesConsoleManager(
             model: model,
             instructions: instructions,
@@ -553,13 +694,15 @@ extension ResponsesConsoleManager {
             textVerbosity: textVerbosity
         )
         
-        print("Model: \(model)")
+        let modeText = useNonStreaming ? "Non-streaming" : "Streaming"
+        print("Model: \(model) (\(modeText) mode)")
+        print("Function calling: User-controlled (max 5 rounds)")
         
         // If input message is provided, use it once and exit
         if let message = inputMessage {
             print("You: \(message)")
             do {
-                try await manager.respondStreaming(userText: message)
+                try await handleUserMessage(manager: manager, message: message, useNonStreaming: useNonStreaming)
             } catch {
                 print("[error] \(error.localizedDescription)")
             }
@@ -569,7 +712,6 @@ extension ResponsesConsoleManager {
         // Interactive mode
         while true {
             print("You: ", terminator: "")
-            
             
             guard let userText = readLine()?.trimmingCharacters(in: .whitespacesAndNewlines),
                   !userText.isEmpty else {
@@ -583,10 +725,40 @@ extension ResponsesConsoleManager {
             }
             
             do {
-                try await manager.respondStreaming(userText: userText)
+                try await handleUserMessage(manager: manager, message: userText, useNonStreaming: useNonStreaming)
             } catch {
                 print("[error] \(error.localizedDescription)")
             }
+        }
+    }
+    
+    private static func handleUserMessage(manager: ResponsesConsoleManager, message: String, useNonStreaming: Bool) async throws {
+        // User-controlled function calling with configurable maximum rounds
+        let maxFunctionCallRounds = 5
+        var currentRound = 0
+        
+        // Initial response
+        var functionCallOutputs: [SAOAIInputContent.FunctionCallOutput]?
+        if useNonStreaming {
+            functionCallOutputs = try await manager.respondNonStreaming(userText: message)
+        } else {
+            functionCallOutputs = try await manager.respondStreaming(userText: message)
+        }
+        
+        // Continue function calling rounds based on user-defined logic
+        while let outputs = functionCallOutputs, currentRound < maxFunctionCallRounds {
+            currentRound += 1
+            print("[debug] Function call round \(currentRound)/\(maxFunctionCallRounds)")
+            
+            if useNonStreaming {
+                functionCallOutputs = try await manager.continueNonStreamingWithFunctionOutputs(outputs)
+            } else {
+                functionCallOutputs = try await manager.continueStreamingWithFunctionOutputs(outputs)
+            }
+        }
+        
+        if currentRound >= maxFunctionCallRounds {
+            print("[debug] Maximum function call rounds (\(maxFunctionCallRounds)) reached")
         }
     }
 }
@@ -618,6 +790,7 @@ struct ResponsesConsoleChatbotApp {
         var reasoningSummary: String? = ProcessInfo.processInfo.environment["DEFAULT_REASONING_SUMMARY"]
         var textVerbosity: String? = ProcessInfo.processInfo.environment["DEFAULT_TEXT_VERBOSITY"]
         var inputMessage: String? = nil
+        var useNonStreaming = false // Default to streaming mode
         
         // Simple argument parsing
         var i = 1
@@ -656,6 +829,10 @@ struct ResponsesConsoleChatbotApp {
                     inputMessage = arguments[i + 1]
                     i += 1
                 }
+            case "--non-streaming":
+                useNonStreaming = true
+            case "--streaming":
+                useNonStreaming = false
             case "--help":
                 printHelp()
                 return
@@ -668,6 +845,8 @@ struct ResponsesConsoleChatbotApp {
         print("🤖 SwiftAzureOpenAI Responses Console Chatbot")
         print("=============================================")
         print("Console chat using Azure Responses API (no UI)")
+        let modeText = useNonStreaming ? "Non-streaming" : "Streaming" 
+        print("Mode: \(modeText) with user-controlled function calling")
         if inputMessage == nil {
             print("Type 'exit' or 'quit' to stop.")
             print("Try: 'can you use tool to calculate 10 plus 22'")
@@ -681,7 +860,8 @@ struct ResponsesConsoleChatbotApp {
                 reasoningEffort: reasoningEffort,
                 reasoningSummary: reasoningSummary,
                 textVerbosity: textVerbosity,
-                inputMessage: inputMessage
+                inputMessage: inputMessage,
+                useNonStreaming: useNonStreaming
             )
         } catch {
             print("Failed to start console: \(error.localizedDescription)")
@@ -701,11 +881,19 @@ struct ResponsesConsoleChatbotApp {
         print("  --reasoning-summary TYPE Reasoning summary: auto, concise, detailed")
         print("  --text-verbosity LEVEL   Text verbosity: low, medium, high")
         print("  --message TEXT           Single message to send (non-interactive)")
+        print("  --streaming              Use real-time streaming mode (default)")
+        print("  --non-streaming          Use blocking non-streaming mode")
         print("  --help                   Show this help")
+        print("")
+        print("Function Calling:")
+        print("  User-controlled function calling with max 5 rounds per conversation.")
+        print("  SDK returns function call outputs to user instead of automatic loops.")
+        print("  User decides when and how many times to continue function calling.")
         print("")
         print("Environment Variables:")
         print("  AZURE_OPENAI_ENDPOINT       Azure OpenAI endpoint (required)")
         print("  AZURE_OPENAI_API_KEY        Azure OpenAI API key")
+        print("  COPILOT_AGENT_AZURE_OPENAI_API_KEY  Alternative API key")
         print("  AZURE_OPENAI_DEPLOYMENT     Azure OpenAI deployment name")
         print("  DEFAULT_MODEL               Default model name")
         print("  DEFAULT_INSTRUCTIONS        Default system instructions")
@@ -714,8 +902,19 @@ struct ResponsesConsoleChatbotApp {
         print("  DEFAULT_TEXT_VERBOSITY      Default text verbosity")
         print("")
         print("Examples:")
-        print("  ResponsesConsoleChatbot --reasoning high --reasoning-summary detailed --text-verbosity low --message \"Explain quantum physics\"")
-        print("  ResponsesConsoleChatbot --reasoning medium --reasoning-summary auto --message \"Calculate the square root of 144\"")
-        print("  ResponsesConsoleChatbot --model gpt-5-nano --instructions \"You are a helpful assistant\"")
+        print("  # Interactive streaming mode (default)")
+        print("  ResponsesConsoleChatbot")
+        print("")
+        print("  # Non-streaming mode with user-controlled function calling")
+        print("  ResponsesConsoleChatbot --non-streaming")
+        print("")
+        print("  # Single message with function calls (user controls iterations)")
+        print("  ResponsesConsoleChatbot --message \"calculate 10 plus 22\" --non-streaming")
+        print("")
+        print("  # Advanced reasoning in blocking mode")
+        print("  ResponsesConsoleChatbot --reasoning high --reasoning-summary detailed --text-verbosity low --message \"Explain quantum physics\" --non-streaming")
+        print("")
+        print("  # Streaming mode with reasoning")
+        print("  ResponsesConsoleChatbot --reasoning medium --reasoning-summary auto --message \"Calculate the square root of 144\" --streaming")
     }
 }
