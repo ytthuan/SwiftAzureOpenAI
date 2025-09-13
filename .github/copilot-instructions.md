@@ -10,7 +10,7 @@ SwiftAzureOpenAI is a Swift Package Manager library providing seamless integrati
 - **Language**: Swift 6.0+ (currently using Swift 6.1.2)
 - **Package Manager**: Swift Package Manager (SPM) only
 - **Dependencies**: Zero external dependencies (intentional design)
-- **Test Coverage**: 197 comprehensive tests across 30+ test files
+- **Test Coverage**: 260 comprehensive tests across 40+ test files
 - **Platforms**: iOS 13.0+, macOS 10.15+, watchOS 6.0+, tvOS 13.0+
 - **API Focus**: Azure OpenAI Responses API (preview) and OpenAI Responses API
 
@@ -36,7 +36,7 @@ SAOAIAzureConfiguration(
 ### **CRITICAL TIMING INFORMATION**
 Commands may take longer than expected - NEVER CANCEL:
 - `swift build` (clean): ~2-25 seconds
-- `swift test`: ~6-15 seconds (197 tests)
+- `swift test`: ~10-25 seconds (260 tests)
 - Set timeouts to 60+ seconds for builds, 30+ seconds for tests
 
 ### Essential Commands
@@ -49,7 +49,7 @@ swift package describe             # Package structure validation
 swift build                        # Debug build
 swift build --configuration release # Release build
 
-# Test (NEVER CANCEL - 197 tests take time)
+# Test (NEVER CANCEL - 260 tests take time)
 swift test                         # All tests
 swift test --parallel             # Parallel execution (faster)
 
@@ -64,6 +64,15 @@ export AZURE_OPENAI_ENDPOINT="https://your-resource.openai.azure.com"
 export AZURE_OPENAI_API_KEY="your-api-key"
 export AZURE_OPENAI_DEPLOYMENT="your-deployment-name"
 swift test  # Enables live API tests
+```
+
+### RawApiTesting.swift - Standalone API Testing Tool
+```bash
+# Direct Azure OpenAI endpoint testing (captures real response data)
+export AZURE_OPENAI_ENDPOINT="https://your-resource.openai.azure.com"
+export COPILOT_AGENT_AZURE_OPENAI_API_KEY="your-api-key"  # or AZURE_OPENAI_API_KEY
+export AZURE_OPENAI_DEPLOYMENT="your-deployment-name"
+swift RawApiTesting.swift           # Direct endpoint validation
 ```
 
 ## Project Architecture and Key Locations
@@ -87,7 +96,7 @@ SwiftAzureOpenAI/
 │   │   ├── Requests/               # Request models
 │   │   └── Responses/              # Response models
 │   └── Extensions/                 # Foundation extensions
-├── Tests/SwiftAzureOpenAITests/    # 197 comprehensive tests
+├── Tests/SwiftAzureOpenAITests/    # 260 comprehensive tests
 ├── RawApiTesting.swift             # Standalone API testing tool
 ├── .github/workflows/              # CI/CD automation
 │   ├── ci.yml                      # Continuous integration
@@ -109,7 +118,7 @@ SwiftAzureOpenAI/
 - **Zero External Dependencies**: Package intentionally has no external dependencies
 - **Modern Swift**: Uses Swift 6.0 with full concurrency support (async/await)
 - **Cross-Platform**: Works on all Apple platforms + Linux
-- **Test-Driven**: 197 tests covering all functionality including streaming, caching, error handling
+- **Test-Driven**: 260 tests covering all functionality including streaming, caching, error handling
 - **CI/CD Integration**: Comprehensive GitHub Actions with multi-platform testing
 
 ## Validation Requirements
@@ -121,7 +130,7 @@ swift build                         # Debug build
 swift build --configuration release # Release build
 
 # 2. Test validation  
-swift test                          # All 197 tests
+swift test                          # All 260 tests
 swift test --parallel               # Parallel execution
 
 # 3. Package validation
@@ -149,7 +158,7 @@ swift RawApiTesting.swift           # Direct endpoint testing
 
 ### Manual Testing Scenarios
 1. **Build verification**: Debug and release builds successful
-2. **Test execution**: All 197 tests pass
+2. **Test execution**: All 260 tests pass
 3. **Environment variable testing**: With Azure OpenAI credentials set
 4. **API integration**: `RawApiTesting.swift` for direct endpoint validation
 
@@ -161,14 +170,22 @@ swift RawApiTesting.swift           # Direct endpoint testing
 - **Swift version**: Must be 6.0+ (`swift --version`)
 
 ### Test Issues
-- **Tests hanging**: NEVER CANCEL - 197 tests take 6-15 seconds
+- **Tests hanging**: NEVER CANCEL - 260 tests take 10-25 seconds
 - **Environment variables**: Set `AZURE_OPENAI_*` for live API testing
 
 ### Performance Expectations
 - `swift build` (clean): ~2-25 seconds
 - `swift build` (incremental): ~0.2-2 seconds
-- `swift test`: ~6-15 seconds (197 tests)
+- `swift test`: ~10-25 seconds (260 tests)
 - `swift package` commands: <1 second
+
+## Comprehensive Documentation
+
+The repository includes detailed documentation in the `docs/` directory:
+- **`docs/LIVE_API_TESTING.md`**: Complete guide for live API testing with environment setup
+- **`docs/CI-CD.md`**: Detailed CI/CD workflow documentation and GitHub Actions
+- **`docs/Release-Guide.md`**: Release process and versioning guidelines
+- **`docs/Best-Practices-Analysis.md`**: Development best practices and analysis
 
 ## Quick Reference
 
