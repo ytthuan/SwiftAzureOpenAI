@@ -712,7 +712,6 @@ extension ResponsesConsoleManager {
         // Interactive mode
         while true {
             print("You: ", terminator: "")
-            
             guard let userText = readLine()?.trimmingCharacters(in: .whitespacesAndNewlines),
                   !userText.isEmpty else {
                 continue
