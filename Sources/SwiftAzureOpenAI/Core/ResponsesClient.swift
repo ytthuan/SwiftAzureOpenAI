@@ -227,7 +227,7 @@ public final class ResponsesClient {
         // Pre-encode the request to avoid capturing it in the closure
         let requestData: Data
         do {
-            requestData = try JSONEncoder().encode(request)
+            requestData = try SharedJSONEncoder.shared.encode(request)
         } catch {
             return AsyncThrowingStream { continuation in
                 continuation.finish(throwing: error)
@@ -368,7 +368,7 @@ public final class ResponsesClient {
     // MARK: - Private Methods
     
     private func sendRequest(_ request: SAOAIRequest) async throws -> SAOAIResponse {
-        let jsonData = try JSONEncoder().encode(request)
+        let jsonData = try SharedJSONEncoder.shared.encode(request)
         
         let apiRequest = APIRequest(
             method: "POST",
@@ -386,7 +386,7 @@ public final class ResponsesClient {
         // Pre-encode the request to avoid capturing it in the closure
         let requestData: Data
         do {
-            requestData = try JSONEncoder().encode(request)
+            requestData = try SharedJSONEncoder.shared.encode(request)
         } catch {
             return AsyncThrowingStream { continuation in
                 continuation.finish(throwing: error)

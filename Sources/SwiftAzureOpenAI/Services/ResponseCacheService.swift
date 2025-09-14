@@ -17,9 +17,27 @@ public final class InMemoryResponseCache: ResponseCache {
     private let encoder: JSONEncoder
     private let decoder: JSONDecoder
 
-    public init(encoder: JSONEncoder = JSONEncoder(), decoder: JSONDecoder = JSONDecoder()) {
-        self.encoder = encoder
-        self.decoder = decoder
+    public init(encoder: JSONEncoder? = nil, decoder: JSONDecoder? = nil) {
+        // Use shared encoder by default for better performance
+        if let encoder = encoder {
+            self.encoder = encoder
+        } else {
+            // Create a lightweight encoder if none provided
+            let sharedEncoder = JSONEncoder()
+            sharedEncoder.outputFormatting = []
+            sharedEncoder.dateEncodingStrategy = .iso8601
+            self.encoder = sharedEncoder
+        }
+        
+        // Use shared decoder by default for better performance
+        if let decoder = decoder {
+            self.decoder = decoder
+        } else {
+            // Create a lightweight decoder if none provided
+            let sharedDecoder = JSONDecoder()
+            sharedDecoder.dateDecodingStrategy = .iso8601
+            self.decoder = sharedDecoder
+        }
     }
 
     public func store<T: Codable>(response: APIResponse<T>, for key: Data) async {

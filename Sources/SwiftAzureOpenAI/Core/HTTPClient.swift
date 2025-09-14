@@ -22,9 +22,9 @@ public final class HTTPClient: @unchecked Sendable {
     private let urlSession: URLSession
     private let maxRetries: Int
 
-    public init(configuration: SAOAIConfiguration, session: URLSession = .shared, maxRetries: Int = 2) {
+    public init(configuration: SAOAIConfiguration, session: URLSession? = nil, maxRetries: Int = 2) {
         self.configuration = configuration
-        self.urlSession = session
+        self.urlSession = session ?? OptimizedURLSession.shared.urlSession
         self.maxRetries = maxRetries
     }
 
@@ -75,7 +75,7 @@ public final class HTTPClient: @unchecked Sendable {
                     }
                     
                     #if canImport(FoundationNetworking)
-                    // For Linux/FoundationNetworking, use data(for:) and simulate streaming
+                    // For Linux/FoundationNetworking, use optimized byte-level streaming simulation
                     let (data, response) = try await urlSession.data(for: urlRequest)
                     guard let httpResponse = response as? HTTPURLResponse else {
                         continuation.finish(throwing: SAOAIError.networkError(URLError(.badServerResponse)))
@@ -88,28 +88,38 @@ public final class HTTPClient: @unchecked Sendable {
                         return
                     }
                     
-                    // Optimized streaming simulation for better performance
-                    if let responseString = String(data: data, encoding: .utf8) {
-                        // Use optimized line processing
-                        let lines = responseString.components(separatedBy: .newlines)
-                        var buffer = Data()
-                        buffer.reserveCapacity(4096) // Pre-allocate buffer
+                    // Use byte-level delimiter scanning to reduce string allocations
+                    let delimiter = "\n\n".data(using: .utf8)!
+                    var buffer = Data()
+                    buffer.reserveCapacity(8192) // Pre-allocate larger buffer
+                    buffer.append(data)
+                    
+                    // Process complete chunks using optimized byte scanning
+                    while let range = buffer.range(of: delimiter) {
+                        let chunkData = buffer[..<range.upperBound]
+                        buffer.removeSubrange(..<range.upperBound)
                         
-                        for line in lines {
-                            if !line.isEmpty {
-                                // Use optimized completion check first
-                                let lineData = line.data(using: .utf8)! + "\n\n".data(using: .utf8)!
-                                if OptimizedSSEParser.isCompletionChunkOptimized(lineData) {
-                                    continuation.finish()
-                                    return
-                                }
-                                
-                                continuation.yield(lineData)
+                        if !chunkData.isEmpty {
+                            // Use optimized completion check first
+                            if OptimizedSSEParser.isCompletionChunkOptimized(chunkData) {
+                                continuation.finish()
+                                return
                             }
+                            
+                            continuation.yield(chunkData)
                         }
-                    } else {
-                        continuation.yield(data)
                     }
+                    
+                    // Process remaining data if any
+                    if !buffer.isEmpty {
+                        let finalChunk = buffer + delimiter
+                        if OptimizedSSEParser.isCompletionChunkOptimized(finalChunk) {
+                            continuation.finish()
+                            return
+                        }
+                        continuation.yield(finalChunk)
+                    }
+                    
                     continuation.finish()
                     #else
                     // For newer platforms with streaming support
@@ -178,27 +188,36 @@ public final class HTTPClient: @unchecked Sendable {
                             return
                         }
                         
-                        // Optimized fallback streaming for older platforms
-                        if let responseString = String(data: data, encoding: .utf8) {
-                            let lines = responseString.components(separatedBy: .newlines)
-                            var buffer = Data()
-                            buffer.reserveCapacity(4096) // Pre-allocate buffer
+                        // Use optimized byte-level streaming for older platforms
+                        let delimiter = "\n\n".data(using: .utf8)!
+                        var buffer = Data()
+                        buffer.reserveCapacity(8192) // Pre-allocate larger buffer
+                        buffer.append(data)
+                        
+                        // Process complete chunks using optimized byte scanning
+                        while let range = buffer.range(of: delimiter) {
+                            let chunkData = buffer[..<range.upperBound]
+                            buffer.removeSubrange(..<range.upperBound)
                             
-                            for line in lines {
-                                if !line.isEmpty {
-                                    let lineData = line.data(using: .utf8)! + "\n\n".data(using: .utf8)!
-                                    
-                                    // Use optimized completion check first
-                                    if OptimizedSSEParser.isCompletionChunkOptimized(lineData) {
-                                        continuation.finish()
-                                        return
-                                    }
-                                    
-                                    continuation.yield(lineData)
+                            if !chunkData.isEmpty {
+                                // Use optimized completion check first
+                                if OptimizedSSEParser.isCompletionChunkOptimized(chunkData) {
+                                    continuation.finish()
+                                    return
                                 }
+                                
+                                continuation.yield(chunkData)
                             }
-                        } else {
-                            continuation.yield(data)
+                        }
+                        
+                        // Process remaining data if any
+                        if !buffer.isEmpty {
+                            let finalChunk = buffer + delimiter
+                            if OptimizedSSEParser.isCompletionChunkOptimized(finalChunk) {
+                                continuation.finish()
+                                return
+                            }
+                            continuation.yield(finalChunk)
                         }
                         continuation.finish()
                     }

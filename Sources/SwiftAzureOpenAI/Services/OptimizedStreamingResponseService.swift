@@ -16,12 +16,12 @@ public final class OptimizedStreamingResponseService: Sendable {
         self.enableBatching = enableBatching
     }
     
-    /// Process stream with optimized buffering and batching
+    /// Process stream with optimized buffering and batching using bounded buffer
     public func processStreamOptimized<T: Codable & Sendable>(
         _ stream: AsyncThrowingStream<Data, Error>, 
         type: T.Type
     ) -> AsyncThrowingStream<StreamingResponseChunk<T>, Error> {
-        AsyncThrowingStream { continuation in
+        AsyncThrowingStream(bufferingPolicy: .bufferingNewest(32)) { continuation in
             Task {
                 await processStreamInternal(stream, type: type, continuation: continuation)
             }
