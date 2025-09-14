@@ -1,13 +1,13 @@
 {
   "notes" : "Basic conversation without tools or streaming",
-  "requestBody" : "{\"stream\":false,\"max_output_tokens\":100,\"input\":[{\"role\":\"system\",\"content\":[{\"type\":\"input_text\",\"text\":\"You are a helpful assistant.\"}]},{\"role\":\"user\",\"content\":[{\"type\":\"input_text\",\"text\":\"Hello! Tell me a short joke about programming.\"}]}],\"model\":\"gpt-5-nano\"}",
-  "responseBody" : "{\n  \"id\": \"resp_68c0237b99748194929c2e0d1fbed97c0f38f5f6be5bbedf\",\n  \"object\": \"response\",\n  \"created_at\": 1757422459,\n  \"status\": \"incomplete\",\n  \"background\": false,\n  \"content_filters\": null,\n  \"error\": null,\n  \"incomplete_details\": {\n    \"reason\": \"max_output_tokens\"\n  },\n  \"instructions\": null,\n  \"max_output_tokens\": 100,\n  \"max_tool_calls\": null,\n  \"model\": \"gpt-5-nano\",\n  \"output\": [\n    {\n      \"id\": \"rs_68c0237c9d1c8194befa1debb2ff7e6a0f38f5f6be5bbedf\",\n      \"type\": \"reasoning\",\n      \"summary\": []\n    }\n  ],\n  \"parallel_tool_calls\": true,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n  \"reasoning\": {\n    \"effort\": \"medium\",\n    \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n  \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\": \"text\"\n    }\n  },\n  \"tool_choice\": \"auto\",\n  \"tools\": [],\n  \"top_p\": 1.0,\n  \"truncation\": \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 26,\n    \"input_tokens_details\": {\n      \"cached_tokens\": 0\n    },\n    \"output_tokens\": 64,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\": 64\n    },\n    \"total_tokens\": 90\n  },\n  \"user\": null,\n  \"metadata\": {}\n}",
+  "requestBody" : "{\"max_output_tokens\":100,\"stream\":false,\"input\":[{\"content\":[{\"type\":\"input_text\",\"text\":\"You are a helpful assistant.\"}],\"role\":\"system\"},{\"content\":[{\"text\":\"Hello! Tell me a short joke about programming.\",\"type\":\"input_text\"}],\"role\":\"user\"}],\"model\":\"gpt-5-nano\"}",
+  "responseBody" : "{\n  \"id\": \"resp_68c62dea76d88197ba7cd635e9e5fa2905aa879af072490a\",\n  \"object\": \"response\",\n  \"created_at\": 1757818346,\n  \"status\": \"incomplete\",\n  \"background\": false,\n  \"content_filters\": null,\n  \"error\": null,\n  \"incomplete_details\": {\n    \"reason\": \"max_output_tokens\"\n  },\n  \"instructions\": null,\n  \"max_output_tokens\": 100,\n  \"max_tool_calls\": null,\n  \"model\": \"gpt-5-nano\",\n  \"output\": [\n    {\n      \"id\": \"rs_68c62deb070c8197a45e09199aaf977905aa879af072490a\",\n      \"type\": \"reasoning\",\n      \"summary\": []\n    }\n  ],\n  \"parallel_tool_calls\": true,\n  \"previous_response_id\": null,\n  \"prompt_cache_key\": null,\n  \"reasoning\": {\n    \"effort\": \"medium\",\n    \"summary\": null\n  },\n  \"safety_identifier\": null,\n  \"service_tier\": \"default\",\n  \"store\": true,\n  \"temperature\": 1.0,\n  \"text\": {\n    \"format\": {\n      \"type\": \"text\"\n    }\n  },\n  \"tool_choice\": \"auto\",\n  \"tools\": [],\n  \"top_p\": 1.0,\n  \"truncation\": \"disabled\",\n  \"usage\": {\n    \"input_tokens\": 26,\n    \"input_tokens_details\": {\n      \"cached_tokens\": 0\n    },\n    \"output_tokens\": 64,\n    \"output_tokens_details\": {\n      \"reasoning_tokens\": 64\n    },\n    \"total_tokens\": 90\n  },\n  \"user\": null,\n  \"metadata\": {}\n}",
   "responseHeaders" : {
-    "Apim-Request-Id" : "f2063b0b-c273-42be-91f5-e91882b0717b",
+    "Apim-Request-Id" : "ef074a2f-cd23-4e21-a684-2394eac97d1a",
     "Azure-Openai-Data-Collection" : "true",
     "Connection" : "close",
     "Content-Type" : "application\/json",
-    "Date" : "Tue, 09 Sep 2025 12:54:21 GMT",
+    "Date" : "Sun, 14 Sep 2025 02:52:26 GMT",
     "Strict-Transport-Security" : "max-age=31536000; includeSubDomains; preload",
     "Transfer-Encoding" : "chunked",
     "X-Content-Type-Options" : "nosniff",
@@ -25,9 +25,9 @@
     "X-Ratelimit-Limit-Tokens" : "200000",
     "X-Ratelimit-Remaining-Requests" : "199",
     "X-Ratelimit-Remaining-Tokens" : "199758",
-    "X-Request-Id" : "c9efafd4-fc90-4905-8f49-ff1f06b4c71d"
+    "X-Request-Id" : "0e8147ab-2839-4b90-a4fa-93aefd3183c4"
   },
   "responseStatus" : 200,
   "testCase" : "normal_conversation_non_streaming",
-  "timestamp" : "2025-09-09T12:54:21Z"
+  "timestamp" : "2025-09-14T02:52:27Z"
 }
