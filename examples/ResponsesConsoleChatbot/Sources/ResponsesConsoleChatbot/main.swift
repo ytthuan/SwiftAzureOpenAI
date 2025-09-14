@@ -341,9 +341,9 @@ extension ResponsesConsoleManager {
                 switch type {
                 case "reasoning":
                     // Display reasoning summary if available
-                    if let summary = output.summary, !summary.isEmpty {
-                        let summaryText = summary.joined(separator: " ")
-                        print("\n[reasoning] \(summaryText)")
+                    if let summaryText = output.summaryText, !summaryText.isEmpty {
+                        let combinedText = summaryText.joined(separator: "\n\n")
+                        print("\n[reasoning] \(combinedText)")
                     }
                     
                 case "function_call":
