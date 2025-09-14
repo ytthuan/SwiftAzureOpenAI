@@ -245,22 +245,7 @@ public final class OptimizedSSEParser: Sendable {
     }
 }
 
-/// Thread-safe cached JSON decoder for performance
-private final class CachedJSONDecoder: @unchecked Sendable {
-    static let shared = CachedJSONDecoder()
-    
-    private let decoder: JSONDecoder
-    
-    private init() {
-        self.decoder = JSONDecoder()
-        // Pre-configure decoder for optimal performance
-        self.decoder.dateDecodingStrategy = .secondsSince1970
-    }
-    
-    func decode<T: Decodable>(_ type: T.Type, from data: Data) throws -> T {
-        return try decoder.decode(type, from: data)
-    }
-}
+
 
 // MARK: - Additional methods for OptimizedSSEParser
 

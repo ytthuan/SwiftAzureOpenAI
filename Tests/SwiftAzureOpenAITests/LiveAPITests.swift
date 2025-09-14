@@ -150,7 +150,7 @@ final class LiveAPITests: XCTestCase {
                 print("Created: \(apiResponse.created?.description ?? "N/A")")
                 print("Reasoning Output ID: \(firstOutput.id ?? "N/A")")
                 print("Reasoning Type: \(type)")
-                print("Reasoning Summary: \(firstOutput.summary ?? [])")
+                print("Reasoning Summary: \(firstOutput.summaryText ?? [])")
             } else {
                 // Handle unknown output types gracefully
                 print("⚠️ Unknown output type detected")
