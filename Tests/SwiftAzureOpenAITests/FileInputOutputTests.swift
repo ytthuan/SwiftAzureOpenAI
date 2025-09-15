@@ -302,4 +302,59 @@ class FileInputOutputTests: XCTestCase {
         XCTAssertEqual(content1, content2)
         XCTAssertNotEqual(content1, content3)
     }
+
+    // MARK: - JSON Format Verification Tests
+
+    func testJSONFormatMatchesAzureDocumentation() throws {
+        // Test Base64 file format matches Azure docs
+        let base64Message = SAOAIMessage(
+            role: .user,
+            text: "Summarize this PDF",
+            filename: "test.pdf",
+            base64FileData: "dGVzdCBwZGYgZGF0YQ==",
+            mimeType: "application/pdf"
+        )
+        
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .prettyPrinted
+        let data = try encoder.encode(base64Message)
+        let json = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        
+        // Verify top-level structure
+        XCTAssertEqual(json["role"] as? String, "user")
+        let content = json["content"] as! [[String: Any]]
+        XCTAssertEqual(content.count, 2)
+        
+        // Verify text content
+        XCTAssertEqual(content[0]["type"] as? String, "input_text")
+        XCTAssertEqual(content[0]["text"] as? String, "Summarize this PDF")
+        
+        // Verify file content matches Azure format
+        XCTAssertEqual(content[1]["type"] as? String, "input_file")
+        XCTAssertEqual(content[1]["filename"] as? String, "test.pdf")
+        XCTAssertEqual(content[1]["file_data"] as? String, "data:application/pdf;base64,dGVzdCBwZGYgZGF0YQ==")
+        XCTAssertNil(content[1]["file_id"])
+    }
+    
+    func testFileIDFormatMatchesAzureDocumentation() throws {
+        // Test file ID format matches Azure docs
+        let fileIdMessage = SAOAIMessage(
+            role: .user,
+            text: "Analyze this document",
+            fileId: "assistant-KaVLJQTiWEvdz8yJQHHkqJ"
+        )
+        
+        let encoder = JSONEncoder()
+        let data = try encoder.encode(fileIdMessage)
+        let json = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        
+        let content = json["content"] as! [[String: Any]]
+        XCTAssertEqual(content.count, 2)
+        
+        // Verify file content matches Azure format  
+        XCTAssertEqual(content[1]["type"] as? String, "input_file")
+        XCTAssertEqual(content[1]["file_id"] as? String, "assistant-KaVLJQTiWEvdz8yJQHHkqJ")
+        XCTAssertNil(content[1]["filename"])
+        XCTAssertNil(content[1]["file_data"])
+    }
 }
