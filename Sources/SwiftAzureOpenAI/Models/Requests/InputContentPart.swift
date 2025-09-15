@@ -4,6 +4,7 @@ import Foundation
 public enum SAOAIInputContent: Codable, Equatable {
     case inputText(InputText)
     case inputImage(InputImage)
+    case inputFile(InputFile)
     case functionCallOutput(FunctionCallOutput)
 
     /// Text content input.
@@ -41,6 +42,42 @@ public enum SAOAIInputContent: Codable, Equatable {
         }
     }
 
+    /// File content input for documents like PDFs.
+    public struct InputFile: Codable, Equatable {
+        public let type: String = "input_file"
+        public let filename: String?
+        public let fileData: String?
+        public let fileId: String?
+
+        enum CodingKeys: String, CodingKey {
+            case type
+            case filename
+            case fileData = "file_data"
+            case fileId = "file_id"
+        }
+
+        /// Create an InputFile with base64-encoded file data
+        public init(filename: String, fileData: String) {
+            self.filename = filename
+            self.fileData = fileData
+            self.fileId = nil
+        }
+        
+        /// Create an InputFile with a file ID (for previously uploaded files)
+        public init(fileId: String) {
+            self.filename = nil
+            self.fileData = nil
+            self.fileId = fileId
+        }
+        
+        /// Create an InputFile with base64-encoded PDF data
+        public init(filename: String, base64Data: String, mimeType: String = "application/pdf") {
+            self.filename = filename
+            self.fileData = "data:\(mimeType);base64,\(base64Data)"
+            self.fileId = nil
+        }
+    }
+
     /// Function call output result.
     public struct FunctionCallOutput: Codable, Equatable {
         public let type: String = "function_call_output"
@@ -67,6 +104,8 @@ public enum SAOAIInputContent: Codable, Equatable {
             self = .inputText(try InputText(from: decoder))
         case "input_image":
             self = .inputImage(try InputImage(from: decoder))
+        case "input_file":
+            self = .inputFile(try InputFile(from: decoder))
         case "function_call_output":
             self = .functionCallOutput(try FunctionCallOutput(from: decoder))
         default:
@@ -81,6 +120,8 @@ public enum SAOAIInputContent: Codable, Equatable {
         case .inputText(let value):
             try value.encode(to: encoder)
         case .inputImage(let value):
+            try value.encode(to: encoder)
+        case .inputFile(let value):
             try value.encode(to: encoder)
         case .functionCallOutput(let value):
             try value.encode(to: encoder)
