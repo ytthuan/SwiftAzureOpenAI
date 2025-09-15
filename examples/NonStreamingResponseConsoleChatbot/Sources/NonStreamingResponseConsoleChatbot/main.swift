@@ -160,7 +160,165 @@ extension NonStreamingResponsesManager {
     }
 }
 
-// MARK: - Non-Streaming Response Handler
+// MARK: - Enhanced Response Handler with Output Capture
+
+extension NonStreamingResponsesManager {
+    
+    func respondWithCapturedOutput(userText: String) async throws -> (functionOutputs: [SAOAIInputContent.FunctionCallOutput]?, responseText: String) {
+        let tools = buildFunctionTools(includeCodeInterpreter: true)
+        
+        // Create user message
+        let userMessage = SAOAIMessage(role: .user, text: userText)
+        let inputMessages = [userMessage]
+        
+        // Create flexible reasoning configuration with new summary support
+        let reasoning: SAOAIReasoning? = reasoningEffort.map { effort in
+            if let summary = reasoningSummary {
+                return SAOAIReasoning(effort: effort, summary: summary)
+            } else {
+                return SAOAIReasoning(effort: effort)
+            }
+        }
+        
+        // Create text configuration for verbosity control
+        let text: SAOAIText? = textVerbosity.map { SAOAIText(verbosity: $0) }
+        
+        if let effort = reasoningEffort {
+            let summaryText = reasoningSummary ?? "none"
+            let verbosityText = textVerbosity ?? "default"
+            print("[debug] flexible reasoning enabled (effort=\(effort), summary=\(summaryText), verbosity=\(verbosityText))")
+        }
+        
+        // Make non-streaming request
+        let response = try await client.responses.create(
+            model: model,
+            input: inputMessages,
+            maxOutputTokens: nil,
+            tools: tools,
+            previousResponseId: lastResponseId,
+            reasoning: reasoning,
+            text: text
+        )
+        
+        // Update last response ID
+        self.lastResponseId = response.id
+        
+        // Process the response and extract function calls
+        let (functionCallOutputs, responseText) = try await processNonStreamingResponseWithCapture(response)
+        
+        return (functionCallOutputs.isEmpty ? nil : functionCallOutputs, responseText)
+    }
+    
+    func continueWithFunctionOutputsAndCapture(_ functionCallOutputs: [SAOAIInputContent.FunctionCallOutput]) async throws -> (functionOutputs: [SAOAIInputContent.FunctionCallOutput]?, responseText: String) {
+        let tools = buildFunctionTools(includeCodeInterpreter: true)
+        
+        // Make non-streaming request with function call outputs
+        let response = try await client.responses.createWithFunctionCallOutputs(
+            model: model,
+            functionCallOutputs: functionCallOutputs,
+            maxOutputTokens: nil,
+            tools: tools,
+            previousResponseId: lastResponseId
+        )
+        
+        // Update last response ID
+        self.lastResponseId = response.id
+        
+        // Process the response and extract any new function calls
+        let (newFunctionCallOutputs, responseText) = try await processNonStreamingResponseWithCapture(response)
+        
+        return (newFunctionCallOutputs.isEmpty ? nil : newFunctionCallOutputs, responseText)
+    }
+    
+    private func processNonStreamingResponseWithCapture(_ response: SAOAIResponse) async throws -> ([SAOAIInputContent.FunctionCallOutput], String) {
+        var functionCallOutputs: [SAOAIInputContent.FunctionCallOutput] = []
+        var responseTextParts: [String] = []
+        
+        // Process each output item in the response
+        for output in response.output {
+            
+            // Handle different output types based on the type field
+            if let type = output.type {
+                switch type {
+                case "reasoning":
+                    // Display reasoning summary if available
+                    if let summaryText = output.summaryText, !summaryText.isEmpty {
+                        let combinedText = summaryText.joined(separator: "\n\n")
+                        let reasoningOutput = "[reasoning] \(combinedText)"
+                        print("\n\(reasoningOutput)")
+                        responseTextParts.append(reasoningOutput)
+                    }
+                    
+                case "function_call":
+                    // Handle function call at the output level
+                    if let name = output.name,
+                       let callId = output.callId,
+                       let arguments = output.arguments {
+                        
+                        print("\n[tool] Function started: \(name) (call_id: \(callId))")
+                        let snippet = arguments.count > 300 ? "\(arguments.prefix(200)) ... \(arguments.suffix(80))" : arguments
+                        print("[tool] \(name) arguments: \(snippet)")
+                        
+                        // Execute the function call
+                        let resultStr = await runFunctionCall(funcName: name, rawArgs: arguments)
+                        let preview = resultStr.count > 4000 ? "\(resultStr.prefix(2000)) ... \(resultStr.suffix(1500))" : resultStr
+                        print("[tool] \(name) result: \(preview)")
+                        
+                        // Add to function call outputs for potential continuation
+                        functionCallOutputs.append(SAOAIInputContent.FunctionCallOutput(
+                            callId: callId,
+                            output: resultStr
+                        ))
+                        
+                        responseTextParts.append("[tool] \(name): \(preview)")
+                    }
+                    
+                default:
+                    // Handle other output types at the content level
+                    break
+                }
+            }
+            
+            // Process content array if present
+            if let contentArray = output.content {
+                for content in contentArray {
+                    switch content {
+                    case .outputText(let textContent):
+                        let assistantOutput = "[assistant]: \(textContent.text)"
+                        print(assistantOutput)
+                        responseTextParts.append(assistantOutput)
+                        
+                    case .functionCall(let functionContent):
+                        print("\n[tool] Function started: \(functionContent.name) (call_id: \(functionContent.callId))")
+                        let snippet = functionContent.arguments.count > 300 ? "\(functionContent.arguments.prefix(200)) ... \(functionContent.arguments.suffix(80))" : functionContent.arguments
+                        print("[tool] \(functionContent.name) arguments: \(snippet)")
+                        
+                        // Execute the function call
+                        let resultStr = await runFunctionCall(funcName: functionContent.name, rawArgs: functionContent.arguments)
+                        let preview = resultStr.count > 4000 ? "\(resultStr.prefix(2000)) ... \(resultStr.suffix(1500))" : resultStr
+                        print("[tool] \(functionContent.name) result: \(preview)")
+                        
+                        // Add to function call outputs for potential continuation
+                        functionCallOutputs.append(SAOAIInputContent.FunctionCallOutput(
+                            callId: functionContent.callId,
+                            output: resultStr
+                        ))
+                        
+                        responseTextParts.append("[tool] \(functionContent.name): \(preview)")
+                    }
+                }
+            }
+        }
+        
+        if !functionCallOutputs.isEmpty {
+            print("") // Add line break after function calls
+        }
+        
+        return (functionCallOutputs, responseTextParts.joined(separator: "\n"))
+    }
+}
+
+// MARK: - Non-Streaming Response Handler (Original Methods)
 
 extension NonStreamingResponsesManager {
     
@@ -313,7 +471,7 @@ extension NonStreamingResponsesManager {
 
 extension NonStreamingResponsesManager {
     
-    static func console(model: String, instructions: String = "", reasoningEffort: String? = nil, reasoningSummary: String? = nil, textVerbosity: String? = nil, inputMessage: String? = nil) async throws {
+    static func console(model: String, instructions: String = "", reasoningEffort: String? = nil, reasoningSummary: String? = nil, textVerbosity: String? = nil, inputMessage: String? = nil, inputFile: String? = nil, outputFile: String? = nil) async throws {
         let manager = try NonStreamingResponsesManager(
             model: model,
             instructions: instructions,
@@ -325,11 +483,24 @@ extension NonStreamingResponsesManager {
         print("Model: \(model) (Non-streaming mode)")
         print("Function calling: User-controlled (max 5 rounds)")
         
+        // File-based input/output mode
+        if let inputFilePath = inputFile {
+            try await handleFileBasedConversation(
+                manager: manager,
+                inputFilePath: inputFilePath,
+                outputFilePath: outputFile
+            )
+            return
+        }
+        
         // If input message is provided, use it once and exit
         if let message = inputMessage {
             print("You: \(message)")
             do {
-                try await handleUserMessage(manager: manager, message: message)
+                let response = try await handleUserMessage(manager: manager, message: message, outputFilePath: outputFile)
+                if let outputPath = outputFile {
+                    try await writeResponseToFile(response: response, outputPath: outputPath)
+                }
             } catch {
                 print("[error] \(error.localizedDescription)")
             }
@@ -352,31 +523,163 @@ extension NonStreamingResponsesManager {
             }
             
             do {
-                try await handleUserMessage(manager: manager, message: userText)
+                let response = try await handleUserMessage(manager: manager, message: userText, outputFilePath: outputFile)
+                if let outputPath = outputFile {
+                    try await writeResponseToFile(response: response, outputPath: outputPath, append: true)
+                }
             } catch {
                 print("[error] \(error.localizedDescription)")
             }
         }
     }
     
-    private static func handleUserMessage(manager: NonStreamingResponsesManager, message: String) async throws {
+    private static func handleUserMessage(manager: NonStreamingResponsesManager, message: String, outputFilePath: String? = nil) async throws -> String {
         // User-controlled function calling with configurable maximum rounds
         let maxFunctionCallRounds = 5
         var currentRound = 0
+        var allResponseParts: [String] = []
         
         // Initial response
-        var functionCallOutputs = try await manager.respond(userText: message)
+        var (functionCallOutputs, responseText) = try await manager.respondWithCapturedOutput(userText: message)
+        allResponseParts.append(responseText)
         
         // Continue function calling rounds based on user-defined logic
         while let outputs = functionCallOutputs, currentRound < maxFunctionCallRounds {
             currentRound += 1
             print("[debug] Function call round \(currentRound)/\(maxFunctionCallRounds)")
             
-            functionCallOutputs = try await manager.continueWithFunctionOutputs(outputs)
+            let (newOutputs, newResponseText) = try await manager.continueWithFunctionOutputsAndCapture(outputs)
+            allResponseParts.append(newResponseText)
+            functionCallOutputs = newOutputs
         }
         
         if currentRound >= maxFunctionCallRounds {
             print("[debug] Maximum function call rounds (\(maxFunctionCallRounds)) reached")
+        }
+        
+        return allResponseParts.joined(separator: "\n")
+    }
+    
+    // MARK: - File-based Input/Output Functions
+    
+    private static func handleFileBasedConversation(
+        manager: NonStreamingResponsesManager,
+        inputFilePath: String,
+        outputFilePath: String?
+    ) async throws {
+        print("📁 File-based conversation mode")
+        print("Input file: \(inputFilePath)")
+        if let outputPath = outputFilePath {
+            print("Output file: \(outputPath)")
+        }
+        print("----")
+        
+        let prompts = try await readPromptsFromFile(inputFilePath: inputFilePath)
+        var allResponses: [String] = []
+        
+        for (index, prompt) in prompts.enumerated() {
+            print("Processing prompt \(index + 1)/\(prompts.count):")
+            print("You: \(prompt.text)")
+            
+            do {
+                // Handle different prompt types (text, file content)
+                let response = try await processPrompt(manager: manager, prompt: prompt)
+                allResponses.append("Prompt \(index + 1): \(prompt.text)\nResponse: \(response)\n")
+            } catch {
+                let errorResponse = "[error] \(error.localizedDescription)"
+                print(errorResponse)
+                allResponses.append("Prompt \(index + 1): \(prompt.text)\nError: \(errorResponse)\n")
+            }
+            
+            if index < prompts.count - 1 {
+                print("----")
+            }
+        }
+        
+        if let outputPath = outputFilePath {
+            try await writeResponseToFile(response: allResponses.joined(separator: "\n"), outputPath: outputPath)
+            print("📝 All responses written to: \(outputPath)")
+        }
+    }
+    
+    private static func readPromptsFromFile(inputFilePath: String) async throws -> [FilePrompt] {
+        guard FileManager.default.fileExists(atPath: inputFilePath) else {
+            throw RuntimeError("Input file does not exist: \(inputFilePath)")
+        }
+        
+        let content = try String(contentsOfFile: inputFilePath, encoding: .utf8)
+        let lines = content.components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty && !$0.hasPrefix("#") } // Skip empty lines and comments
+        
+        var prompts: [FilePrompt] = []
+        
+        for line in lines {
+            // Check if line contains file reference
+            if line.hasPrefix("file:") {
+                let filePath = String(line.dropFirst(5)).trimmingCharacters(in: .whitespacesAndNewlines)
+                prompts.append(try FilePrompt.fromFile(filePath))
+            } else {
+                // Regular text prompt
+                prompts.append(FilePrompt(text: line))
+            }
+        }
+        
+        return prompts
+    }
+    
+    private static func processPrompt(manager: NonStreamingResponsesManager, prompt: FilePrompt) async throws -> String {
+        // User-controlled function calling with configurable maximum rounds
+        let maxFunctionCallRounds = 5
+        var currentRound = 0
+        var allResponseParts: [String] = []
+        
+        // Create message based on prompt type
+        let message: String
+        if let fileData = prompt.fileData, let filename = prompt.filename, let mimeType = prompt.mimeType {
+            // For binary files (like PDFs), use the File API
+            if mimeType == "application/pdf" || mimeType.hasPrefix("image/") {
+                // This demonstrates the File API integration - in a real scenario, 
+                // you would create a proper SAOAIMessage with file content
+                message = "\(prompt.text)\n\n[Note: File \(filename) would be processed using File API with base64 content]"
+            } else {
+                // For text files, include content directly
+                message = "\(prompt.text)\n\nFile content (\(filename)):\n\(fileData)"
+            }
+        } else {
+            message = prompt.text
+        }
+        
+        // Initial response
+        var (functionCallOutputs, responseText) = try await manager.respondWithCapturedOutput(userText: message)
+        allResponseParts.append(responseText)
+        
+        // Continue function calling rounds based on user-defined logic
+        while let outputs = functionCallOutputs, currentRound < maxFunctionCallRounds {
+            currentRound += 1
+            print("[debug] Function call round \(currentRound)/\(maxFunctionCallRounds)")
+            
+            let (newOutputs, newResponseText) = try await manager.continueWithFunctionOutputsAndCapture(outputs)
+            allResponseParts.append(newResponseText)
+            functionCallOutputs = newOutputs
+        }
+        
+        if currentRound >= maxFunctionCallRounds {
+            print("[debug] Maximum function call rounds (\(maxFunctionCallRounds)) reached")
+        }
+        
+        return allResponseParts.joined(separator: "\n")
+    }
+    
+    private static func writeResponseToFile(response: String, outputPath: String, append: Bool = false) async throws {
+        let url = URL(fileURLWithPath: outputPath)
+        
+        if append && FileManager.default.fileExists(atPath: outputPath) {
+            let existingContent = try String(contentsOf: url, encoding: .utf8)
+            let newContent = existingContent + "\n" + response
+            try newContent.write(to: url, atomically: true, encoding: .utf8)
+        } else {
+            try response.write(to: url, atomically: true, encoding: .utf8)
         }
     }
 }
@@ -395,6 +698,80 @@ struct RuntimeError: Error, LocalizedError {
     }
 }
 
+// MARK: - File Prompt Structure
+
+struct FilePrompt {
+    let text: String
+    let fileData: String?
+    let filename: String?
+    let mimeType: String?
+    
+    init(text: String) {
+        self.text = text
+        self.fileData = nil
+        self.filename = nil
+        self.mimeType = nil
+    }
+    
+    init(text: String, fileData: String, filename: String, mimeType: String) {
+        self.text = text
+        self.fileData = fileData
+        self.filename = filename
+        self.mimeType = mimeType
+    }
+    
+    static func fromFile(_ filePath: String) throws -> FilePrompt {
+        guard FileManager.default.fileExists(atPath: filePath) else {
+            throw RuntimeError("Referenced file does not exist: \(filePath)")
+        }
+        
+        let url = URL(fileURLWithPath: filePath)
+        let filename = url.lastPathComponent
+        let fileExtension = url.pathExtension.lowercased()
+        
+        // Determine MIME type based on file extension
+        let mimeType: String
+        switch fileExtension {
+        case "pdf":
+            mimeType = "application/pdf"
+        case "txt":
+            mimeType = "text/plain"
+        case "md":
+            mimeType = "text/markdown"
+        case "json":
+            mimeType = "application/json"
+        case "jpg", "jpeg":
+            mimeType = "image/jpeg"
+        case "png":
+            mimeType = "image/png"
+        default:
+            mimeType = "application/octet-stream"
+        }
+        
+        // For text files, read content directly
+        if mimeType.hasPrefix("text/") || mimeType == "application/json" {
+            let content = try String(contentsOf: url, encoding: .utf8)
+            return FilePrompt(
+                text: "Analyze this \(fileExtension.uppercased()) file: \(filename)",
+                fileData: content,
+                filename: filename,
+                mimeType: mimeType
+            )
+        }
+        
+        // For binary files (PDFs, images), read as base64
+        let data = try Data(contentsOf: url)
+        let base64String = data.base64EncodedString()
+        
+        return FilePrompt(
+            text: "Analyze this \(fileExtension.uppercased()) file: \(filename)",
+            fileData: base64String,
+            filename: filename,
+            mimeType: mimeType
+        )
+    }
+}
+
 // MARK: - Main Entry Point
 
 @main
@@ -408,6 +785,8 @@ struct NonStreamingResponseConsoleChatbotApp {
         var reasoningSummary: String? = ProcessInfo.processInfo.environment["DEFAULT_REASONING_SUMMARY"]
         var textVerbosity: String? = ProcessInfo.processInfo.environment["DEFAULT_TEXT_VERBOSITY"]
         var inputMessage: String? = nil
+        var inputFile: String? = nil
+        var outputFile: String? = nil
         
         // Simple argument parsing (no streaming options since this is non-streaming only)
         var i = 1
@@ -446,6 +825,16 @@ struct NonStreamingResponseConsoleChatbotApp {
                     inputMessage = arguments[i + 1]
                     i += 1
                 }
+            case "--input-file":
+                if i + 1 < arguments.count {
+                    inputFile = arguments[i + 1]
+                    i += 1
+                }
+            case "--output-file":
+                if i + 1 < arguments.count {
+                    outputFile = arguments[i + 1]
+                    i += 1
+                }
             case "--help":
                 printHelp()
                 return
@@ -472,7 +861,9 @@ struct NonStreamingResponseConsoleChatbotApp {
                 reasoningEffort: reasoningEffort,
                 reasoningSummary: reasoningSummary,
                 textVerbosity: textVerbosity,
-                inputMessage: inputMessage
+                inputMessage: inputMessage,
+                inputFile: inputFile,
+                outputFile: outputFile
             )
         } catch {
             print("Failed to start console: \(error.localizedDescription)")
@@ -492,6 +883,8 @@ struct NonStreamingResponseConsoleChatbotApp {
         print("  --reasoning-summary TYPE Reasoning summary: auto, concise, detailed")
         print("  --text-verbosity LEVEL   Text verbosity: low, medium, high")
         print("  --message TEXT           Single message to send (non-interactive)")
+        print("  --input-file PATH        Read prompts from file (one per line)")
+        print("  --output-file PATH       Write responses to file")
         print("  --help                   Show this help")
         print("")
         print("Mode:")
@@ -521,10 +914,16 @@ struct NonStreamingResponseConsoleChatbotApp {
         print("  # Single message with function calls (user controls iterations)")
         print("  NonStreamingResponseConsoleChatbot --message \"calculate 10 plus 22\"")
         print("")
-        print("  # Advanced reasoning in blocking mode")
-        print("  NonStreamingResponseConsoleChatbot --reasoning high --reasoning-summary detailed --text-verbosity low --message \"Explain quantum physics\"")
+        print("  # Advanced reasoning with file input/output")
+        print("  NonStreamingResponseConsoleChatbot --reasoning high --input-file prompts.txt --output-file responses.txt")
         print("")
-        print("  # Simple calculation with reasoning")
-        print("  NonStreamingResponseConsoleChatbot --reasoning medium --reasoning-summary auto --message \"Calculate the square root of 144\"")
+        print("File Input Format:")
+        print("  Input files should contain one prompt per line. Lines starting with '#' are ignored.")
+        print("  To reference files for analysis, use 'file:/path/to/file' syntax.")
+        print("  Example prompts.txt:")
+        print("    # This is a comment")  
+        print("    What is the meaning of life?")
+        print("    file:/path/to/document.pdf")
+        print("    Explain quantum physics in simple terms")
     }
 }

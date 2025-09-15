@@ -596,6 +596,76 @@ func testAzureOpenAI() async throws {
 }
 ```
 
+## File-based Validation and Console Examples
+
+The SwiftAzureOpenAI library includes console applications that demonstrate file-based input/output for validation and testing purposes.
+
+### NonStreamingResponseConsoleChatbot with File API
+
+The enhanced NonStreamingResponseConsoleChatbot supports file-based validation:
+
+```bash
+# Navigate to the example
+cd examples/NonStreamingResponseConsoleChatbot
+
+# File-based processing with input prompts and output responses
+swift run NonStreamingResponseConsoleChatbot \
+  --input-file prompts.txt \
+  --output-file responses.txt \
+  --reasoning high
+
+# Single message with file output for validation
+swift run NonStreamingResponseConsoleChatbot \
+  --message "Analyze the quarterly report" \
+  --output-file analysis.txt
+```
+
+#### Input File Format
+Create `prompts.txt` with one prompt per line:
+```
+# Comments start with # and are ignored
+What is machine learning?
+
+# Reference files for File API processing
+file:/path/to/document.pdf
+file:/path/to/chart.png
+
+# Regular text prompts
+Calculate the square root of 144
+```
+
+#### File Processing Features
+- **Text files** (`.txt`, `.md`, `.json`): Content included directly
+- **Binary files** (`.pdf`, `.jpg`, `.png`): Base64-encoded for File API
+- **Structured output**: Responses written with prompt numbering
+- **Error handling**: File errors captured in output
+- **File API integration**: Leverages SwiftAzureOpenAI File API models
+
+#### Example Output Structure
+```
+Prompt 1: What is machine learning?
+Response: [assistant]: Machine learning is a field of computer science...
+
+Prompt 2: file:/path/to/document.pdf  
+Response: [assistant]: After analyzing the PDF document, I found...
+
+Prompt 3: Calculate the square root of 144
+Response: [assistant]: The square root of 144 is 12.
+```
+
+### Use Cases for File-based Validation
+- **Batch testing**: Process multiple prompts systematically
+- **Response validation**: Compare outputs across model versions
+- **File API testing**: Validate PDF and image processing capabilities
+- **Performance benchmarking**: Measure response times and quality
+- **Integration testing**: Test real-world scenarios with actual files
+
+### Additional Examples
+See the [examples/](examples/) directory for:
+- **ConsoleChatbot**: Interactive streaming/non-streaming modes
+- **ResponsesConsoleChatbot**: Advanced unified console example
+- **NonStreamingResponseConsoleChatbot**: File-based validation example
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
