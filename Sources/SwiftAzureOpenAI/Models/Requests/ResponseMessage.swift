@@ -47,6 +47,24 @@ public struct SAOAIMessage: Codable, Equatable {
             .inputImage(.init(base64Data: base64Image, mimeType: mimeType))
         ]
     }
+    
+    /// Convenience initializer for text + file (base64-encoded)
+    public init(role: SAOAIMessageRole, text: String, filename: String, base64FileData: String, mimeType: String = "application/pdf") {
+        self.role = role
+        self.content = [
+            .inputText(.init(text: text)),
+            .inputFile(.init(filename: filename, base64Data: base64FileData, mimeType: mimeType))
+        ]
+    }
+    
+    /// Convenience initializer for text + file ID
+    public init(role: SAOAIMessageRole, text: String, fileId: String) {
+        self.role = role
+        self.content = [
+            .inputText(.init(text: text)),
+            .inputFile(.init(fileId: fileId))
+        ]
+    }
 }
 
 extension SAOAIMessage {

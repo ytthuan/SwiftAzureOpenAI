@@ -218,6 +218,53 @@ let functionStream = client.responses.createStreaming(
 for try await _ in functionStream { /* handle follow-up events */ }
 ```
 
+### File Input and Processing
+
+SwiftAzureOpenAI supports file inputs (especially PDFs) following Azure AI Foundry guidelines. Files can be provided as Base64-encoded data or as file IDs from previously uploaded files.
+
+```swift
+// Example 1: PDF analysis with Base64-encoded data
+let pdfData = // Your PDF data as Data
+let base64String = pdfData.base64EncodedString()
+
+let pdfResponse = try await client.responses.create(
+    model: "gpt-4o", // Vision models support PDF inputs
+    input: [
+        .message(SAOAIMessage(
+            role: .user,
+            text: "Summarize this PDF document",
+            filename: "report.pdf", 
+            base64FileData: base64String,
+            mimeType: "application/pdf"
+        ))
+    ]
+)
+
+// Example 2: Using a file ID from uploaded files
+let fileIdResponse = try await client.responses.create(
+    model: "gpt-4o-mini",
+    input: [
+        .message(SAOAIMessage(
+            role: .user,
+            text: "Analyze the uploaded document", 
+            fileId: "assistant-KaVLJQTiWEvdz8yJQHHkqJ"
+        ))
+    ]
+)
+
+// Example 3: Direct file content creation
+let message = SAOAIMessage(role: .user, content: [
+    .inputText(.init(text: "What are the key findings in this document?")),
+    .inputFile(.init(fileId: "assistant-123456789"))
+])
+```
+
+**File Input Requirements:**
+- Only models with vision capabilities (gpt-4o, gpt-4o-mini, o1, etc.) support PDF file inputs
+- Files can be up to 100 pages and 32MB total content per request
+- Both extracted text and page images are included in the model's context
+- Currently supported file types: PDF (primary), with support for various document formats
+
 ### Retrieve and Delete Responses
 
 ```swift
@@ -332,6 +379,7 @@ The Responses API uses a unified data model structure that consolidates the best
 - **`SAOAIInputContent`** - Structured input content
   - `.inputText(InputText)` — `{ type: "input_text", text }`
   - `.inputImage(InputImage)` — `{ type: "input_image", image_url }` or base64 data URI
+  - `.inputFile(InputFile)` — `{ type: "input_file", filename?, file_data?, file_id? }` for PDF and document processing
   - `.functionCallOutput(FunctionCallOutput)` — `{ type: "function_call_output", call_id, output }`
 
 ### Response Models
