@@ -48,6 +48,61 @@ swift run NonStreamingResponseConsoleChatbot
 swift run NonStreamingResponseConsoleChatbot --message "calculate 10 plus 22"
 ```
 
+## File API Integration
+
+All examples support the Azure OpenAI File API for document analysis and multi-modal conversations:
+
+### Upload and Analyze Files
+
+```swift
+// In any of the console chatbot examples
+let client = SAOAIClient(configuration: config)
+
+// Upload a document
+let fileData = try Data(contentsOf: URL(fileURLWithPath: "report.pdf"))
+let file = try await client.files.create(
+    file: fileData,
+    filename: "report.pdf", 
+    purpose: .assistants
+)
+
+// Reference the file in conversation
+let response = try await client.responses.create(
+    model: deploymentName,
+    input: "Analyze the uploaded report and summarize key findings",
+    // File automatically available via file ID: \(file.id)
+)
+```
+
+### Direct File Input
+
+```swift
+// Include file data directly without uploading
+let inputFile = SAOAIInputContent.inputFile(.init(
+    filename: "chart.png",
+    base64Data: imageData.base64EncodedString(),
+    mimeType: "image/png"
+))
+
+let message = SAOAIMessage(
+    role: .user, 
+    content: [inputFile, textInput]
+)
+```
+
+### File Management
+
+```swift
+// List all uploaded files
+let fileList = try await client.files.list()
+print("Found \(fileList.data.count) files")
+
+// Retrieve specific file details  
+let file = try await client.files.retrieve("file-abc123")
+
+// Delete files when done
+let result = try await client.files.delete("file-abc123")
+
  
 
 ## How These Examples Work

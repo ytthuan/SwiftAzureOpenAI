@@ -33,6 +33,22 @@ This package targets the Azure/OpenAI Responses API. It is model-agnostic; use t
 
 > Check the Azure models documentation for availability: https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/models
 
+### File API Support
+
+SwiftAzureOpenAI includes comprehensive support for the Azure OpenAI File API, enabling file upload, management, and integration with the Responses API:
+
+- 📁 **File Upload**: Upload documents, images, and data files
+- 📋 **File Management**: List, retrieve, and delete files
+- 🔗 **Responses Integration**: Reference uploaded files in conversations
+- 🎯 **Direct File Input**: Include file data directly in requests
+- 🛡️ **Type Safety**: Strongly typed file operations and responses
+
+Supported operations:
+- `client.files.create()` - Upload files
+- `client.files.list()` - List all files  
+- `client.files.retrieve()` - Get file details
+- `client.files.delete()` - Remove files
+
 ## Installation
 
 ### Swift Package Manager
@@ -596,75 +612,99 @@ func testAzureOpenAI() async throws {
 }
 ```
 
-## File-based Validation and Console Examples
+## Azure OpenAI File API Examples
 
-The SwiftAzureOpenAI library includes console applications that demonstrate file-based input/output for validation and testing purposes.
+### Upload and Use Files
 
-### NonStreamingResponseConsoleChatbot with File API
+```swift
+import SwiftAzureOpenAI
 
-The enhanced NonStreamingResponseConsoleChatbot supports file-based validation:
-
-```bash
-# Navigate to the example
-cd examples/NonStreamingResponseConsoleChatbot
-
-# File-based processing with input prompts and output responses
-swift run NonStreamingResponseConsoleChatbot \
-  --input-file prompts.txt \
-  --output-file responses.txt \
-  --reasoning high
-
-# Single message with file output for validation
-swift run NonStreamingResponseConsoleChatbot \
-  --message "Analyze the quarterly report" \
-  --output-file analysis.txt
+func fileAPIExample() async throws {
+    // Configure client
+    let config = SAOAIAzureConfiguration(
+        endpoint: "https://your-resource.openai.azure.com",
+        apiKey: "your-api-key",
+        deploymentName: "gpt-4o",
+        apiVersion: "preview"
+    )
+    
+    let client = SAOAIClient(configuration: config)
+    
+    // Upload a file
+    let fileData = try Data(contentsOf: URL(fileURLWithPath: "document.pdf"))
+    let file = try await client.files.create(
+        file: fileData,
+        filename: "document.pdf",
+        purpose: .assistants  // Use .assistants as workaround for .userData
+    )
+    
+    print("Uploaded file: \(file.id)")
+    
+    // Use the file in a conversation
+    let fileInput = SAOAIInputContent.inputFile(.init(fileId: file.id))
+    let textInput = SAOAIInputContent.inputText(.init(text: "Summarize this document"))
+    
+    let message = SAOAIMessage(
+        role: .user,
+        content: [fileInput, textInput]
+    )
+    
+    let response = try await client.responses.create(
+        model: "gpt-4o",
+        input: [.message(message)]
+    )
+    
+    print("Summary: \(response.outputText ?? "")")
+    
+    // List all files
+    let fileList = try await client.files.list()
+    print("Found \(fileList.data.count) files")
+    
+    // Delete the file when done
+    let deleteResult = try await client.files.delete(file.id)
+    print("File deleted: \(deleteResult.deleted)")
+}
 ```
 
-#### Input File Format
-Create `prompts.txt` with one prompt per line:
+### Direct File Input (Base64)
+
+```swift
+func directFileExample() async throws {
+    let config = SAOAIAzureConfiguration(
+        endpoint: "https://your-resource.openai.azure.com", 
+        apiKey: "your-api-key",
+        deploymentName: "gpt-4o",
+        apiVersion: "preview"
+    )
+    
+    let client = SAOAIClient(configuration: config)
+    
+    // Load image file
+    let imageData = try Data(contentsOf: URL(fileURLWithPath: "chart.png"))
+    let base64Image = imageData.base64EncodedString()
+    
+    // Include file directly in request (no upload needed)
+    let fileInput = SAOAIInputContent.inputFile(.init(
+        filename: "chart.png",
+        base64Data: base64Image,
+        mimeType: "image/png"
+    ))
+    
+    let textInput = SAOAIInputContent.inputText(.init(text: "What does this chart show?"))
+    
+    let message = SAOAIMessage(
+        role: .user,
+        content: [fileInput, textInput]
+    )
+    
+    let response = try await client.responses.create(
+        model: "gpt-4o",
+        input: [.message(message)]
+    )
+    
+    print("Chart analysis: \(response.outputText ?? "")")
+}
 ```
-# Comments start with # and are ignored
-What is machine learning?
-
-# Reference files for File API processing
-file:/path/to/document.pdf
-file:/path/to/chart.png
-
-# Regular text prompts
-Calculate the square root of 144
-```
-
-#### File Processing Features
-- **Text files** (`.txt`, `.md`, `.json`): Content included directly
-- **Binary files** (`.pdf`, `.jpg`, `.png`): Base64-encoded for File API
-- **Structured output**: Responses written with prompt numbering
-- **Error handling**: File errors captured in output
-- **File API integration**: Leverages SwiftAzureOpenAI File API models
-
-#### Example Output Structure
-```
-Prompt 1: What is machine learning?
-Response: [assistant]: Machine learning is a field of computer science...
-
-Prompt 2: file:/path/to/document.pdf  
-Response: [assistant]: After analyzing the PDF document, I found...
-
-Prompt 3: Calculate the square root of 144
-Response: [assistant]: The square root of 144 is 12.
-```
-
-### Use Cases for File-based Validation
-- **Batch testing**: Process multiple prompts systematically
-- **Response validation**: Compare outputs across model versions
-- **File API testing**: Validate PDF and image processing capabilities
-- **Performance benchmarking**: Measure response times and quality
-- **Integration testing**: Test real-world scenarios with actual files
-
-### Additional Examples
-See the [examples/](examples/) directory for:
-- **ConsoleChatbot**: Interactive streaming/non-streaming modes
-- **ResponsesConsoleChatbot**: Advanced unified console example
-- **NonStreamingResponseConsoleChatbot**: File-based validation example
 
 ## License
 
