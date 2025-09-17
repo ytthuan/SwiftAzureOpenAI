@@ -15,6 +15,21 @@ public final class FilesClient {
         self.configuration = configuration
     }
     
+    /// Helper to construct the files endpoint URL.
+    private func filesEndpointURL() throws -> URL {
+        var filesURL = configuration.baseURL
+        if filesURL.absoluteString.contains("/openai/v1/responses") {
+            let urlString = filesURL.absoluteString.replacingOccurrences(of: "/openai/v1/responses", with: "/openai/v1/files")
+            guard let newURL = URL(string: urlString) else {
+                throw SAOAIError.invalidRequest("Failed to construct files endpoint URL")
+            }
+            filesURL = newURL
+        } else {
+            filesURL = filesURL.appendingPathComponent("files")
+        }
+        return filesURL
+    }
+
     /// Upload a file to Azure OpenAI.
     /// - Parameters:
     ///   - file: The file data to upload
@@ -25,21 +40,8 @@ public final class FilesClient {
         let boundary = "Boundary-\(UUID().uuidString)"
         let body = createMultipartFormData(file: file, filename: filename, purpose: purpose.rawValue, boundary: boundary)
         
-        // Construct the files endpoint URL
-        var filesURL = configuration.baseURL
-        
-        // Replace the responses path with files path
-        if filesURL.absoluteString.contains("/openai/v1/responses") {
-            // For Azure OpenAI, change from responses to files endpoint
-            let urlString = filesURL.absoluteString.replacingOccurrences(of: "/openai/v1/responses", with: "/openai/v1/files")
-            guard let newURL = URL(string: urlString) else {
-                throw SAOAIError.invalidRequest("Failed to construct files endpoint URL")
-            }
-            filesURL = newURL
-        } else {
-            // Fallback: append files path
-            filesURL = filesURL.appendingPathComponent("files")
-        }
+        // Use the helper to construct the files endpoint URL
+        let filesURL = try filesEndpointURL()
         
         var headers = configuration.headers
         headers["Content-Type"] = "multipart/form-data; boundary=\(boundary)"
