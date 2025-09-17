@@ -12,6 +12,11 @@ public final class SAOAIClient: @unchecked Sendable {
     public lazy var responses: ResponsesClient = {
         ResponsesClient(httpClient: httpClient, responseService: responseService, configuration: configuration)
     }()
+    
+    /// Files client for Azure OpenAI Files API operations
+    public lazy var files: FilesClient = {
+        FilesClient(httpClient: httpClient, responseService: responseService, configuration: configuration)
+    }()
 
     public init(configuration: SAOAIConfiguration, cache: ResponseCache? = nil, useOptimizedService: Bool = true) {
         self.configuration = configuration

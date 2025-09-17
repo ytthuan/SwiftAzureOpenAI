@@ -33,6 +33,22 @@ This package targets the Azure/OpenAI Responses API. It is model-agnostic; use t
 
 > Check the Azure models documentation for availability: https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/models
 
+### File API Support
+
+SwiftAzureOpenAI includes comprehensive support for the Azure OpenAI File API, enabling file upload, management, and integration with the Responses API:
+
+- 📁 **File Upload**: Upload documents, images, and data files
+- 📋 **File Management**: List, retrieve, and delete files
+- 🔗 **Responses Integration**: Reference uploaded files in conversations
+- 🎯 **Direct File Input**: Include file data directly in requests
+- 🛡️ **Type Safety**: Strongly typed file operations and responses
+
+Supported operations:
+- `client.files.create()` - Upload files
+- `client.files.list()` - List all files  
+- `client.files.retrieve()` - Get file details
+- `client.files.delete()` - Remove files
+
 ## Installation
 
 ### Swift Package Manager
@@ -593,6 +609,100 @@ func testAzureOpenAI() async throws {
     
     // Implement your HTTP client logic here
     print("Request configured successfully")
+}
+```
+
+## Azure OpenAI File API Examples
+
+### Upload and Use Files
+
+```swift
+import SwiftAzureOpenAI
+
+func fileAPIExample() async throws {
+    // Configure client
+    let config = SAOAIAzureConfiguration(
+        endpoint: "https://your-resource.openai.azure.com",
+        apiKey: "your-api-key",
+        deploymentName: "gpt-4o",
+        apiVersion: "preview"
+    )
+    
+    let client = SAOAIClient(configuration: config)
+    
+    // Upload a file
+    let fileData = try Data(contentsOf: URL(fileURLWithPath: "document.pdf"))
+    let file = try await client.files.create(
+        file: fileData,
+        filename: "document.pdf",
+        purpose: .assistants  // Use .assistants as workaround for .userData
+    )
+    
+    print("Uploaded file: \(file.id)")
+    
+    // Use the file in a conversation
+    let fileInput = SAOAIInputContent.inputFile(.init(fileId: file.id))
+    let textInput = SAOAIInputContent.inputText(.init(text: "Summarize this document"))
+    
+    let message = SAOAIMessage(
+        role: .user,
+        content: [fileInput, textInput]
+    )
+    
+    let response = try await client.responses.create(
+        model: "gpt-4o",
+        input: [.message(message)]
+    )
+    
+    print("Summary: \(response.outputText ?? "")")
+    
+    // List all files
+    let fileList = try await client.files.list()
+    print("Found \(fileList.data.count) files")
+    
+    // Delete the file when done
+    let deleteResult = try await client.files.delete(file.id)
+    print("File deleted: \(deleteResult.deleted)")
+}
+```
+
+### Direct File Input (Base64)
+
+```swift
+func directFileExample() async throws {
+    let config = SAOAIAzureConfiguration(
+        endpoint: "https://your-resource.openai.azure.com", 
+        apiKey: "your-api-key",
+        deploymentName: "gpt-4o",
+        apiVersion: "preview"
+    )
+    
+    let client = SAOAIClient(configuration: config)
+    
+    // Load image file
+    let imageData = try Data(contentsOf: URL(fileURLWithPath: "chart.png"))
+    let base64Image = imageData.base64EncodedString()
+    
+    // Include file directly in request (no upload needed)
+    let fileInput = SAOAIInputContent.inputFile(.init(
+        filename: "chart.png",
+        base64Data: base64Image,
+        mimeType: "image/png"
+    ))
+    
+    let textInput = SAOAIInputContent.inputText(.init(text: "What does this chart show?"))
+    
+    let message = SAOAIMessage(
+        role: .user,
+        content: [fileInput, textInput]
+    )
+    
+    let response = try await client.responses.create(
+        model: "gpt-4o",
+        input: [.message(message)]
+    )
+    
+    print("Chart analysis: \(response.outputText ?? "")")
 }
 ```
 
