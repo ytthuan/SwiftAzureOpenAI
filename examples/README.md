@@ -70,7 +70,8 @@ let file = try await client.files.create(
 let response = try await client.responses.create(
     model: deploymentName,
     input: "Analyze the uploaded report and summarize key findings",
-    // File automatically available via file ID: \(file.id)
+    // Reference the uploaded file by including its ID in the input:
+    files: [file.id] // Pass the file ID(s) to associate with the request
 )
 ```
 
