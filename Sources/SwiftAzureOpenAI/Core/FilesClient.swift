@@ -198,7 +198,7 @@ public final class FilesClient: @unchecked Sendable {
     // MARK: - Private Methods
     
     /// Create multipart form data for file upload.
-    private static func createMultipartFormData(file: Data, filename: String, purpose: String, boundary: String) -> Data {
+    private func createMultipartFormData(file: Data, filename: String, purpose: String, boundary: String) -> Data {
         var body = Data()
         
         // Add purpose field
