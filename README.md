@@ -37,10 +37,11 @@ This package targets the Azure/OpenAI Responses API. It is model-agnostic; use t
 
 SwiftAzureOpenAI includes comprehensive support for the Azure OpenAI File API, enabling file upload, management, and integration with the Responses API:
 
-- 📁 **File Upload**: Upload documents, images, and data files
+- 📁 **File Upload**: Upload documents, images, and data files  
 - 📋 **File Management**: List, retrieve, and delete files
 - 🔗 **Responses Integration**: Reference uploaded files in conversations
 - 🎯 **Direct File Input**: Include file data directly in requests
+- 📡 **Streaming Downloads**: Stream large file content in chunks
 - 🛡️ **Type Safety**: Strongly typed file operations and responses
 
 Supported operations:
@@ -48,6 +49,7 @@ Supported operations:
 - `client.files.list()` - List all files  
 - `client.files.retrieve()` - Get file details
 - `client.files.delete()` - Remove files
+- `client.files.streamContent()` - Stream file content for large downloads
 
 ## Installation
 
@@ -664,6 +666,26 @@ func fileAPIExample() async throws {
     let deleteResult = try await client.files.delete(file.id)
     print("File deleted: \(deleteResult.deleted)")
 }
+```
+
+### Streaming File Downloads
+
+For large files, you can stream file content in chunks rather than loading the entire file into memory:
+
+```swift
+// Stream file content for large files
+let stream = client.files.streamContent("file-abc123")
+
+// Process chunks as they arrive
+for try await chunk in stream {
+    // Process data chunk (e.g., write to file, parse incrementally)
+    print("Received chunk of \(chunk.count) bytes")
+    
+    // Example: Write to local file
+    // fileHandle.write(chunk)
+}
+
+print("File download completed")
 ```
 
 ### Direct File Input (Base64)

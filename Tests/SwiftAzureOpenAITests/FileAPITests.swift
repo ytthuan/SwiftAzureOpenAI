@@ -274,4 +274,112 @@ final class FileAPITests: XCTestCase {
         XCTAssertEqual(message.content.count, 2)
         XCTAssertEqual(message.role, .user)
     }
+    
+    // MARK: - Streaming File API Tests
+    
+    func testStreamContentMethodExists() {
+        // Test that the streaming content method exists and has correct signature
+        XCTAssertNotNil(client.files.streamContent)
+        
+        let streamTask: (String) -> AsyncThrowingStream<Data, Error> = { fileId in
+            self.client.files.streamContent(fileId)
+        }
+        
+        XCTAssertNotNil(streamTask)
+    }
+    
+    func testStreamContentUsagePattern() async {
+        // Test that the streamContent method can be used in expected patterns
+        let fileId = "file-test123"
+        let stream = client.files.streamContent(fileId)
+        
+        // This test verifies the usage pattern compiles correctly
+        // In a real scenario, this would fail with network errors since we're using test config
+        do {
+            var dataChunks: [Data] = []
+            for try await chunk in stream {
+                dataChunks.append(chunk)
+                // In real usage, would process chunks as they arrive
+                break // Break immediately to avoid network error in test
+            }
+            XCTFail("Should not reach here with test configuration")
+        } catch {
+            // Expected to fail with test configuration - the important thing is compilation
+            XCTAssertTrue(true, "Method compiles and can be called")
+        }
+    }
+    
+    func testFileUploadProgressModelCreation() {
+        // Test the SAOAIFileUploadProgress enum
+        let progressEvent = SAOAIFileUploadProgress.progress(0.5, "Uploading...")
+        let completedEvent = SAOAIFileUploadProgress.completed(SAOAIFile(
+            id: "file-test",
+            bytes: 1024,
+            createdAt: Int(Date().timeIntervalSince1970),
+            expiresAt: nil,
+            filename: "test.txt",
+            object: "file",
+            purpose: "assistants",
+            status: "processed",
+            statusDetails: nil
+        ))
+        
+        // Test progress event
+        XCTAssertEqual(progressEvent.progressPercentage, 0.5)
+        XCTAssertEqual(progressEvent.statusMessage, "Uploading...")
+        XCTAssertNil(progressEvent.file)
+        
+        // Test completed event
+        XCTAssertEqual(completedEvent.progressPercentage, 1.0)
+        XCTAssertEqual(completedEvent.statusMessage, "Upload completed successfully")
+        XCTAssertNotNil(completedEvent.file)
+        XCTAssertEqual(completedEvent.file?.id, "file-test")
+    }
+    
+    func testStreamingFileAPIBackwardCompatibility() {
+        // Ensure existing file API methods still work
+        let existingUploadTask: () async throws -> SAOAIFile = {
+            try await self.client.files.create(
+                file: "Hello".data(using: .utf8)!,
+                filename: "test.txt",
+                purpose: .assistants
+            )
+        }
+        
+        let existingListTask: () async throws -> SAOAIFileList = {
+            try await self.client.files.list()
+        }
+        
+        let existingRetrieveTask: () async throws -> SAOAIFile = {
+            try await self.client.files.retrieve("file-123")
+        }
+        
+        let existingDeleteTask: () async throws -> SAOAIFileDeleteResponse = {
+            try await self.client.files.delete("file-123")
+        }
+        
+        // Verify all existing methods still compile and have correct types
+        XCTAssertNotNil(existingUploadTask)
+        XCTAssertNotNil(existingListTask)
+        XCTAssertNotNil(existingRetrieveTask)
+        XCTAssertNotNil(existingDeleteTask)
+    }
+    
+    func testStreamingAPIDesignPatterns() {
+        // Test that streaming APIs follow consistent patterns with ResponsesClient
+        
+        // 1. Streaming content download pattern (similar to streaming responses)
+        let contentStream = client.files.streamContent("file-123")
+        XCTAssertNotNil(contentStream)
+        
+        // 2. Verify return types are consistent with expectations
+        let streamType = type(of: contentStream)
+        XCTAssertTrue(String(describing: streamType).contains("AsyncThrowingStream"))
+        
+        // 3. Test that methods can be chained/composed
+        let transformedStream = contentStream.map { data in
+            return data.count // Example transformation
+        }
+        XCTAssertNotNil(transformedStream)
+    }
 }

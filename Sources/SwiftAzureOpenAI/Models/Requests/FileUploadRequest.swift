@@ -1,7 +1,7 @@
 import Foundation
 
 /// Request model for uploading a file to Azure OpenAI.
-public struct SAOAIFileUploadRequest: Codable {
+public struct SAOAIFileUploadRequest: Codable, Sendable {
     /// The file content as Data
     public let file: Data
     /// The purpose of the uploaded file.

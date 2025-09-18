@@ -4,7 +4,7 @@ import FoundationNetworking
 #endif
 
 /// A client for Azure OpenAI Files API operations.
-public final class FilesClient {
+public final class FilesClient: @unchecked Sendable {
     private let httpClient: HTTPClient
     private let responseService: ResponseServiceProtocol
     private let configuration: SAOAIConfiguration
@@ -38,7 +38,7 @@ public final class FilesClient {
     /// - Returns: The uploaded file object
     public func create(file: Data, filename: String, purpose: SAOAIFilePurpose) async throws -> SAOAIFile {
         let boundary = "Boundary-\(UUID().uuidString)"
-        let body = createMultipartFormData(file: file, filename: filename, purpose: purpose.rawValue, boundary: boundary)
+        let body = Self.createMultipartFormData(file: file, filename: filename, purpose: purpose.rawValue, boundary: boundary)
         
         // Use the helper to construct the files endpoint URL
         let filesURL = try filesEndpointURL()
@@ -148,10 +148,57 @@ public final class FilesClient {
         return result.data
     }
     
+    // MARK: - Streaming Methods
+    
+    /// Retrieve file content as a streaming download for large files.
+    /// - Parameter fileId: The ID of the file to retrieve content for
+    /// - Returns: An AsyncThrowingStream of Data chunks representing the file content
+    public func streamContent(_ fileId: String) -> AsyncThrowingStream<Data, Error> {
+        // Capture needed values outside the stream to avoid concurrency issues
+        let configuration = self.configuration
+        let httpClient = self.httpClient
+        
+        return AsyncThrowingStream { continuation in
+            Task {
+                do {
+                    // Construct the files content endpoint URL
+                    var filesURL = configuration.baseURL
+                    if filesURL.absoluteString.contains("/openai/v1/responses") {
+                        let urlString = filesURL.absoluteString.replacingOccurrences(of: "/openai/v1/responses", with: "/openai/v1/files")
+                        guard let newURL = URL(string: urlString) else {
+                            continuation.finish(throwing: SAOAIError.invalidRequest("Failed to construct files endpoint URL"))
+                            return
+                        }
+                        filesURL = newURL
+                    } else {
+                        filesURL = filesURL.appendingPathComponent("files")
+                    }
+                    filesURL = filesURL.appendingPathComponent(fileId).appendingPathComponent("content")
+                    
+                    let request = APIRequest(
+                        method: "GET",
+                        url: filesURL,
+                        headers: configuration.headers
+                    )
+                    
+                    let stream = httpClient.sendStreaming(request)
+                    
+                    for try await chunk in stream {
+                        continuation.yield(chunk)
+                    }
+                    
+                    continuation.finish()
+                } catch {
+                    continuation.finish(throwing: error)
+                }
+            }
+        }
+    }
+    
     // MARK: - Private Methods
     
     /// Create multipart form data for file upload.
-    private func createMultipartFormData(file: Data, filename: String, purpose: String, boundary: String) -> Data {
+    private static func createMultipartFormData(file: Data, filename: String, purpose: String, boundary: String) -> Data {
         var body = Data()
         
         // Add purpose field
