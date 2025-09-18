@@ -38,7 +38,7 @@ public final class FilesClient: @unchecked Sendable {
     /// - Returns: The uploaded file object
     public func create(file: Data, filename: String, purpose: SAOAIFilePurpose) async throws -> SAOAIFile {
         let boundary = "Boundary-\(UUID().uuidString)"
-        let body = Self.createMultipartFormData(file: file, filename: filename, purpose: purpose.rawValue, boundary: boundary)
+        let body = self.createMultipartFormData(file: file, filename: filename, purpose: purpose.rawValue, boundary: boundary)
         
         // Use the helper to construct the files endpoint URL
         let filesURL = try filesEndpointURL()
