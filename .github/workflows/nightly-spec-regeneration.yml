@@ -34,11 +34,11 @@ jobs:
       run: |
         echo "📡 Downloading latest Azure OpenAI API specification..."
         
-        # Try multiple Azure OpenAI spec URLs in order of preference
+        # Try multiple Azure OpenAI Response API spec URLs in order of preference
         SPEC_URLS=(
-          "https://raw.githubusercontent.com/Azure/azure-rest-api-specs/main/specification/cognitiveservices/data-plane/AzureOpenAI/inference/preview/2024-10-01-preview/inference.json"
-          "https://raw.githubusercontent.com/Azure/azure-rest-api-specs/main/specification/cognitiveservices/data-plane/AzureOpenAI/inference/stable/2024-08-01-preview/inference.json"
-          "https://raw.githubusercontent.com/openai/openai-openapi/master/openapi.yaml"
+          "https://raw.githubusercontent.com/Azure/azure-rest-api-specs/main/specification/ai/data-plane/OpenAI.v1/azure-v1-v1-generated.json"
+          "https://raw.githubusercontent.com/Azure/azure-rest-api-specs/main/specification/cognitiveservices/data-plane/AzureOpenAI/inference/preview/2025-04-01-preview/inference.json"
+          "https://raw.githubusercontent.com/Azure/azure-rest-api-specs/main/specification/cognitiveservices/data-plane/AzureOpenAI/inference/stable/2024-10-21/inference.json"
         )
         
         SUCCESS=false

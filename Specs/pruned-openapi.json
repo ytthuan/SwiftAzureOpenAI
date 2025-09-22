@@ -1,65 +1,24 @@
 {
   "components": {
     "schemas": {
-      "ContentPart": {
-        "properties": {
-          "input_text": {
-            "type": "string"
-          },
-          "text": {
-            "type": "string"
-          },
-          "type": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "type"
+      "AzureAIFoundryModelsApiVersion": {
+        "enum": [
+          "v1",
+          "preview"
         ],
-        "type": "object"
+        "type": "string"
       },
-      "DeleteResponse": {
-        "properties": {
-          "deleted": {
-            "type": "boolean"
-          },
-          "id": {
-            "type": "string"
-          },
-          "object": {
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "Embedding": {
-        "properties": {
-          "embedding": {
-            "items": {
-              "type": "number"
-            },
-            "type": "array"
-          },
-          "index": {
-            "type": "integer"
-          },
-          "object": {
-            "enum": [
-              "embedding"
-            ],
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "EmbeddingsRequest": {
+      "AzureCreateEmbeddingRequest": {
         "properties": {
           "dimensions": {
-            "description": "Number of dimensions for the embedding",
+            "description": "The number of dimensions the resulting output embeddings should have. Only supported in `text-embedding-3` and later models.",
+            "format": "int32",
+            "minimum": 1,
             "type": "integer"
           },
           "encoding_format": {
             "default": "float",
+            "description": "The format to return the embeddings in. Can be either `float` or [`base64`](https://pypi.org/project/pybase64/).",
             "enum": [
               "float",
               "base64"
@@ -67,8 +26,7 @@
             "type": "string"
           },
           "input": {
-            "description": "Text input to get embeddings for",
-            "oneOf": [
+            "anyOf": [
               {
                 "type": "string"
               },
@@ -77,15 +35,33 @@
                   "type": "string"
                 },
                 "type": "array"
+              },
+              {
+                "items": {
+                  "format": "int32",
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              {
+                "items": {
+                  "items": {
+                    "format": "int32",
+                    "type": "integer"
+                  },
+                  "type": "array"
+                },
+                "type": "array"
               }
-            ]
+            ],
+            "description": "Input text to embed, encoded as a string or array of tokens. To embed multiple inputs in a single request, pass an array of strings or array of token arrays. The input must not exceed the max input tokens for the model (8192 tokens for all embedding models), cannot be an empty string, and any array must be 2048 dimensions or less. [Example Python code](https://cookbook.openai.com/examples/how_to_count_tokens_with_tiktoken) for counting tokens. In addition to the per-input token limit, all embedding  models enforce a maximum of 300,000 tokens summed across all inputs in a  single request."
           },
           "model": {
-            "description": "The model to use for embeddings",
+            "description": "The model to use for the embedding request.",
             "type": "string"
           },
           "user": {
-            "description": "Unique identifier for the end-user",
+            "description": "A unique identifier representing your end-user, which can help OpenAI to monitor and detect abuse. [Learn more](/docs/guides/safety-best-practices#end-user-ids).",
             "type": "string"
           }
         },
@@ -95,56 +71,648 @@
         ],
         "type": "object"
       },
-      "EmbeddingsResponse": {
+      "AzureCreateFileRequestMultiPart": {
+        "properties": {
+          "expires_after": {
+            "properties": {
+              "anchor": {
+                "$ref": "#/components/schemas/AzureFileExpiryAnchor"
+              },
+              "seconds": {
+                "format": "int32",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "seconds",
+              "anchor"
+            ],
+            "type": "object"
+          },
+          "file": {
+            "format": "binary",
+            "type": "string"
+          },
+          "purpose": {
+            "description": "The intended purpose of the uploaded file. One of: - `assistants`: Used in the Assistants API - `batch`: Used in the Batch API - `fine-tune`: Used for fine-tuning - `evals`: Used for eval data sets",
+            "enum": [
+              "assistants",
+              "batch",
+              "fine-tune",
+              "evals"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "file",
+          "expires_after",
+          "purpose"
+        ],
+        "type": "object"
+      },
+      "AzureCreateResponse": {
+        "properties": {
+          "background": {
+            "default": false,
+            "description": "Whether to run the model response in the background.\n[Learn more](/docs/guides/background).",
+            "nullable": true,
+            "type": "boolean"
+          },
+          "include": {
+            "description": "Specify additional output data to include in the model response. Currently\nsupported values are:\n- `code_interpreter_call.outputs`: Includes the outputs of python code execution\n  in code interpreter tool call items.\n- `computer_call_output.output.image_url`: Include image urls from the computer call output.\n- `file_search_call.results`: Include the search results of\n  the file search tool call.\n- `message.input_image.image_url`: Include image urls from the input message.\n- `message.output_text.logprobs`: Include logprobs with assistant messages.\n- `reasoning.encrypted_content`: Includes an encrypted version of reasoning\n  tokens in reasoning item outputs. This enables reasoning items to be used in\n  multi-turn conversations when using the Responses API statelessly (like\n  when the `store` parameter is set to `false`, or when an organization is\n  enrolled in the zero data retention program).",
+            "items": {
+              "$ref": "#/components/schemas/OpenAI.Includable"
+            },
+            "nullable": true,
+            "type": "array"
+          },
+          "input": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/OpenAI.ImplicitUserMessage"
+                    },
+                    {
+                      "$ref": "#/components/schemas/OpenAI.ItemParam"
+                    }
+                  ]
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Text, image, or file inputs to the model, used to generate a response.\n\nLearn more:\n- [Text inputs and outputs](/docs/guides/text)\n- [Image inputs](/docs/guides/images)\n- [File inputs](/docs/guides/pdf-files)\n- [Conversation state](/docs/guides/conversation-state)\n- [Function calling](/docs/guides/function-calling)"
+          },
+          "instructions": {
+            "description": "A system (or developer) message inserted into the model's context.\n\nWhen using along with `previous_response_id`, the instructions from a previous\nresponse will not be carried over to the next response. This makes it simple\nto swap out system (or developer) messages in new responses.",
+            "nullable": true,
+            "type": "string"
+          },
+          "max_output_tokens": {
+            "description": "An upper bound for the number of tokens that can be generated for a response, including visible output tokens and [reasoning tokens](/docs/guides/reasoning).",
+            "format": "int32",
+            "nullable": true,
+            "type": "integer"
+          },
+          "max_tool_calls": {
+            "description": "The maximum number of total calls to built-in tools that can be processed in a response. This maximum number applies across all built-in tool calls, not per individual tool. Any further attempts to call a tool by the model will be ignored.",
+            "format": "int32",
+            "nullable": true,
+            "type": "integer"
+          },
+          "metadata": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Set of 16 key-value pairs that can be attached to an object. This can be\nuseful for storing additional information about the object in a structured\nformat, and querying for objects via API or the dashboard.\n\nKeys are strings with a maximum length of 64 characters. Values are strings\nwith a maximum length of 512 characters.",
+            "type": "object",
+            "x-oaiTypeLabel": "map"
+          },
+          "model": {
+            "description": "The model deployment to use for the creation of this response.",
+            "type": "string"
+          },
+          "parallel_tool_calls": {
+            "default": true,
+            "description": "Whether to allow the model to run tool calls in parallel.",
+            "nullable": true,
+            "type": "boolean"
+          },
+          "previous_response_id": {
+            "description": "The unique ID of the previous response to the model. Use this to\ncreate multi-turn conversations. Learn more about\n[conversation state](/docs/guides/conversation-state).",
+            "nullable": true,
+            "type": "string"
+          },
+          "prompt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OpenAI.Prompt"
+              }
+            ],
+            "nullable": true,
+            "type": "object"
+          },
+          "reasoning": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OpenAI.Reasoning"
+              }
+            ],
+            "nullable": true,
+            "type": "object"
+          },
+          "store": {
+            "default": true,
+            "description": "Whether to store the generated model response for later retrieval via\nAPI.",
+            "nullable": true,
+            "type": "boolean"
+          },
+          "stream": {
+            "default": false,
+            "description": "If set to true, the model response data will be streamed to the client\nas it is generated using [server-sent events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events#Event_stream_format).\nSee the [Streaming section below](/docs/api-reference/responses-streaming)\nfor more information.",
+            "nullable": true,
+            "type": "boolean"
+          },
+          "temperature": {
+            "default": 1,
+            "description": "What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic.\nWe generally recommend altering this or `top_p` but not both.",
+            "format": "float",
+            "maximum": 2,
+            "minimum": 0,
+            "nullable": true,
+            "type": "number"
+          },
+          "text": {
+            "description": "Configuration options for a text response from the model. Can be plain\ntext or structured JSON data. Learn more:\n- [Text inputs and outputs](/docs/guides/text)\n- [Structured Outputs](/docs/guides/structured-outputs)",
+            "properties": {
+              "format": {
+                "$ref": "#/components/schemas/OpenAI.ResponseTextFormatConfiguration"
+              }
+            },
+            "type": "object"
+          },
+          "tool_choice": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OpenAI.ToolChoiceOptions"
+              },
+              {
+                "$ref": "#/components/schemas/OpenAI.ToolChoiceObject"
+              }
+            ],
+            "description": "How the model should select which tool (or tools) to use when generating\na response. See the `tools` parameter to see how to specify which tools\nthe model can call."
+          },
+          "tools": {
+            "description": "An array of tools the model may call while generating a response. You \ncan specify which tool to use by setting the `tool_choice` parameter.\n\nThe two categories of tools you can provide the model are:\n\n- **Built-in tools**: Tools that are provided by OpenAI that extend the\n  model's capabilities, like file search.\n- **Function calls (custom tools)**: Functions that are defined by you,\n  enabling the model to call your own code.",
+            "items": {
+              "$ref": "#/components/schemas/OpenAI.Tool"
+            },
+            "type": "array"
+          },
+          "top_logprobs": {
+            "description": "An integer between 0 and 20 specifying the number of most likely tokens to return at each token position, each with an associated log probability.",
+            "format": "int32",
+            "maximum": 20,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "top_p": {
+            "default": 1,
+            "description": "An alternative to sampling with temperature, called nucleus sampling,\nwhere the model considers the results of the tokens with top_p probability\nmass. So 0.1 means only the tokens comprising the top 10% probability mass\nare considered.\n\nWe generally recommend altering this or `temperature` but not both.",
+            "format": "float",
+            "maximum": 1,
+            "minimum": 0,
+            "nullable": true,
+            "type": "number"
+          },
+          "truncation": {
+            "default": "disabled",
+            "description": "The truncation strategy to use for the model response.\n- `auto`: If the context of this response and previous ones exceeds\n  the model's context window size, the model will truncate the\n  response to fit the context window by dropping input items in the\n  middle of the conversation.\n- `disabled` (default): If a model response will exceed the context window\n  size for a model, the request will fail with a 400 error.",
+            "enum": [
+              "auto",
+              "disabled"
+            ],
+            "nullable": true,
+            "type": "string"
+          },
+          "user": {
+            "description": "A unique identifier representing your end-user, which can help OpenAI to monitor and detect abuse. [Learn more](/docs/guides/safety-best-practices#end-user-ids).",
+            "type": "string"
+          }
+        },
+        "required": [
+          "model"
+        ],
+        "type": "object"
+      },
+      "AzureErrorResponse": {
+        "properties": {
+          "error": {
+            "description": "The error details.",
+            "properties": {
+              "code": {
+                "description": "The distinct, machine-generated identifier for the error.",
+                "type": "string"
+              },
+              "inner_error": {},
+              "message": {
+                "description": "A human-readable message associated with the error.",
+                "type": "string"
+              },
+              "param": {
+                "description": "If applicable, the request input parameter associated with the error",
+                "type": "string"
+              },
+              "type": {
+                "description": "The object type, always 'error.'",
+                "enum": [
+                  "error"
+                ],
+                "type": "string"
+              }
+            },
+            "type": "object"
+          }
+        },
+        "type": "object"
+      },
+      "AzureFileExpiryAnchor": {
+        "enum": [
+          "created_at"
+        ],
+        "type": "string"
+      },
+      "AzureListFilesResponse": {
         "properties": {
           "data": {
             "items": {
-              "$ref": "#/components/schemas/Embedding"
+              "$ref": "#/components/schemas/AzureOpenAIFile"
+            },
+            "type": "array"
+          },
+          "first_id": {
+            "type": "string"
+          },
+          "has_more": {
+            "type": "boolean"
+          },
+          "last_id": {
+            "type": "string"
+          },
+          "object": {
+            "enum": [
+              "list"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "object",
+          "data",
+          "first_id",
+          "last_id",
+          "has_more"
+        ],
+        "type": "object"
+      },
+      "AzureOpenAIFile": {
+        "properties": {
+          "bytes": {
+            "description": "The size of the file, in bytes.",
+            "format": "int64",
+            "nullable": true,
+            "type": "integer"
+          },
+          "created_at": {
+            "description": "The Unix timestamp (in seconds) for when the file was created.",
+            "format": "unixtime",
+            "type": "integer"
+          },
+          "expires_at": {
+            "description": "The Unix timestamp (in seconds) for when the file will expire.",
+            "format": "unixtime",
+            "type": "integer"
+          },
+          "filename": {
+            "description": "The name of the file.",
+            "type": "string"
+          },
+          "id": {
+            "description": "The file identifier, which can be referenced in the API endpoints.",
+            "type": "string"
+          },
+          "object": {
+            "description": "The object type, which is always `file`.",
+            "enum": [
+              "file"
+            ],
+            "type": "string"
+          },
+          "purpose": {
+            "description": "The intended purpose of the file. Supported values are `assistants`, `assistants_output`, `batch`, `batch_output`, `fine-tune` and `fine-tune-results`.",
+            "enum": [
+              "assistants",
+              "assistants_output",
+              "batch",
+              "batch_output",
+              "fine-tune",
+              "fine-tune-results",
+              "evals"
+            ],
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "uploaded",
+              "pending",
+              "running",
+              "processed",
+              "error",
+              "deleting",
+              "deleted"
+            ],
+            "type": "string"
+          },
+          "status_details": {
+            "deprecated": true,
+            "description": "Deprecated. For details on why a fine-tuning training file failed validation, see the `error` field on `fine_tuning.job`.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "bytes",
+          "created_at",
+          "filename",
+          "object",
+          "purpose",
+          "status"
+        ],
+        "type": "object"
+      },
+      "AzureResponse": {
+        "properties": {
+          "background": {
+            "default": false,
+            "description": "Whether to run the model response in the background.\n[Learn more](/docs/guides/background).",
+            "nullable": true,
+            "type": "boolean"
+          },
+          "created_at": {
+            "description": "Unix timestamp (in seconds) of when this Response was created.",
+            "format": "unixtime",
+            "type": "integer"
+          },
+          "error": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OpenAI.ResponseError"
+              }
+            ],
+            "nullable": true,
+            "type": "object"
+          },
+          "id": {
+            "description": "Unique identifier for this Response.",
+            "type": "string"
+          },
+          "incomplete_details": {
+            "description": "Details about why the response is incomplete.",
+            "nullable": true,
+            "properties": {
+              "reason": {
+                "description": "The reason why the response is incomplete.",
+                "enum": [
+                  "max_output_tokens",
+                  "content_filter"
+                ],
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "instructions": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "$ref": "#/components/schemas/OpenAI.ItemParam"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "A system (or developer) message inserted into the model's context.\n\nWhen using along with `previous_response_id`, the instructions from a previous\nresponse will not be carried over to the next response. This makes it simple\nto swap out system (or developer) messages in new responses.",
+            "nullable": true
+          },
+          "max_output_tokens": {
+            "description": "An upper bound for the number of tokens that can be generated for a response, including visible output tokens and [reasoning tokens](/docs/guides/reasoning).",
+            "format": "int32",
+            "nullable": true,
+            "type": "integer"
+          },
+          "max_tool_calls": {
+            "description": "The maximum number of total calls to built-in tools that can be processed in a response. This maximum number applies across all built-in tool calls, not per individual tool. Any further attempts to call a tool by the model will be ignored.",
+            "format": "int32",
+            "nullable": true,
+            "type": "integer"
+          },
+          "metadata": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Set of 16 key-value pairs that can be attached to an object. This can be\nuseful for storing additional information about the object in a structured\nformat, and querying for objects via API or the dashboard.\n\nKeys are strings with a maximum length of 64 characters. Values are strings\nwith a maximum length of 512 characters.",
+            "nullable": true,
+            "type": "object",
+            "x-oaiTypeLabel": "map"
+          },
+          "model": {
+            "description": "The model used to generate this response.",
+            "type": "string"
+          },
+          "object": {
+            "description": "The object type of this resource - always set to `response`.",
+            "enum": [
+              "response"
+            ],
+            "type": "string"
+          },
+          "output": {
+            "description": "An array of content items generated by the model.\n\n- The length and order of items in the `output` array is dependent\n  on the model's response.\n- Rather than accessing the first item in the `output` array and\n  assuming it's an `assistant` message with the content generated by\n  the model, you might consider using the `output_text` property where\n  supported in SDKs.",
+            "items": {
+              "$ref": "#/components/schemas/OpenAI.ItemResource"
+            },
+            "type": "array"
+          },
+          "output_text": {
+            "description": "SDK-only convenience property that contains the aggregated text output\nfrom all `output_text` items in the `output` array, if any are present.\nSupported in the Python and JavaScript SDKs.",
+            "nullable": true,
+            "type": "string"
+          },
+          "parallel_tool_calls": {
+            "default": true,
+            "description": "Whether to allow the model to run tool calls in parallel.",
+            "type": "boolean"
+          },
+          "previous_response_id": {
+            "description": "The unique ID of the previous response to the model. Use this to\ncreate multi-turn conversations. Learn more about\n[conversation state](/docs/guides/conversation-state).",
+            "nullable": true,
+            "type": "string"
+          },
+          "prompt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OpenAI.Prompt"
+              }
+            ],
+            "nullable": true,
+            "type": "object"
+          },
+          "reasoning": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OpenAI.Reasoning"
+              }
+            ],
+            "nullable": true,
+            "type": "object"
+          },
+          "status": {
+            "description": "The status of the response generation. One of `completed`, `failed`,\n`in_progress`, `cancelled`, `queued`, or `incomplete`.",
+            "enum": [
+              "completed",
+              "failed",
+              "in_progress",
+              "cancelled",
+              "queued",
+              "incomplete"
+            ],
+            "type": "string"
+          },
+          "temperature": {
+            "description": "What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic.\nWe generally recommend altering this or `top_p` but not both.",
+            "format": "float",
+            "maximum": 2,
+            "minimum": 0,
+            "nullable": true,
+            "type": "number"
+          },
+          "text": {
+            "description": "Configuration options for a text response from the model. Can be plain\ntext or structured JSON data. Learn more:\n- [Text inputs and outputs](/docs/guides/text)\n- [Structured Outputs](/docs/guides/structured-outputs)",
+            "properties": {
+              "format": {
+                "$ref": "#/components/schemas/OpenAI.ResponseTextFormatConfiguration"
+              }
+            },
+            "type": "object"
+          },
+          "tool_choice": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OpenAI.ToolChoiceOptions"
+              },
+              {
+                "$ref": "#/components/schemas/OpenAI.ToolChoiceObject"
+              }
+            ],
+            "description": "How the model should select which tool (or tools) to use when generating\na response. See the `tools` parameter to see how to specify which tools\nthe model can call."
+          },
+          "tools": {
+            "description": "An array of tools the model may call while generating a response. You\ncan specify which tool to use by setting the `tool_choice` parameter.\n\nThe two categories of tools you can provide the model are:\n\n- **Built-in tools**: Tools that are provided by OpenAI that extend the\n  model's capabilities, like [web search](/docs/guides/tools-web-search)\n  or [file search](/docs/guides/tools-file-search). Learn more about\n  [built-in tools](/docs/guides/tools).\n- **Function calls (custom tools)**: Functions that are defined by you,\n  enabling the model to call your own code. Learn more about\n  [function calling](/docs/guides/function-calling).",
+            "items": {
+              "$ref": "#/components/schemas/OpenAI.Tool"
+            },
+            "type": "array"
+          },
+          "top_logprobs": {
+            "description": "An integer between 0 and 20 specifying the number of most likely tokens to return at each token position, each with an associated log probability.",
+            "format": "int32",
+            "nullable": true,
+            "type": "integer"
+          },
+          "top_p": {
+            "description": "An alternative to sampling with temperature, called nucleus sampling,\nwhere the model considers the results of the tokens with top_p probability\nmass. So 0.1 means only the tokens comprising the top 10% probability mass\nare considered.\n\nWe generally recommend altering this or `temperature` but not both.",
+            "format": "float",
+            "maximum": 1,
+            "minimum": 0,
+            "nullable": true,
+            "type": "number"
+          },
+          "truncation": {
+            "default": "disabled",
+            "description": "The truncation strategy to use for the model response.\n- `auto`: If the context of this response and previous ones exceeds\n  the model's context window size, the model will truncate the\n  response to fit the context window by dropping input items in the\n  middle of the conversation.\n- `disabled` (default): If a model response will exceed the context window\n  size for a model, the request will fail with a 400 error.",
+            "enum": [
+              "auto",
+              "disabled"
+            ],
+            "nullable": true,
+            "type": "string"
+          },
+          "usage": {
+            "$ref": "#/components/schemas/OpenAI.ResponseUsage"
+          },
+          "user": {
+            "description": "A unique identifier representing your end-user, which can help OpenAI to monitor and detect abuse. [Learn more](/docs/guides/safety-best-practices#end-user-ids).",
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "metadata",
+          "temperature",
+          "top_p",
+          "user",
+          "id",
+          "object",
+          "created_at",
+          "error",
+          "incomplete_details",
+          "output",
+          "instructions",
+          "parallel_tool_calls",
+          "model"
+        ],
+        "type": "object"
+      },
+      "OpenAI.CreateEmbeddingResponse": {
+        "properties": {
+          "data": {
+            "description": "The list of embeddings generated by the model.",
+            "items": {
+              "$ref": "#/components/schemas/OpenAI.Embedding"
             },
             "type": "array"
           },
           "model": {
+            "description": "The name of the model used to generate the embedding.",
             "type": "string"
           },
           "object": {
+            "description": "The object type, which is always \"list\".",
             "enum": [
               "list"
             ],
             "type": "string"
           },
           "usage": {
-            "$ref": "#/components/schemas/TokenUsage"
-          }
-        },
-        "type": "object"
-      },
-      "FileListResponse": {
-        "properties": {
-          "data": {
-            "items": {
-              "$ref": "#/components/schemas/FileResponse"
+            "description": "The usage information for the request.",
+            "properties": {
+              "prompt_tokens": {
+                "description": "The number of tokens used by the prompt.",
+                "format": "int32",
+                "type": "integer"
+              },
+              "total_tokens": {
+                "description": "The total number of tokens used by the request.",
+                "format": "int32",
+                "type": "integer"
+              }
             },
-            "type": "array"
-          },
-          "object": {
-            "enum": [
-              "list"
+            "required": [
+              "prompt_tokens",
+              "total_tokens"
             ],
-            "type": "string"
+            "type": "object"
           }
         },
+        "required": [
+          "data",
+          "model",
+          "object",
+          "usage"
+        ],
         "type": "object"
       },
-      "FileResponse": {
+      "OpenAI.DeleteFileResponse": {
         "properties": {
-          "bytes": {
-            "type": "integer"
-          },
-          "created_at": {
-            "type": "integer"
-          },
-          "filename": {
-            "type": "string"
+          "deleted": {
+            "type": "boolean"
           },
           "id": {
             "type": "string"
@@ -154,157 +722,659 @@
               "file"
             ],
             "type": "string"
-          },
-          "purpose": {
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "FileUploadRequest": {
-        "properties": {
-          "file": {
-            "description": "The file to upload",
-            "format": "binary",
-            "type": "string"
-          },
-          "purpose": {
-            "description": "The purpose of the file upload",
-            "type": "string"
           }
         },
         "required": [
-          "file",
-          "purpose"
+          "id",
+          "object",
+          "deleted"
         ],
         "type": "object"
       },
-      "InputMessage": {
+      "OpenAI.Embedding": {
+        "description": "Represents an embedding vector returned by embedding endpoint.",
         "properties": {
-          "content": {
-            "items": {
-              "$ref": "#/components/schemas/ContentPart"
-            },
-            "type": "array"
+          "embedding": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "description": "The embedding vector, which is a list of floats. The length of vector depends on the model as listed in the [embedding guide](/docs/guides/embeddings)."
           },
-          "role": {
+          "index": {
+            "description": "The index of the embedding in the list of embeddings.",
+            "format": "int32",
+            "type": "integer"
+          },
+          "object": {
+            "description": "The object type, which is always \"embedding\".",
             "enum": [
-              "user",
-              "assistant",
-              "system"
+              "embedding"
             ],
             "type": "string"
           }
         },
         "required": [
-          "role",
+          "index",
+          "embedding",
+          "object"
+        ],
+        "type": "object"
+      },
+      "OpenAI.ImplicitUserMessage": {
+        "properties": {
+          "content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "$ref": "#/components/schemas/OpenAI.ItemContent"
+                },
+                "type": "array"
+              }
+            ]
+          }
+        },
+        "required": [
           "content"
         ],
         "type": "object"
       },
-      "OutputContentPart": {
-        "properties": {
-          "text": {
-            "type": "string"
+      "OpenAI.Includable": {
+        "description": "Specify additional output data to include in the model response. Currently\nsupported values are:\n- `code_interpreter_call.outputs`: Includes the outputs of python code execution\n  in code interpreter tool call items.\n- `computer_call_output.output.image_url`: Include image urls from the computer call output.\n- `file_search_call.results`: Include the search results of\n  the file search tool call.\n- `message.input_image.image_url`: Include image urls from the input message.\n- `message.output_text.logprobs`: Include logprobs with assistant messages.\n- `reasoning.encrypted_content`: Includes an encrypted version of reasoning\n  tokens in reasoning item outputs. This enables reasoning items to be used in\n  multi-turn conversations when using the Responses API statelessly (like\n  when the `store` parameter is set to `false`, or when an organization is\n  enrolled in the zero data retention program).",
+        "enum": [
+          "code_interpreter_call.outputs",
+          "computer_call_output.output.image_url",
+          "file_search_call.results",
+          "message.input_image.image_url",
+          "message.output_text.logprobs",
+          "reasoning.encrypted_content"
+        ],
+        "type": "string"
+      },
+      "OpenAI.ItemContent": {
+        "discriminator": {
+          "mapping": {
+            "input_audio": "#/components/schemas/OpenAI.ItemContentInputAudio",
+            "input_file": "#/components/schemas/OpenAI.ItemContentInputFile",
+            "input_image": "#/components/schemas/OpenAI.ItemContentInputImage",
+            "input_text": "#/components/schemas/OpenAI.ItemContentInputText",
+            "output_audio": "#/components/schemas/OpenAI.ItemContentOutputAudio",
+            "output_text": "#/components/schemas/OpenAI.ItemContentOutputText",
+            "refusal": "#/components/schemas/OpenAI.ItemContentRefusal"
           },
+          "propertyName": "type"
+        },
+        "properties": {
           "type": {
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "ResponseChoice": {
-        "properties": {
-          "finish_reason": {
-            "type": "string"
-          },
-          "index": {
-            "type": "integer"
-          },
-          "message": {
-            "$ref": "#/components/schemas/ResponseMessage"
-          }
-        },
-        "type": "object"
-      },
-      "ResponseMessage": {
-        "properties": {
-          "content": {
-            "items": {
-              "$ref": "#/components/schemas/OutputContentPart"
-            },
-            "type": "array"
-          },
-          "role": {
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "ResponsesRequest": {
-        "properties": {
-          "input": {
-            "items": {
-              "$ref": "#/components/schemas/InputMessage"
-            },
-            "type": "array"
-          },
-          "max_output_tokens": {
-            "description": "Maximum number of tokens to generate",
-            "type": "integer"
-          },
-          "model": {
-            "description": "The model to use for generating responses",
-            "type": "string"
-          },
-          "stream": {
-            "description": "Whether to stream results",
-            "type": "boolean"
-          },
-          "temperature": {
-            "description": "Sampling temperature",
-            "type": "number"
+            "$ref": "#/components/schemas/OpenAI.ItemContentType"
           }
         },
         "required": [
-          "model",
-          "input"
+          "type"
         ],
         "type": "object"
       },
-      "ResponsesResponse": {
+      "OpenAI.ItemContentType": {
+        "description": "Multi-modal input and output contents.",
+        "enum": [
+          "input_text",
+          "input_audio",
+          "input_image",
+          "input_file",
+          "output_text",
+          "output_audio",
+          "refusal"
+        ],
+        "type": "string"
+      },
+      "OpenAI.ItemParam": {
+        "description": "Content item used to generate a response.",
+        "discriminator": {
+          "mapping": {
+            "code_interpreter_call": "#/components/schemas/OpenAI.CodeInterpreterToolCallItemParam",
+            "computer_call": "#/components/schemas/OpenAI.ComputerToolCallItemParam",
+            "computer_call_output": "#/components/schemas/OpenAI.ComputerToolCallOutputItemParam",
+            "file_search_call": "#/components/schemas/OpenAI.FileSearchToolCallItemParam",
+            "function_call": "#/components/schemas/OpenAI.FunctionToolCallItemParam",
+            "function_call_output": "#/components/schemas/OpenAI.FunctionToolCallOutputItemParam",
+            "image_generation_call": "#/components/schemas/OpenAI.ImageGenToolCallItemParam",
+            "item_reference": "#/components/schemas/OpenAI.ItemReferenceItemParam",
+            "local_shell_call": "#/components/schemas/OpenAI.LocalShellToolCallItemParam",
+            "local_shell_call_output": "#/components/schemas/OpenAI.LocalShellToolCallOutputItemParam",
+            "mcp_approval_request": "#/components/schemas/OpenAI.MCPApprovalRequestItemParam",
+            "mcp_approval_response": "#/components/schemas/OpenAI.MCPApprovalResponseItemParam",
+            "mcp_call": "#/components/schemas/OpenAI.MCPCallItemParam",
+            "mcp_list_tools": "#/components/schemas/OpenAI.MCPListToolsItemParam",
+            "message": "#/components/schemas/OpenAI.ResponsesMessageItemParam",
+            "reasoning": "#/components/schemas/OpenAI.ReasoningItemParam",
+            "web_search_call": "#/components/schemas/OpenAI.WebSearchToolCallItemParam"
+          },
+          "propertyName": "type"
+        },
         "properties": {
-          "choices": {
-            "items": {
-              "$ref": "#/components/schemas/ResponseChoice"
-            },
-            "type": "array"
+          "type": {
+            "$ref": "#/components/schemas/OpenAI.ItemType"
+          }
+        },
+        "required": [
+          "type"
+        ],
+        "type": "object"
+      },
+      "OpenAI.ItemResource": {
+        "description": "Content item used to generate a response.",
+        "discriminator": {
+          "mapping": {
+            "code_interpreter_call": "#/components/schemas/OpenAI.CodeInterpreterToolCallItemResource",
+            "computer_call": "#/components/schemas/OpenAI.ComputerToolCallItemResource",
+            "computer_call_output": "#/components/schemas/OpenAI.ComputerToolCallOutputItemResource",
+            "file_search_call": "#/components/schemas/OpenAI.FileSearchToolCallItemResource",
+            "function_call": "#/components/schemas/OpenAI.FunctionToolCallItemResource",
+            "function_call_output": "#/components/schemas/OpenAI.FunctionToolCallOutputItemResource",
+            "image_generation_call": "#/components/schemas/OpenAI.ImageGenToolCallItemResource",
+            "local_shell_call": "#/components/schemas/OpenAI.LocalShellToolCallItemResource",
+            "local_shell_call_output": "#/components/schemas/OpenAI.LocalShellToolCallOutputItemResource",
+            "mcp_approval_request": "#/components/schemas/OpenAI.MCPApprovalRequestItemResource",
+            "mcp_approval_response": "#/components/schemas/OpenAI.MCPApprovalResponseItemResource",
+            "mcp_call": "#/components/schemas/OpenAI.MCPCallItemResource",
+            "mcp_list_tools": "#/components/schemas/OpenAI.MCPListToolsItemResource",
+            "message": "#/components/schemas/OpenAI.ResponsesMessageItemResource",
+            "reasoning": "#/components/schemas/OpenAI.ReasoningItemResource",
+            "web_search_call": "#/components/schemas/OpenAI.WebSearchToolCallItemResource"
           },
-          "created": {
-            "type": "integer"
-          },
+          "propertyName": "type"
+        },
+        "properties": {
           "id": {
             "type": "string"
           },
-          "model": {
+          "type": {
+            "$ref": "#/components/schemas/OpenAI.ItemType"
+          }
+        },
+        "required": [
+          "type",
+          "id"
+        ],
+        "type": "object"
+      },
+      "OpenAI.ItemType": {
+        "enum": [
+          "message",
+          "file_search_call",
+          "function_call",
+          "function_call_output",
+          "computer_call",
+          "computer_call_output",
+          "web_search_call",
+          "reasoning",
+          "item_reference",
+          "image_generation_call",
+          "code_interpreter_call",
+          "local_shell_call",
+          "local_shell_call_output",
+          "mcp_list_tools",
+          "mcp_approval_request",
+          "mcp_approval_response",
+          "mcp_call"
+        ],
+        "type": "string"
+      },
+      "OpenAI.Prompt": {
+        "description": "Reference to a prompt template and its variables.\n[Learn more](/docs/guides/text?api-mode=responses#reusable-prompts).",
+        "properties": {
+          "id": {
+            "description": "The unique identifier of the prompt template to use.",
             "type": "string"
           },
-          "object": {
+          "variables": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OpenAI.ResponsePromptVariables"
+              }
+            ],
+            "nullable": true,
+            "type": "object"
+          },
+          "version": {
+            "description": "Optional version of the prompt template.",
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "type": "object"
+      },
+      "OpenAI.Reasoning": {
+        "description": "**o-series models only**\n\nConfiguration options for\n[reasoning models](https://platform.openai.com/docs/guides/reasoning).",
+        "properties": {
+          "effort": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OpenAI.ReasoningEffort"
+              }
+            ],
+            "default": "medium",
+            "nullable": true
+          },
+          "generate_summary": {
+            "default": null,
+            "deprecated": true,
+            "description": "**Deprecated:** use `summary` instead.\n\nA summary of the reasoning performed by the model. This can be\nuseful for debugging and understanding the model's reasoning process.\nOne of `auto`, `concise`, or `detailed`.",
+            "enum": [
+              "auto",
+              "concise",
+              "detailed"
+            ],
+            "nullable": true,
+            "type": "string"
+          },
+          "summary": {
+            "description": "A summary of the reasoning performed by the model. This can be\nuseful for debugging and understanding the model's reasoning process.\nOne of `auto`, `concise`, or `detailed`.",
+            "enum": [
+              "auto",
+              "concise",
+              "detailed"
+            ],
+            "nullable": true,
             "type": "string"
           }
         },
         "type": "object"
       },
-      "TokenUsage": {
+      "OpenAI.ReasoningEffort": {
+        "description": "**o-series models only**\n\nConstrains effort on reasoning for\n[reasoning models](https://platform.openai.com/docs/guides/reasoning).\nCurrently supported values are `low`, `medium`, and `high`. Reducing\nreasoning effort can result in faster responses and fewer tokens used\non reasoning in a response.",
+        "enum": [
+          "low",
+          "medium",
+          "high"
+        ],
+        "type": "string"
+      },
+      "OpenAI.ResponseError": {
+        "description": "An error object returned when the model fails to generate a Response.",
         "properties": {
-          "prompt_tokens": {
+          "code": {
+            "$ref": "#/components/schemas/OpenAI.ResponseErrorCode"
+          },
+          "message": {
+            "description": "A human-readable description of the error.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "type": "object"
+      },
+      "OpenAI.ResponseErrorCode": {
+        "description": "The error code for the response.",
+        "enum": [
+          "server_error",
+          "rate_limit_exceeded",
+          "invalid_prompt",
+          "vector_store_timeout",
+          "invalid_image",
+          "invalid_image_format",
+          "invalid_base64_image",
+          "invalid_image_url",
+          "image_too_large",
+          "image_too_small",
+          "image_parse_error",
+          "image_content_policy_violation",
+          "invalid_image_mode",
+          "image_file_too_large",
+          "unsupported_image_media_type",
+          "empty_image_file",
+          "failed_to_download_image",
+          "image_file_not_found"
+        ],
+        "type": "string"
+      },
+      "OpenAI.ResponsePromptVariables": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/OpenAI.ItemParam"
+        },
+        "description": "Optional map of values to substitute in for variables in your\nprompt. The substitution values can either be strings, or other\nResponse input types like images or files.",
+        "type": "object",
+        "x-oaiExpandable": true,
+        "x-oaiTypeLabel": "map"
+      },
+      "OpenAI.ResponseStreamEvent": {
+        "discriminator": {
+          "mapping": {
+            "error": "#/components/schemas/OpenAI.ResponseErrorEvent",
+            "response.code_interpreter_call.completed": "#/components/schemas/OpenAI.ResponseCodeInterpreterCallCompletedEvent",
+            "response.code_interpreter_call.in_progress": "#/components/schemas/OpenAI.ResponseCodeInterpreterCallInProgressEvent",
+            "response.code_interpreter_call.interpreting": "#/components/schemas/OpenAI.ResponseCodeInterpreterCallInterpretingEvent",
+            "response.code_interpreter_call_code.delta": "#/components/schemas/OpenAI.ResponseCodeInterpreterCallCodeDeltaEvent",
+            "response.code_interpreter_call_code.done": "#/components/schemas/OpenAI.ResponseCodeInterpreterCallCodeDoneEvent",
+            "response.completed": "#/components/schemas/OpenAI.ResponseCompletedEvent",
+            "response.content_part.added": "#/components/schemas/OpenAI.ResponseContentPartAddedEvent",
+            "response.content_part.done": "#/components/schemas/OpenAI.ResponseContentPartDoneEvent",
+            "response.created": "#/components/schemas/OpenAI.ResponseCreatedEvent",
+            "response.failed": "#/components/schemas/OpenAI.ResponseFailedEvent",
+            "response.file_search_call.completed": "#/components/schemas/OpenAI.ResponseFileSearchCallCompletedEvent",
+            "response.file_search_call.in_progress": "#/components/schemas/OpenAI.ResponseFileSearchCallInProgressEvent",
+            "response.file_search_call.searching": "#/components/schemas/OpenAI.ResponseFileSearchCallSearchingEvent",
+            "response.function_call_arguments.delta": "#/components/schemas/OpenAI.ResponseFunctionCallArgumentsDeltaEvent",
+            "response.function_call_arguments.done": "#/components/schemas/OpenAI.ResponseFunctionCallArgumentsDoneEvent",
+            "response.image_generation_call.completed": "#/components/schemas/OpenAI.ResponseImageGenCallCompletedEvent",
+            "response.image_generation_call.generating": "#/components/schemas/OpenAI.ResponseImageGenCallGeneratingEvent",
+            "response.image_generation_call.in_progress": "#/components/schemas/OpenAI.ResponseImageGenCallInProgressEvent",
+            "response.image_generation_call.partial_image": "#/components/schemas/OpenAI.ResponseImageGenCallPartialImageEvent",
+            "response.in_progress": "#/components/schemas/OpenAI.ResponseInProgressEvent",
+            "response.incomplete": "#/components/schemas/OpenAI.ResponseIncompleteEvent",
+            "response.mcp_call.arguments_delta": "#/components/schemas/OpenAI.ResponseMCPCallArgumentsDeltaEvent",
+            "response.mcp_call.arguments_done": "#/components/schemas/OpenAI.ResponseMCPCallArgumentsDoneEvent",
+            "response.mcp_call.completed": "#/components/schemas/OpenAI.ResponseMCPCallCompletedEvent",
+            "response.mcp_call.failed": "#/components/schemas/OpenAI.ResponseMCPCallFailedEvent",
+            "response.mcp_call.in_progress": "#/components/schemas/OpenAI.ResponseMCPCallInProgressEvent",
+            "response.mcp_list_tools.completed": "#/components/schemas/OpenAI.ResponseMCPListToolsCompletedEvent",
+            "response.mcp_list_tools.failed": "#/components/schemas/OpenAI.ResponseMCPListToolsFailedEvent",
+            "response.mcp_list_tools.in_progress": "#/components/schemas/OpenAI.ResponseMCPListToolsInProgressEvent",
+            "response.output_item.added": "#/components/schemas/OpenAI.ResponseOutputItemAddedEvent",
+            "response.output_item.done": "#/components/schemas/OpenAI.ResponseOutputItemDoneEvent",
+            "response.output_text.delta": "#/components/schemas/OpenAI.ResponseTextDeltaEvent",
+            "response.output_text.done": "#/components/schemas/OpenAI.ResponseTextDoneEvent",
+            "response.queued": "#/components/schemas/OpenAI.ResponseQueuedEvent",
+            "response.reasoning.delta": "#/components/schemas/OpenAI.ResponseReasoningDeltaEvent",
+            "response.reasoning.done": "#/components/schemas/OpenAI.ResponseReasoningDoneEvent",
+            "response.reasoning_summary.delta": "#/components/schemas/OpenAI.ResponseReasoningSummaryDeltaEvent",
+            "response.reasoning_summary.done": "#/components/schemas/OpenAI.ResponseReasoningSummaryDoneEvent",
+            "response.reasoning_summary_part.added": "#/components/schemas/OpenAI.ResponseReasoningSummaryPartAddedEvent",
+            "response.reasoning_summary_part.done": "#/components/schemas/OpenAI.ResponseReasoningSummaryPartDoneEvent",
+            "response.reasoning_summary_text.delta": "#/components/schemas/OpenAI.ResponseReasoningSummaryTextDeltaEvent",
+            "response.reasoning_summary_text.done": "#/components/schemas/OpenAI.ResponseReasoningSummaryTextDoneEvent",
+            "response.refusal.delta": "#/components/schemas/OpenAI.ResponseRefusalDeltaEvent",
+            "response.refusal.done": "#/components/schemas/OpenAI.ResponseRefusalDoneEvent",
+            "response.web_search_call.completed": "#/components/schemas/OpenAI.ResponseWebSearchCallCompletedEvent",
+            "response.web_search_call.in_progress": "#/components/schemas/OpenAI.ResponseWebSearchCallInProgressEvent",
+            "response.web_search_call.searching": "#/components/schemas/OpenAI.ResponseWebSearchCallSearchingEvent"
+          },
+          "propertyName": "type"
+        },
+        "properties": {
+          "sequence_number": {
+            "description": "The sequence number for this event.",
+            "format": "int32",
             "type": "integer"
           },
+          "type": {
+            "$ref": "#/components/schemas/OpenAI.ResponseStreamEventType"
+          }
+        },
+        "required": [
+          "type",
+          "sequence_number"
+        ],
+        "type": "object"
+      },
+      "OpenAI.ResponseStreamEventType": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "enum": [
+              "response.audio.delta",
+              "response.audio.done",
+              "response.audio_transcript.delta",
+              "response.audio_transcript.done",
+              "response.code_interpreter_call_code.delta",
+              "response.code_interpreter_call_code.done",
+              "response.code_interpreter_call.completed",
+              "response.code_interpreter_call.in_progress",
+              "response.code_interpreter_call.interpreting",
+              "response.completed",
+              "response.content_part.added",
+              "response.content_part.done",
+              "response.created",
+              "error",
+              "response.file_search_call.completed",
+              "response.file_search_call.in_progress",
+              "response.file_search_call.searching",
+              "response.function_call_arguments.delta",
+              "response.function_call_arguments.done",
+              "response.in_progress",
+              "response.failed",
+              "response.incomplete",
+              "response.output_item.added",
+              "response.output_item.done",
+              "response.refusal.delta",
+              "response.refusal.done",
+              "response.output_text.annotation.added",
+              "response.output_text.delta",
+              "response.output_text.done",
+              "response.reasoning_summary_part.added",
+              "response.reasoning_summary_part.done",
+              "response.reasoning_summary_text.delta",
+              "response.reasoning_summary_text.done",
+              "response.web_search_call.completed",
+              "response.web_search_call.in_progress",
+              "response.web_search_call.searching",
+              "response.image_generation_call.completed",
+              "response.image_generation_call.generating",
+              "response.image_generation_call.in_progress",
+              "response.image_generation_call.partial_image",
+              "response.mcp_call.arguments_delta",
+              "response.mcp_call.arguments_done",
+              "response.mcp_call.completed",
+              "response.mcp_call.failed",
+              "response.mcp_call.in_progress",
+              "response.mcp_list_tools.completed",
+              "response.mcp_list_tools.failed",
+              "response.mcp_list_tools.in_progress",
+              "response.queued",
+              "response.reasoning.delta",
+              "response.reasoning.done",
+              "response.reasoning_summary.delta",
+              "response.reasoning_summary.done"
+            ],
+            "type": "string"
+          }
+        ]
+      },
+      "OpenAI.ResponseTextFormatConfiguration": {
+        "discriminator": {
+          "mapping": {
+            "json_object": "#/components/schemas/OpenAI.ResponseTextFormatConfigurationJsonObject",
+            "json_schema": "#/components/schemas/OpenAI.ResponseTextFormatConfigurationJsonSchema",
+            "text": "#/components/schemas/OpenAI.ResponseTextFormatConfigurationText"
+          },
+          "propertyName": "type"
+        },
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/OpenAI.ResponseTextFormatConfigurationType"
+          }
+        },
+        "required": [
+          "type"
+        ],
+        "type": "object"
+      },
+      "OpenAI.ResponseTextFormatConfigurationType": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "enum": [
+              "text",
+              "json_schema",
+              "json_object"
+            ],
+            "type": "string"
+          }
+        ],
+        "description": "An object specifying the format that the model must output.\n\nConfiguring `{ \"type\": \"json_schema\" }` enables Structured Outputs,\nwhich ensures the model will match your supplied JSON schema. Learn more in the\n[Structured Outputs guide](/docs/guides/structured-outputs).\n\nThe default format is `{ \"type\": \"text\" }` with no additional options.\n\n**Not recommended for gpt-4o and newer models:**\n\nSetting to `{ \"type\": \"json_object\" }` enables the older JSON mode, which\nensures the message the model generates is valid JSON. Using `json_schema`\nis preferred for models that support it."
+      },
+      "OpenAI.ResponseUsage": {
+        "description": "Represents token usage details including input tokens, output tokens,\na breakdown of output tokens, and the total tokens used.",
+        "properties": {
+          "input_tokens": {
+            "description": "The number of input tokens.",
+            "format": "int32",
+            "type": "integer"
+          },
+          "input_tokens_details": {
+            "description": "A detailed breakdown of the input tokens.",
+            "properties": {
+              "cached_tokens": {
+                "description": "The number of tokens that were retrieved from the cache.\n[More on prompt caching](/docs/guides/prompt-caching).",
+                "format": "int32",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "cached_tokens"
+            ],
+            "type": "object"
+          },
+          "output_tokens": {
+            "description": "The number of output tokens.",
+            "format": "int32",
+            "type": "integer"
+          },
+          "output_tokens_details": {
+            "description": "A detailed breakdown of the output tokens.",
+            "properties": {
+              "reasoning_tokens": {
+                "description": "The number of reasoning tokens.",
+                "format": "int32",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "reasoning_tokens"
+            ],
+            "type": "object"
+          },
           "total_tokens": {
+            "description": "The total number of tokens used.",
+            "format": "int32",
             "type": "integer"
           }
         },
+        "required": [
+          "input_tokens",
+          "input_tokens_details",
+          "output_tokens",
+          "output_tokens_details",
+          "total_tokens"
+        ],
         "type": "object"
+      },
+      "OpenAI.Tool": {
+        "discriminator": {
+          "mapping": {
+            "code_interpreter": "#/components/schemas/OpenAI.CodeInterpreterTool",
+            "computer_use_preview": "#/components/schemas/OpenAI.ComputerUsePreviewTool",
+            "file_search": "#/components/schemas/OpenAI.FileSearchTool",
+            "function": "#/components/schemas/OpenAI.FunctionTool",
+            "image_generation": "#/components/schemas/OpenAI.ImageGenTool",
+            "local_shell": "#/components/schemas/OpenAI.LocalShellTool",
+            "mcp": "#/components/schemas/OpenAI.MCPTool",
+            "web_search_preview": "#/components/schemas/OpenAI.WebSearchPreviewTool"
+          },
+          "propertyName": "type"
+        },
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/OpenAI.ToolType"
+          }
+        },
+        "required": [
+          "type"
+        ],
+        "type": "object"
+      },
+      "OpenAI.ToolChoiceObject": {
+        "discriminator": {
+          "mapping": {
+            "code_interpreter": "#/components/schemas/OpenAI.ToolChoiceObjectCodeInterpreter",
+            "computer_use_preview": "#/components/schemas/OpenAI.ToolChoiceObjectComputer",
+            "file_search": "#/components/schemas/OpenAI.ToolChoiceObjectFileSearch",
+            "function": "#/components/schemas/OpenAI.ToolChoiceObjectFunction",
+            "image_generation": "#/components/schemas/OpenAI.ToolChoiceObjectImageGen",
+            "mcp": "#/components/schemas/OpenAI.ToolChoiceObjectMCP",
+            "web_search_preview": "#/components/schemas/OpenAI.ToolChoiceObjectWebSearch"
+          },
+          "propertyName": "type"
+        },
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/OpenAI.ToolChoiceObjectType"
+          }
+        },
+        "required": [
+          "type"
+        ],
+        "type": "object"
+      },
+      "OpenAI.ToolChoiceObjectType": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "enum": [
+              "file_search",
+              "function",
+              "computer_use_preview",
+              "web_search_preview",
+              "image_generation",
+              "code_interpreter",
+              "mcp"
+            ],
+            "type": "string"
+          }
+        ],
+        "description": "Indicates that the model should use a built-in tool to generate a response.\n[Learn more about built-in tools](/docs/guides/tools)."
+      },
+      "OpenAI.ToolChoiceOptions": {
+        "description": "Controls which (if any) tool is called by the model.\n\n`none` means the model will not call any tool and instead generates a message.\n\n`auto` means the model can pick between generating a message or calling one or\nmore tools.\n\n`required` means the model must call one or more tools.",
+        "enum": [
+          "none",
+          "auto",
+          "required"
+        ],
+        "type": "string"
+      },
+      "OpenAI.ToolType": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "enum": [
+              "file_search",
+              "function",
+              "computer_use_preview",
+              "web_search_preview",
+              "mcp",
+              "code_interpreter",
+              "image_generation",
+              "local_shell"
+            ],
+            "type": "string"
+          }
+        ],
+        "description": "A tool that can be used to generate a response."
       }
     },
     "securitySchemes": {
@@ -316,20 +1386,35 @@
     }
   },
   "info": {
-    "description": "Azure OpenAI API for responses, embeddings, and file operations",
-    "title": "Azure OpenAI API",
-    "version": "2024-10-01-preview"
+    "license": {
+      "name": "MIT",
+      "url": "https://github.com/openai/openai-openapi/blob/master/LICENSE"
+    },
+    "title": "Azure AI Foundry Models Service",
+    "version": "v1"
   },
-  "openapi": "3.0.1",
+  "openapi": "3.0.0",
   "paths": {
     "/embeddings": {
       "post": {
         "operationId": "createEmbedding",
+        "parameters": [
+          {
+            "description": "The explicit Azure AI Foundry Models API version to use for this request.\n`v1` if not otherwise specified.",
+            "in": "query",
+            "name": "api-version",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/AzureAIFoundryModelsApiVersion",
+              "default": "v1"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/EmbeddingsRequest"
+                "$ref": "#/components/schemas/AzureCreateEmbeddingRequest"
               }
             }
           },
@@ -340,46 +1425,139 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EmbeddingsResponse"
+                  "$ref": "#/components/schemas/OpenAI.CreateEmbeddingResponse"
                 }
               }
             },
-            "description": "Success"
+            "description": "The request has succeeded.",
+            "headers": {
+              "apim-request-id": {
+                "description": "A request ID used for troubleshooting purposes.",
+                "required": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AzureErrorResponse"
+                }
+              }
+            },
+            "description": "An unexpected error response.",
+            "headers": {
+              "apim-request-id": {
+                "description": "A request ID used for troubleshooting purposes.",
+                "required": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           }
         },
-        "summary": "Create embeddings",
+        "summary": "Creates an embedding vector representing the input text.",
         "tags": [
           "Embeddings"
-        ]
+        ],
+        "x-ms-examples": {
+          "Create an embedding request": {
+            "$ref": "./examples/embeddings.yaml"
+          }
+        }
       }
     },
     "/files": {
       "get": {
         "operationId": "listFiles",
+        "parameters": [
+          {
+            "description": "The explicit Azure AI Foundry Models API version to use for this request.\n`v1` if not otherwise specified.",
+            "in": "query",
+            "name": "api-version",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/AzureAIFoundryModelsApiVersion",
+              "default": "v1"
+            }
+          },
+          {
+            "explode": false,
+            "in": "query",
+            "name": "purpose",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FileListResponse"
+                  "$ref": "#/components/schemas/AzureListFilesResponse"
                 }
               }
             },
-            "description": "Success"
+            "description": "The request has succeeded.",
+            "headers": {
+              "apim-request-id": {
+                "description": "A request ID used for troubleshooting purposes.",
+                "required": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AzureErrorResponse"
+                }
+              }
+            },
+            "description": "An unexpected error response.",
+            "headers": {
+              "apim-request-id": {
+                "description": "A request ID used for troubleshooting purposes.",
+                "required": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           }
         },
-        "summary": "List files",
         "tags": [
           "Files"
         ]
       },
       "post": {
-        "operationId": "uploadFile",
+        "operationId": "createFile",
+        "parameters": [
+          {
+            "description": "The explicit Azure AI Foundry Models API version to use for this request.\n`v1` if not otherwise specified.",
+            "in": "query",
+            "name": "api-version",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/AzureAIFoundryModelsApiVersion",
+              "default": "v1"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/FileUploadRequest"
+                "$ref": "#/components/schemas/AzureCreateFileRequestMultiPart"
               }
             }
           },
@@ -390,17 +1568,49 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FileResponse"
+                  "$ref": "#/components/schemas/AzureOpenAIFile"
                 }
               }
             },
-            "description": "Success"
+            "description": "The request has succeeded.",
+            "headers": {
+              "apim-request-id": {
+                "description": "A request ID used for troubleshooting purposes.",
+                "required": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AzureErrorResponse"
+                }
+              }
+            },
+            "description": "An unexpected error response.",
+            "headers": {
+              "apim-request-id": {
+                "description": "A request ID used for troubleshooting purposes.",
+                "required": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           }
         },
-        "summary": "Upload a file",
         "tags": [
           "Files"
-        ]
+        ],
+        "x-ms-examples": {
+          "Create a file request": {
+            "$ref": "./examples/files.yaml"
+          }
+        }
       }
     },
     "/files/{file_id}": {
@@ -408,6 +1618,17 @@
         "operationId": "deleteFile",
         "parameters": [
           {
+            "description": "The explicit Azure AI Foundry Models API version to use for this request.\n`v1` if not otherwise specified.",
+            "in": "query",
+            "name": "api-version",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/AzureAIFoundryModelsApiVersion",
+              "default": "v1"
+            }
+          },
+          {
+            "description": "The ID of the file to use for this request.",
             "in": "path",
             "name": "file_id",
             "required": true,
@@ -421,14 +1642,41 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DeleteResponse"
+                  "$ref": "#/components/schemas/OpenAI.DeleteFileResponse"
                 }
               }
             },
-            "description": "Success"
+            "description": "The request has succeeded.",
+            "headers": {
+              "apim-request-id": {
+                "description": "A request ID used for troubleshooting purposes.",
+                "required": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AzureErrorResponse"
+                }
+              }
+            },
+            "description": "An unexpected error response.",
+            "headers": {
+              "apim-request-id": {
+                "description": "A request ID used for troubleshooting purposes.",
+                "required": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           }
         },
-        "summary": "Delete a file",
         "tags": [
           "Files"
         ]
@@ -437,6 +1685,17 @@
         "operationId": "retrieveFile",
         "parameters": [
           {
+            "description": "The explicit Azure AI Foundry Models API version to use for this request.\n`v1` if not otherwise specified.",
+            "in": "query",
+            "name": "api-version",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/AzureAIFoundryModelsApiVersion",
+              "default": "v1"
+            }
+          },
+          {
+            "description": "The ID of the file to use for this request.",
             "in": "path",
             "name": "file_id",
             "required": true,
@@ -450,14 +1709,41 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FileResponse"
+                  "$ref": "#/components/schemas/AzureOpenAIFile"
                 }
               }
             },
-            "description": "Success"
+            "description": "The request has succeeded.",
+            "headers": {
+              "apim-request-id": {
+                "description": "A request ID used for troubleshooting purposes.",
+                "required": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AzureErrorResponse"
+                }
+              }
+            },
+            "description": "An unexpected error response.",
+            "headers": {
+              "apim-request-id": {
+                "description": "A request ID used for troubleshooting purposes.",
+                "required": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           }
         },
-        "summary": "Retrieve a file",
         "tags": [
           "Files"
         ]
@@ -465,15 +1751,17 @@
     },
     "/responses": {
       "post": {
+        "description": "Creates a model response.",
         "operationId": "createResponse",
         "parameters": [
           {
+            "description": "The explicit Azure AI Foundry Models API version to use for this request.\n`v1` if not otherwise specified.",
             "in": "query",
             "name": "api-version",
-            "required": true,
+            "required": false,
             "schema": {
-              "default": "preview",
-              "type": "string"
+              "$ref": "#/components/schemas/AzureAIFoundryModelsApiVersion",
+              "default": "v1"
             }
           }
         ],
@@ -481,7 +1769,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ResponsesRequest"
+                "$ref": "#/components/schemas/AzureCreateResponse"
               }
             }
           },
@@ -492,22 +1780,54 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ResponsesResponse"
+                  "$ref": "#/components/schemas/AzureResponse"
                 }
               },
               "text/event-stream": {
                 "schema": {
-                  "type": "string"
+                  "$ref": "#/components/schemas/OpenAI.ResponseStreamEvent"
                 }
               }
             },
-            "description": "Success"
+            "description": "The request has succeeded.",
+            "headers": {
+              "apim-request-id": {
+                "description": "A request ID used for troubleshooting purposes.",
+                "required": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AzureErrorResponse"
+                }
+              }
+            },
+            "description": "An unexpected error response.",
+            "headers": {
+              "apim-request-id": {
+                "description": "A request ID used for troubleshooting purposes.",
+                "required": false,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           }
         },
-        "summary": "Create a response",
         "tags": [
           "Responses"
-        ]
+        ],
+        "x-ms-examples": {
+          "Create a response request": {
+            "$ref": "./examples/responses.yaml"
+          }
+        }
       }
     }
   },
@@ -518,10 +1838,12 @@
   ],
   "servers": [
     {
-      "url": "https://{endpoint}/openai/v1",
+      "description": "Azure AI Foundry Models APIs",
+      "url": "{endpoint}/openai/v1",
       "variables": {
         "endpoint": {
-          "default": "example.openai.azure.com"
+          "default": "",
+          "description": "A supported Azure AI Foundry Models APIs endpoint, including protocol and hostname.\nFor example:\nhttps://westus.api.cognitive.microsoft.com)."
         }
       }
     }
