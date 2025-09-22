@@ -96,10 +96,12 @@ import SwiftAzureOpenAI
 
 - `SAOAIClient` (main client)
 - `ResponsesClient` (Python-style client at `client.responses`)
+- `EmbeddingsClient` (embeddings client at `client.embeddings`)
 - `SAOAIAzureConfiguration`, `SAOAIOpenAIConfiguration`
 - `SAOAIRequest`, `SAOAIMessage`, `SAOAIInputContent`
 - `SAOAIResponse`, `SAOAIOutput`, `SAOAIOutputContent`
 - `SAOAIStreamingResponse` (SSE events)
+- `SAOAIEmbeddingsRequest`, `SAOAIEmbeddingsResponse`, `SAOAIEmbedding`
 - `SAOAIReasoning`, `SAOAIText`
 - `SAOAITool`, `SAOAIJSONValue`
 - `APIResponse<T>`, `ResponseMetadata`, `RateLimitInfo`, `SAOAIError`, `ErrorResponse`
@@ -234,6 +236,98 @@ let functionStream = client.responses.createStreaming(
     previousResponseId: "resp_abc123"
 )
 for try await _ in functionStream { /* handle follow-up events */ }
+```
+
+### 🔍 Vector Embeddings
+
+SwiftAzureOpenAI provides comprehensive embeddings support with built-in similarity utilities:
+
+```swift
+// Create embeddings for a single text
+let response = try await client.embeddings.create(
+    text: "Swift is a powerful programming language",
+    model: "text-embedding-ada-002" // Azure: deployment name
+)
+
+// Access the embedding vector
+let embedding = response.data.first!
+print("Embedding dimensions: \(embedding.dimensions)")
+print("Embedding vector: \(embedding.vector)")
+```
+
+#### Batch Embeddings
+
+```swift
+let texts = [
+    "Swift programming language",
+    "Python programming language", 
+    "Machine learning algorithms",
+    "Database management systems"
+]
+
+let response = try await client.embeddings.create(
+    texts: texts,
+    model: "text-embedding-ada-002"
+)
+
+// Process all embeddings
+for embedding in response.data {
+    print("Text \(embedding.index): \(embedding.dimensions) dims")
+}
+```
+
+#### Cosine Similarity & Vector Operations
+
+```swift
+let embedding1 = response.data[0]
+let embedding2 = response.data[1]
+
+// Calculate similarity (returns value between -1.0 and 1.0)
+let similarity = embedding1.cosineSimilarity(with: embedding2)
+print("Similarity: \(similarity)")
+
+// Other distance metrics
+let euclideanDist = embedding1.euclideanDistance(with: embedding2)
+let dotProduct = embedding1.dotProduct(with: embedding2)
+```
+
+#### Semantic Search
+
+```swift
+let documents = [
+    "Swift is used for iOS development",
+    "Python is popular for AI and ML",
+    "JavaScript runs in web browsers",
+    "Rust focuses on memory safety"
+]
+
+// Find documents most similar to a query
+let results = try await client.embeddings.semanticSearch(
+    query: "mobile app development",
+    documents: documents,
+    model: "text-embedding-ada-002",
+    threshold: 0.7
+)
+
+for result in results {
+    print("Document: \(result.document) (similarity: \(result.similarity))")
+}
+```
+
+#### Advanced Similarity Search
+
+```swift
+// Find top-K most similar texts
+let similarities = try await client.embeddings.findSimilar(
+    query: "artificial intelligence",
+    candidates: documents,
+    model: "text-embedding-ada-002",
+    topK: 3
+)
+
+for (text, index, similarity) in similarities {
+    print("Rank \(index + 1): \(text) (\(similarity))")
+}
 ```
 
 ### File Input and Processing

@@ -17,10 +17,15 @@ public final class SAOAIClient: @unchecked Sendable {
     public lazy var files: FilesClient = {
         FilesClient(httpClient: httpClient, responseService: responseService, configuration: configuration)
     }()
+    
+    /// Embeddings client for generating vector embeddings
+    public lazy var embeddings: EmbeddingsClient = {
+        EmbeddingsClient(httpClient: httpClient, responseService: responseService, configuration: configuration)
+    }()
 
     public init(configuration: SAOAIConfiguration, cache: ResponseCache? = nil, useOptimizedService: Bool = true) {
         self.configuration = configuration
-        self.httpClient = HTTPClient(configuration: configuration)
+        self.httpClient = HTTPClient(configuration: configuration, session: nil, maxRetries: 2)
         
         // Use optimized service by default for better performance
         if useOptimizedService {
