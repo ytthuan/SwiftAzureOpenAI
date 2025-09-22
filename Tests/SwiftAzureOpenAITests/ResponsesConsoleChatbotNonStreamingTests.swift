@@ -210,4 +210,5 @@ private struct TestableConfiguration: SAOAIConfiguration {
     var baseURL: URL { URL(string: "https://test.example.com")! }
     var headers: [String: String] { ["Authorization": "Bearer test"] }
     var sseLoggerConfiguration: SSELoggerConfiguration { .disabled }
+    var loggerConfiguration: LoggerConfiguration { .disabled }
 }

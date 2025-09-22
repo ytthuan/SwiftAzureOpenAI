@@ -158,4 +158,5 @@ private struct TestableConfiguration: SAOAIConfiguration {
     }
     
     var sseLoggerConfiguration: SSELoggerConfiguration { .disabled }
+    var loggerConfiguration: LoggerConfiguration { .disabled }
 }

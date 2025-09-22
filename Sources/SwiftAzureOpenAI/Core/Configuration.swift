@@ -4,6 +4,7 @@ public protocol SAOAIConfiguration: Sendable {
     var baseURL: URL { get }
     var headers: [String: String] { get }
     var sseLoggerConfiguration: SSELoggerConfiguration { get }
+    var loggerConfiguration: LoggerConfiguration { get }
 }
 
 public struct SAOAIAzureConfiguration: SAOAIConfiguration, Sendable {
@@ -12,13 +13,22 @@ public struct SAOAIAzureConfiguration: SAOAIConfiguration, Sendable {
     public let deploymentName: String
     public let apiVersion: String
     public let sseLoggerConfiguration: SSELoggerConfiguration
+    public let loggerConfiguration: LoggerConfiguration
 
-    public init(endpoint: String, apiKey: String, deploymentName: String, apiVersion: String = "preview", sseLoggerConfiguration: SSELoggerConfiguration = .disabled) {
+    public init(
+        endpoint: String, 
+        apiKey: String, 
+        deploymentName: String, 
+        apiVersion: String = "preview", 
+        sseLoggerConfiguration: SSELoggerConfiguration = .disabled,
+        loggerConfiguration: LoggerConfiguration = .disabled
+    ) {
         self.endpoint = endpoint
         self.apiKey = apiKey
         self.deploymentName = deploymentName
         self.apiVersion = apiVersion
         self.sseLoggerConfiguration = sseLoggerConfiguration
+        self.loggerConfiguration = loggerConfiguration
     }
 
     public var baseURL: URL {
@@ -41,11 +51,18 @@ public struct SAOAIOpenAIConfiguration: SAOAIConfiguration, Sendable {
     public let apiKey: String
     public let organization: String?
     public let sseLoggerConfiguration: SSELoggerConfiguration
+    public let loggerConfiguration: LoggerConfiguration
 
-    public init(apiKey: String, organization: String? = nil, sseLoggerConfiguration: SSELoggerConfiguration = .disabled) {
+    public init(
+        apiKey: String, 
+        organization: String? = nil, 
+        sseLoggerConfiguration: SSELoggerConfiguration = .disabled,
+        loggerConfiguration: LoggerConfiguration = .disabled
+    ) {
         self.apiKey = apiKey
         self.organization = organization
         self.sseLoggerConfiguration = sseLoggerConfiguration
+        self.loggerConfiguration = loggerConfiguration
     }
 
     public var baseURL: URL {

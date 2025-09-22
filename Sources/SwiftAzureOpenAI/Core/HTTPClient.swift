@@ -3,47 +3,155 @@ import Foundation
 import FoundationNetworking
 #endif
 
+/// Configuration for HTTP client timeouts and retry behavior
+public struct HTTPClientConfiguration: Sendable {
+    public let maxRetries: Int
+    public let globalTimeoutInterval: TimeInterval
+    public let shouldRetryOnStatusCode: @Sendable (Int) -> Bool
+    
+    public init(
+        maxRetries: Int = 2,
+        globalTimeoutInterval: TimeInterval = 60,
+        shouldRetryOnStatusCode: @escaping @Sendable (Int) -> Bool = HTTPClientConfiguration.defaultRetryStrategy
+    ) {
+        self.maxRetries = maxRetries
+        self.globalTimeoutInterval = globalTimeoutInterval
+        self.shouldRetryOnStatusCode = shouldRetryOnStatusCode
+    }
+    
+    /// Default retry strategy: retry on 429 (rate limit) and 5xx (server errors)
+    public static func defaultRetryStrategy(statusCode: Int) -> Bool {
+        return statusCode == 429 || (500...599).contains(statusCode)
+    }
+}
+
 public struct APIRequest: Sendable {
     public let method: String
     public let url: URL
     public let headers: [String: String]
     public let body: Data?
+    public let timeoutInterval: TimeInterval?
 
-    public init(method: String = "POST", url: URL, headers: [String: String] = [:], body: Data? = nil) {
+    public init(
+        method: String = "POST", 
+        url: URL, 
+        headers: [String: String] = [:], 
+        body: Data? = nil,
+        timeoutInterval: TimeInterval? = nil
+    ) {
         self.method = method
         self.url = url
         self.headers = headers
         self.body = body
+        self.timeoutInterval = timeoutInterval
     }
 }
 
-public final class HTTPClient: @unchecked Sendable {
+/// Protocol for HTTP client abstraction to enable testing and different implementations
+public protocol HTTPClientProtocol: Sendable {
+    func send(_ request: APIRequest) async throws -> (Data, HTTPURLResponse)
+    func sendStreaming(_ request: APIRequest) -> AsyncThrowingStream<Data, Error>
+}
+
+public final class HTTPClient: HTTPClientProtocol, @unchecked Sendable {
     private let configuration: SAOAIConfiguration
     private let urlSession: URLSession
-    private let maxRetries: Int
+    private let httpConfig: HTTPClientConfiguration
+    private let logger: InternalLogger
 
+    /// Primary initializer for backward compatibility
     public init(configuration: SAOAIConfiguration, session: URLSession? = nil, maxRetries: Int = 2) {
+        let httpConfig = HTTPClientConfiguration(maxRetries: maxRetries)
         self.configuration = configuration
         self.urlSession = session ?? OptimizedURLSession.shared.urlSession
-        self.maxRetries = maxRetries
+        self.httpConfig = httpConfig
+        self.logger = InternalLogger(config: configuration.loggerConfiguration)
+    }
+    
+    /// Advanced initializer with full HTTP configuration
+    public init(
+        configuration: SAOAIConfiguration, 
+        session: URLSession? = nil, 
+        httpConfig: HTTPClientConfiguration
+    ) {
+        self.configuration = configuration
+        self.urlSession = session ?? OptimizedURLSession.shared.urlSession
+        self.httpConfig = httpConfig
+        self.logger = InternalLogger(config: configuration.loggerConfiguration)
     }
 
     public func send(_ request: APIRequest) async throws -> (Data, HTTPURLResponse) {
+        let requestId = UUID().uuidString
+        let startTime = Date()
         var attempts = 0
         var lastError: Error?
+        
+        let logContext = LogContext(
+            requestId: requestId,
+            endpoint: request.url.absoluteString,
+            method: request.method
+        )
+        
+        logger.info("Starting HTTP request", context: logContext)
 
-        while attempts <= maxRetries {
+        while attempts <= httpConfig.maxRetries {
             do {
                 let urlRequest = try buildURLRequest(from: request)
+                
+                if attempts > 0 {
+                    let retryContext = LogContext(
+                        requestId: requestId,
+                        endpoint: request.url.absoluteString,
+                        method: request.method,
+                        retryAttempt: attempts
+                    )
+                    logger.info("Retrying HTTP request", context: retryContext)
+                }
+                
                 let (data, response) = try await urlSession.data(for: urlRequest)
                 guard let http = response as? HTTPURLResponse else {
                     throw SAOAIError.networkError(URLError(.badServerResponse))
                 }
+                
+                let duration = Date().timeIntervalSince(startTime)
+                let responseContext = LogContext(
+                    requestId: requestId,
+                    endpoint: request.url.absoluteString,
+                    method: request.method,
+                    statusCode: http.statusCode,
+                    duration: duration,
+                    retryAttempt: attempts > 0 ? attempts : nil
+                )
+                
+                // Check if we should retry based on status code
+                if attempts < httpConfig.maxRetries && httpConfig.shouldRetryOnStatusCode(http.statusCode) {
+                    logger.warn("HTTP request failed, will retry", context: responseContext)
+                    attempts += 1
+                    let sleepMs = UInt64(pow(2.0, Double(attempts)) * 200.0)
+                    try? await Task.sleep(nanoseconds: sleepMs * 1_000_000)
+                    continue
+                }
+                
+                logger.info("HTTP request completed", context: responseContext)
                 return (data, http)
             } catch {
                 lastError = error
                 attempts += 1
-                if attempts > maxRetries { break }
+                
+                let errorContext = LogContext(
+                    requestId: requestId,
+                    endpoint: request.url.absoluteString,
+                    method: request.method,
+                    retryAttempt: attempts
+                )
+                
+                if attempts > httpConfig.maxRetries {
+                    logger.error("HTTP request failed after all retries", context: errorContext, error: error)
+                    break
+                } else {
+                    logger.warn("HTTP request failed, will retry", context: errorContext, error: error)
+                }
+                
                 let sleepMs = UInt64(pow(2.0, Double(attempts)) * 200.0)
                 try? await Task.sleep(nanoseconds: sleepMs * 1_000_000)
             }
@@ -65,7 +173,7 @@ public final class HTTPClient: @unchecked Sendable {
                     request.headers.forEach { finalHeaders[$0.key] = $0.value }
                     for (key, value) in finalHeaders { urlRequest.setValue(value, forHTTPHeaderField: key) }
                     urlRequest.httpBody = request.body
-                    urlRequest.timeoutInterval = 60
+                    urlRequest.timeoutInterval = request.timeoutInterval ?? httpConfig.globalTimeoutInterval
                     
                     // Add streaming headers if this is a streaming request
                     if request.headers["Accept"] == "text/event-stream" {
@@ -236,7 +344,9 @@ public final class HTTPClient: @unchecked Sendable {
         request.headers.forEach { finalHeaders[$0.key] = $0.value }
         for (key, value) in finalHeaders { urlRequest.setValue(value, forHTTPHeaderField: key) }
         urlRequest.httpBody = request.body
-        urlRequest.timeoutInterval = 60
+        
+        // Use request-specific timeout if provided, otherwise use global timeout
+        urlRequest.timeoutInterval = request.timeoutInterval ?? httpConfig.globalTimeoutInterval
         
         // Add streaming headers if this is a streaming request
         if request.headers["Accept"] == "text/event-stream" {

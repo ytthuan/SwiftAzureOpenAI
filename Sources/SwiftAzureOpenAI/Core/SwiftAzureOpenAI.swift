@@ -20,7 +20,7 @@ public final class SAOAIClient: @unchecked Sendable {
 
     public init(configuration: SAOAIConfiguration, cache: ResponseCache? = nil, useOptimizedService: Bool = true) {
         self.configuration = configuration
-        self.httpClient = HTTPClient(configuration: configuration)
+        self.httpClient = HTTPClient(configuration: configuration, session: nil, maxRetries: 2)
         
         // Use optimized service by default for better performance
         if useOptimizedService {
