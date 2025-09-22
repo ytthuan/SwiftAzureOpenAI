@@ -7,12 +7,12 @@ import FoundationNetworking
 public final class EmbeddingsClient: @unchecked Sendable {
     private let httpClient: HTTPClient
     private let responseService: ResponseServiceProtocol
-    private let configuration: SAOAIConfiguration
+    private let requestBuilder: AzureRequestBuilder
     
     internal init(httpClient: HTTPClient, responseService: ResponseServiceProtocol, configuration: SAOAIConfiguration) {
         self.httpClient = httpClient
         self.responseService = responseService
-        self.configuration = configuration
+        self.requestBuilder = AzureRequestBuilder.create(from: configuration)
     }
     
     /// Create embeddings for the given input
@@ -21,10 +21,9 @@ public final class EmbeddingsClient: @unchecked Sendable {
     public func create(_ request: SAOAIEmbeddingsRequest) async throws -> SAOAIEmbeddingsResponse {
         let jsonData = try SharedJSONEncoder.shared.encode(request)
         
-        let apiRequest = APIRequest(
+        let apiRequest = requestBuilder.buildRequest(
             method: "POST",
-            url: embeddingsEndpointURL(),
-            headers: configuration.headers,
+            endpoint: AzureRequestBuilder.Endpoint.embeddings,
             body: jsonData
         )
         
@@ -69,24 +68,6 @@ public final class EmbeddingsClient: @unchecked Sendable {
             dimensions: dimensions
         )
         return try await create(request)
-    }
-    
-    // MARK: - Private Methods
-    
-    /// Construct the embeddings endpoint URL
-    private func embeddingsEndpointURL() -> URL {
-        var embeddingsURL = configuration.baseURL
-        
-        // For Azure, replace the responses path with embeddings path
-        if embeddingsURL.absoluteString.contains("/openai/v1/responses") {
-            let urlString = embeddingsURL.absoluteString.replacingOccurrences(of: "/openai/v1/responses", with: "/openai/v1/embeddings")
-            embeddingsURL = URL(string: urlString) ?? embeddingsURL
-        } else {
-            // For OpenAI, replace the last path component
-            embeddingsURL = embeddingsURL.deletingLastPathComponent().appendingPathComponent("embeddings")
-        }
-        
-        return embeddingsURL
     }
 }
 

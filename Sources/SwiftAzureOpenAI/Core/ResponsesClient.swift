@@ -7,12 +7,14 @@ import FoundationNetworking
 public final class ResponsesClient {
     private let httpClient: HTTPClient
     private let responseService: ResponseServiceProtocol
+    private let requestBuilder: AzureRequestBuilder
     private let configuration: SAOAIConfiguration
     
     internal init(httpClient: HTTPClient, responseService: ResponseServiceProtocol, configuration: SAOAIConfiguration) {
         self.httpClient = httpClient
         self.responseService = responseService
-        self.configuration = configuration
+        self.requestBuilder = AzureRequestBuilder.create(from: configuration)
+        self.configuration = configuration // Keep for backward compatibility
     }
     
     /// Create a response with simple string input (Python-style)
@@ -336,32 +338,46 @@ public final class ResponsesClient {
     
     /// Retrieve a response by ID
     public func retrieve(_ responseId: String) async throws -> SAOAIResponse {
-        var retrieveURL = configuration.baseURL
-        retrieveURL = retrieveURL.appendingPathComponent(responseId)
+        let retrieveURL = requestBuilder.buildURL(for: AzureRequestBuilder.Endpoint.responses)
+            .appendingPathComponent(responseId)
         
-        let request = APIRequest(
+        let request = requestBuilder.buildRequest(
             method: "GET",
+            endpoint: AzureRequestBuilder.Endpoint.responses
+        )
+        // Override the URL to append the response ID
+        let customRequest = APIRequest(
+            method: request.method,
             url: retrieveURL,
-            headers: configuration.headers
+            headers: request.headers,
+            body: request.body,
+            timeoutInterval: request.timeoutInterval
         )
         
-        let (data, httpResponse) = try await httpClient.send(request)
+        let (data, httpResponse) = try await httpClient.send(customRequest)
         let result: APIResponse<SAOAIResponse> = try await responseService.processResponse(data, response: httpResponse, type: SAOAIResponse.self)
         return result.data
     }
     
     /// Delete a response by ID
     public func delete(_ responseId: String) async throws -> Bool {
-        var deleteURL = configuration.baseURL
-        deleteURL = deleteURL.appendingPathComponent(responseId)
+        let deleteURL = requestBuilder.buildURL(for: AzureRequestBuilder.Endpoint.responses)
+            .appendingPathComponent(responseId)
         
-        let request = APIRequest(
+        let request = requestBuilder.buildRequest(
             method: "DELETE",
+            endpoint: AzureRequestBuilder.Endpoint.responses
+        )
+        // Override the URL to append the response ID
+        let customRequest = APIRequest(
+            method: request.method,
             url: deleteURL,
-            headers: configuration.headers
+            headers: request.headers,
+            body: request.body,
+            timeoutInterval: request.timeoutInterval
         )
         
-        let (_, httpResponse) = try await httpClient.send(request)
+        let (_, httpResponse) = try await httpClient.send(customRequest)
         return httpResponse.statusCode == 200 || httpResponse.statusCode == 204
     }
     
@@ -370,10 +386,9 @@ public final class ResponsesClient {
     private func sendRequest(_ request: SAOAIRequest) async throws -> SAOAIResponse {
         let jsonData = try SharedJSONEncoder.shared.encode(request)
         
-        let apiRequest = APIRequest(
+        let apiRequest = requestBuilder.buildRequest(
             method: "POST",
-            url: configuration.baseURL,
-            headers: configuration.headers,
+            endpoint: AzureRequestBuilder.Endpoint.responses,
             body: jsonData
         )
         
