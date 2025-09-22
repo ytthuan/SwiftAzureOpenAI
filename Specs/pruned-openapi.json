@@ -1,0 +1,529 @@
+{
+  "components": {
+    "schemas": {
+      "ContentPart": {
+        "properties": {
+          "input_text": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type"
+        ],
+        "type": "object"
+      },
+      "DeleteResponse": {
+        "properties": {
+          "deleted": {
+            "type": "boolean"
+          },
+          "id": {
+            "type": "string"
+          },
+          "object": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "Embedding": {
+        "properties": {
+          "embedding": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array"
+          },
+          "index": {
+            "type": "integer"
+          },
+          "object": {
+            "enum": [
+              "embedding"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "EmbeddingsRequest": {
+        "properties": {
+          "dimensions": {
+            "description": "Number of dimensions for the embedding",
+            "type": "integer"
+          },
+          "encoding_format": {
+            "default": "float",
+            "enum": [
+              "float",
+              "base64"
+            ],
+            "type": "string"
+          },
+          "input": {
+            "description": "Text input to get embeddings for",
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ]
+          },
+          "model": {
+            "description": "The model to use for embeddings",
+            "type": "string"
+          },
+          "user": {
+            "description": "Unique identifier for the end-user",
+            "type": "string"
+          }
+        },
+        "required": [
+          "model",
+          "input"
+        ],
+        "type": "object"
+      },
+      "EmbeddingsResponse": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/Embedding"
+            },
+            "type": "array"
+          },
+          "model": {
+            "type": "string"
+          },
+          "object": {
+            "enum": [
+              "list"
+            ],
+            "type": "string"
+          },
+          "usage": {
+            "$ref": "#/components/schemas/TokenUsage"
+          }
+        },
+        "type": "object"
+      },
+      "FileListResponse": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/FileResponse"
+            },
+            "type": "array"
+          },
+          "object": {
+            "enum": [
+              "list"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "FileResponse": {
+        "properties": {
+          "bytes": {
+            "type": "integer"
+          },
+          "created_at": {
+            "type": "integer"
+          },
+          "filename": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "object": {
+            "enum": [
+              "file"
+            ],
+            "type": "string"
+          },
+          "purpose": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "FileUploadRequest": {
+        "properties": {
+          "file": {
+            "description": "The file to upload",
+            "format": "binary",
+            "type": "string"
+          },
+          "purpose": {
+            "description": "The purpose of the file upload",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file",
+          "purpose"
+        ],
+        "type": "object"
+      },
+      "InputMessage": {
+        "properties": {
+          "content": {
+            "items": {
+              "$ref": "#/components/schemas/ContentPart"
+            },
+            "type": "array"
+          },
+          "role": {
+            "enum": [
+              "user",
+              "assistant",
+              "system"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "role",
+          "content"
+        ],
+        "type": "object"
+      },
+      "OutputContentPart": {
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ResponseChoice": {
+        "properties": {
+          "finish_reason": {
+            "type": "string"
+          },
+          "index": {
+            "type": "integer"
+          },
+          "message": {
+            "$ref": "#/components/schemas/ResponseMessage"
+          }
+        },
+        "type": "object"
+      },
+      "ResponseMessage": {
+        "properties": {
+          "content": {
+            "items": {
+              "$ref": "#/components/schemas/OutputContentPart"
+            },
+            "type": "array"
+          },
+          "role": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ResponsesRequest": {
+        "properties": {
+          "input": {
+            "items": {
+              "$ref": "#/components/schemas/InputMessage"
+            },
+            "type": "array"
+          },
+          "max_output_tokens": {
+            "description": "Maximum number of tokens to generate",
+            "type": "integer"
+          },
+          "model": {
+            "description": "The model to use for generating responses",
+            "type": "string"
+          },
+          "stream": {
+            "description": "Whether to stream results",
+            "type": "boolean"
+          },
+          "temperature": {
+            "description": "Sampling temperature",
+            "type": "number"
+          }
+        },
+        "required": [
+          "model",
+          "input"
+        ],
+        "type": "object"
+      },
+      "ResponsesResponse": {
+        "properties": {
+          "choices": {
+            "items": {
+              "$ref": "#/components/schemas/ResponseChoice"
+            },
+            "type": "array"
+          },
+          "created": {
+            "type": "integer"
+          },
+          "id": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "object": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "TokenUsage": {
+        "properties": {
+          "prompt_tokens": {
+            "type": "integer"
+          },
+          "total_tokens": {
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "in": "header",
+        "name": "api-key",
+        "type": "apiKey"
+      }
+    }
+  },
+  "info": {
+    "description": "Azure OpenAI API for responses, embeddings, and file operations",
+    "title": "Azure OpenAI API",
+    "version": "2024-10-01-preview"
+  },
+  "openapi": "3.0.1",
+  "paths": {
+    "/embeddings": {
+      "post": {
+        "operationId": "createEmbedding",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmbeddingsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmbeddingsResponse"
+                }
+              }
+            },
+            "description": "Success"
+          }
+        },
+        "summary": "Create embeddings",
+        "tags": [
+          "Embeddings"
+        ]
+      }
+    },
+    "/files": {
+      "get": {
+        "operationId": "listFiles",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileListResponse"
+                }
+              }
+            },
+            "description": "Success"
+          }
+        },
+        "summary": "List files",
+        "tags": [
+          "Files"
+        ]
+      },
+      "post": {
+        "operationId": "uploadFile",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/FileUploadRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileResponse"
+                }
+              }
+            },
+            "description": "Success"
+          }
+        },
+        "summary": "Upload a file",
+        "tags": [
+          "Files"
+        ]
+      }
+    },
+    "/files/{file_id}": {
+      "delete": {
+        "operationId": "deleteFile",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "file_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteResponse"
+                }
+              }
+            },
+            "description": "Success"
+          }
+        },
+        "summary": "Delete a file",
+        "tags": [
+          "Files"
+        ]
+      },
+      "get": {
+        "operationId": "retrieveFile",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "file_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileResponse"
+                }
+              }
+            },
+            "description": "Success"
+          }
+        },
+        "summary": "Retrieve a file",
+        "tags": [
+          "Files"
+        ]
+      }
+    },
+    "/responses": {
+      "post": {
+        "operationId": "createResponse",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "api-version",
+            "required": true,
+            "schema": {
+              "default": "preview",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResponsesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponsesResponse"
+                }
+              },
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Success"
+          }
+        },
+        "summary": "Create a response",
+        "tags": [
+          "Responses"
+        ]
+      }
+    }
+  },
+  "security": [
+    {
+      "ApiKeyAuth": []
+    }
+  ],
+  "servers": [
+    {
+      "url": "https://{endpoint}/openai/v1",
+      "variables": {
+        "endpoint": {
+          "default": "example.openai.azure.com"
+        }
+      }
+    }
+  ]
+}
