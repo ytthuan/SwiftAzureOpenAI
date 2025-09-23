@@ -9,7 +9,7 @@ final class ConfigurationTests: XCTestCase {
         XCTAssertEqual(baseURL.scheme, "https")
         
         // Use expected values from environment variables or defaults
-        let expectedHost = URL(string: TestEnvironmentHelper.azureEndpoint)?.host ?? "test.openai.azure.com"
+        let expectedHost = URL(string: TestEnvironmentHelper.azureEndpoint)?.host ?? "192.0.2.1"
         XCTAssertEqual(baseURL.host, expectedHost)
         XCTAssertEqual(baseURL.path, "/openai/v1/responses")
 

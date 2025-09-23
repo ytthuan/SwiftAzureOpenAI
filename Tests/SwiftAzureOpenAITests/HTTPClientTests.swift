@@ -120,7 +120,7 @@ final class HTTPClientTests: XCTestCase {
         // Test with various URL formats
         let urls = [
             "https://api.openai.com/v1/responses",
-            "https://test.openai.azure.com/openai/v1/responses?api-version=preview",
+            "https://192.0.2.1/openai/v1/responses?api-version=preview",
             "http://localhost:8080/test",
             "https://api.example.com/path/with/multiple/segments"
         ]

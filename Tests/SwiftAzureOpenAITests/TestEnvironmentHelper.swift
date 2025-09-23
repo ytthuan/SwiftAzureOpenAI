@@ -8,7 +8,7 @@ enum TestEnvironmentHelper {
     
     /// Retrieves Azure OpenAI endpoint from environment variables
     static var azureEndpoint: String {
-        ProcessInfo.processInfo.environment["AZURE_OPENAI_ENDPOINT"] ?? "https://test.openai.azure.com"
+        ProcessInfo.processInfo.environment["AZURE_OPENAI_ENDPOINT"] ?? "https://192.0.2.1"
     }
     
     /// Retrieves Azure OpenAI API key from environment variables with proper fallback

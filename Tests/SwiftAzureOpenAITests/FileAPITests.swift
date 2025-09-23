@@ -9,7 +9,7 @@ final class FileAPITests: XCTestCase {
         super.setUp()
         // Use test configuration
         let config = SAOAIAzureConfiguration(
-            endpoint: "https://test.openai.azure.com",
+            endpoint: "https://192.0.2.1",
             apiKey: "test-api-key",
             deploymentName: "gpt-4o",
             apiVersion: "preview"

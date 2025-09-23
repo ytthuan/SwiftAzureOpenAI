@@ -70,7 +70,7 @@ final class NonStreamingPerformanceTests: XCTestCase {
     
     private func createMockHTTPResponse(statusCode: Int = 200) -> HTTPURLResponse {
         return HTTPURLResponse(
-            url: URL(string: "https://test.openai.azure.com/openai/v1/responses")!,
+            url: URL(string: "https://192.0.2.1/openai/v1/responses")!,
             statusCode: statusCode,
             httpVersion: "HTTP/1.1",
             headerFields: [

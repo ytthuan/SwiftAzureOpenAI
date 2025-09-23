@@ -312,7 +312,7 @@ final class SSELoggerAndCodeInterpreterTests: XCTestCase {
     func testConfigurationIntegration() {
         // Test Azure configuration with SSE logger
         let azureConfig = SAOAIAzureConfiguration(
-            endpoint: "https://test.openai.azure.com",
+            endpoint: "https://192.0.2.1",
             apiKey: "test-key",
             deploymentName: "test-deployment",
             sseLoggerConfiguration: .enabled(logFilePath: "/tmp/test.log")

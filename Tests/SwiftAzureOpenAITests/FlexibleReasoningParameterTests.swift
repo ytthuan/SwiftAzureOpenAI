@@ -125,7 +125,7 @@ final class FlexibleReasoningParameterTests: XCTestCase {
     func testResponsesClientWithFlexibleParameters() async throws {
         // Mock configuration for testing
         let config = SAOAIAzureConfiguration(
-            endpoint: "https://test.openai.azure.com",
+            endpoint: "https://192.0.2.1",
             apiKey: "test-key",
             deploymentName: "test-deployment"
         )
@@ -151,7 +151,7 @@ final class FlexibleReasoningParameterTests: XCTestCase {
     func testStreamingResponsesClientWithFlexibleParameters() {
         // Mock configuration for testing
         let config = SAOAIAzureConfiguration(
-            endpoint: "https://test.openai.azure.com",
+            endpoint: "https://192.0.2.1",
             apiKey: "test-key",
             deploymentName: "test-deployment"
         )
