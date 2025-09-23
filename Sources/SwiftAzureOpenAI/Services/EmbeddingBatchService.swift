@@ -102,7 +102,6 @@ public final class EmbeddingBatchService: @unchecked Sendable {
         
         let semaphore = DispatchSemaphore(value: concurrencyLimit)
         var processedCount = 0
-        var retryCount = 0
         
         try await withThrowingTaskGroup(of: (Int, [SAOAIEmbedding]).self) { group in
             for (batchIndex, batch) in batches.enumerated() {
@@ -145,7 +144,7 @@ public final class EmbeddingBatchService: @unchecked Sendable {
             for try await (batchIndex, embeddings) in group {
                 batchResults.append((batchIndex, embeddings))
                 processedCount += embeddings.count
-                progressCallback?(processedCount, texts.count, retryCount)
+                progressCallback?(processedCount, texts.count, 0)
             }
             
             // Sort and combine results
