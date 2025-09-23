@@ -43,16 +43,25 @@ public final class EmbeddingBatchService: @unchecked Sendable {
         var allEmbeddings: [SAOAIEmbedding] = []
         allEmbeddings.reserveCapacity(texts.count)
         
-        // Process batches with concurrency limit using TaskGroup
+        // Process batches with concurrency limit using controlled task spawning
         return try await withThrowingTaskGroup(of: (Int, [SAOAIEmbedding]).self) { group in
-            let concurrentSemaphore = DispatchSemaphore(value: concurrencyLimit)
             var processedCount = 0
+            var activeTasks = 0
             
             for (batchIndex, batch) in batches.enumerated() {
+                // Wait if we've reached concurrency limit
+                while activeTasks >= concurrencyLimit {
+                    // Process one completed task to make room
+                    if let (_, completedEmbeddings) = try await group.next() {
+                        allEmbeddings.append(contentsOf: completedEmbeddings)
+                        processedCount += completedEmbeddings.count
+                        progressCallback?(processedCount, texts.count)
+                        activeTasks -= 1
+                    }
+                }
+                
+                // Add new task
                 group.addTask {
-                    concurrentSemaphore.wait()
-                    defer { concurrentSemaphore.signal() }
-                    
                     // Add delay between batches to avoid rate limiting
                     if batchIndex > 0 {
                         try await Task.sleep(nanoseconds: UInt64(self.delayBetweenBatches * 1_000_000_000))
@@ -61,9 +70,10 @@ public final class EmbeddingBatchService: @unchecked Sendable {
                     let response = try await self.client.create(texts: batch, model: model)
                     return (batchIndex, response.data)
                 }
+                activeTasks += 1
             }
             
-            // Collect results in order
+            // Collect remaining results
             var batchResults: [(Int, [SAOAIEmbedding])] = []
             for try await (batchIndex, embeddings) in group {
                 batchResults.append((batchIndex, embeddings))
@@ -100,15 +110,25 @@ public final class EmbeddingBatchService: @unchecked Sendable {
         var allEmbeddings: [SAOAIEmbedding] = []
         allEmbeddings.reserveCapacity(texts.count)
         
-        let semaphore = DispatchSemaphore(value: concurrencyLimit)
         var processedCount = 0
         
         try await withThrowingTaskGroup(of: (Int, [SAOAIEmbedding]).self) { group in
+            var activeTasks = 0
+            
             for (batchIndex, batch) in batches.enumerated() {
+                // Wait if we've reached concurrency limit
+                while activeTasks >= concurrencyLimit {
+                    // Process one completed task to make room
+                    if let (_, completedEmbeddings) = try await group.next() {
+                        allEmbeddings.append(contentsOf: completedEmbeddings)
+                        processedCount += completedEmbeddings.count
+                        progressCallback?(processedCount, texts.count, 0)
+                        activeTasks -= 1
+                    }
+                }
+                
+                // Add new task
                 group.addTask {
-                    semaphore.wait()
-                    defer { semaphore.signal() }
-                    
                     var attempts = 0
                     var lastError: Error?
                     
@@ -137,9 +157,10 @@ public final class EmbeddingBatchService: @unchecked Sendable {
                     
                     throw lastError ?? SAOAIError.timeoutError(30.0)
                 }
+                activeTasks += 1
             }
             
-            // Collect results
+            // Collect remaining results
             var batchResults: [(Int, [SAOAIEmbedding])] = []
             for try await (batchIndex, embeddings) in group {
                 batchResults.append((batchIndex, embeddings))
