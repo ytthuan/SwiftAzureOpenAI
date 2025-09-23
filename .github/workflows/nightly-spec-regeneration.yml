@@ -1,6 +1,7 @@
+---
 name: Nightly OpenAPI Spec Regeneration
 
-on:
+"on":
   schedule:
     # Run at 2 AM UTC daily
     - cron: '0 2 * * *'
@@ -16,233 +17,253 @@ jobs:
   regenerate-spec:
     runs-on: ubuntu-latest
     name: 🔄 Regenerate OpenAPI Specification
-    
+
     steps:
-    - name: 📋 Checkout Repository
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-        token: ${{ secrets.GITHUB_TOKEN }}
-    
-    - name: 🐍 Setup Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-    
-    - name: 📥 Download Latest Azure OpenAI Spec
-      id: download
-      run: |
-        echo "📡 Downloading latest Azure OpenAI API specification..."
-        
-        # Try multiple Azure OpenAI Response API spec URLs in order of preference
-        SPEC_URLS=(
-          "https://raw.githubusercontent.com/Azure/azure-rest-api-specs/main/specification/ai/data-plane/OpenAI.v1/azure-v1-v1-generated.json"
-          "https://raw.githubusercontent.com/Azure/azure-rest-api-specs/main/specification/cognitiveservices/data-plane/AzureOpenAI/inference/preview/2025-04-01-preview/inference.json"
-          "https://raw.githubusercontent.com/Azure/azure-rest-api-specs/main/specification/cognitiveservices/data-plane/AzureOpenAI/inference/stable/2024-10-21/inference.json"
-        )
-        
-        SUCCESS=false
-        for URL in "${SPEC_URLS[@]}"; do
-          echo "🔍 Trying: $URL"
-          if curl -s -f "$URL" -o Specs/azure-openai-full-new.json; then
-            echo "✅ Successfully downloaded from: $URL"
-            echo "source_url=$URL" >> $GITHUB_OUTPUT
-            SUCCESS=true
-            break
-          else
-            echo "❌ Failed to download from: $URL"
+      - name: 📋 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 📥 Download Latest Azure OpenAI Spec
+        id: download
+        run: |
+          echo "📡 Downloading latest Azure OpenAI API specification..."
+
+          # Try multiple Azure OpenAI Response API spec URLs
+          SPEC_URLS=(
+            "https://raw.githubusercontent.com/Azure/azure-rest-api-specs/main/specification/ai/data-plane/OpenAI.v1/azure-v1-v1-generated.json"
+            "https://raw.githubusercontent.com/Azure/azure-rest-api-specs/main/specification/cognitiveservices/data-plane/AzureOpenAI/inference/preview/2025-04-01-preview/inference.json"
+            "https://raw.githubusercontent.com/Azure/azure-rest-api-specs/main/specification/cognitiveservices/data-plane/AzureOpenAI/inference/stable/2024-10-21/inference.json"
+          )
+
+          SUCCESS=false
+          for URL in "${SPEC_URLS[@]}"; do
+            echo "🔍 Trying: $URL"
+            if curl -s -f "$URL" -o Specs/azure-openai-full-new.json; then
+              echo "✅ Successfully downloaded from: $URL"
+              echo "source_url=$URL" >> $GITHUB_OUTPUT
+              SUCCESS=true
+              break
+            else
+              echo "❌ Failed to download from: $URL"
+            fi
+          done
+
+          if [ "$SUCCESS" = false ]; then
+            echo "❌ All download attempts failed. Using fallback minimal spec."
+            # Create minimal spec as fallback
+            echo '{"openapi":"3.0.1","info":{"title":"Azure OpenAI API","version":"fallback"},"paths":{},"components":{"schemas":{}}}' \
+              > Specs/azure-openai-full-new.json
+            echo "source_url=fallback" >> $GITHUB_OUTPUT
           fi
-        done
-        
-        if [ "$SUCCESS" = false ]; then
-          echo "❌ All download attempts failed. Using fallback minimal spec."
-          # Create minimal spec as fallback
-          echo '{"openapi":"3.0.1","info":{"title":"Azure OpenAI API","version":"fallback"},"paths":{},"components":{"schemas":{}}}' > Specs/azure-openai-full-new.json
-          echo "source_url=fallback" >> $GITHUB_OUTPUT
-        fi
-    
-    - name: 📊 Check for Changes
-      id: check-changes
-      run: |
-        echo "🔍 Checking for changes in the downloaded specification..."
-        
-        # Compare new spec with existing one
-        if [ -f "Specs/azure-openai-full.json" ]; then
-          if cmp -s "Specs/azure-openai-full.json" "Specs/azure-openai-full-new.json"; then
-            echo "✅ No changes detected in source specification"
-            echo "changes_detected=false" >> $GITHUB_OUTPUT
+
+      - name: 📊 Check for Changes
+        id: check-changes
+        run: |
+          echo "🔍 Checking for changes in the downloaded specification..."
+
+          # Compare new spec with existing one
+          if [ -f "Specs/azure-openai-full.json" ]; then
+            if cmp -s "Specs/azure-openai-full.json" \
+                     "Specs/azure-openai-full-new.json"; then
+              echo "✅ No changes detected in source specification"
+              echo "changes_detected=false" >> $GITHUB_OUTPUT
+            else
+              echo "🔄 Changes detected in source specification"
+              echo "changes_detected=true" >> $GITHUB_OUTPUT
+
+              # Show diff summary
+              echo "📋 Diff summary:"
+              diff -u "Specs/azure-openai-full.json" \
+                      "Specs/azure-openai-full-new.json" | head -20 || true
+            fi
           else
-            echo "🔄 Changes detected in source specification"
+            echo "🆕 No existing specification found - treating as new"
             echo "changes_detected=true" >> $GITHUB_OUTPUT
-            
-            # Show diff summary
-            echo "📋 Diff summary:"
-            diff -u "Specs/azure-openai-full.json" "Specs/azure-openai-full-new.json" | head -20 || true
           fi
-        else
-          echo "🆕 No existing specification found - treating as new"
-          echo "changes_detected=true" >> $GITHUB_OUTPUT
-        fi
-    
-    - name: 🔄 Update Specification
-      if: steps.check-changes.outputs.changes_detected == 'true' || github.event.inputs.force_regeneration == 'true'
-      run: |
-        echo "📝 Updating specification files..."
-        mv Specs/azure-openai-full-new.json Specs/azure-openai-full.json
-        
-        # Record metadata about the update
-        cat > Specs/spec-metadata.json << EOF
-        {
-          "last_updated": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-          "source_url": "${{ steps.download.outputs.source_url }}",
-          "workflow_run": "${{ github.run_id }}",
-          "triggered_by": "${{ github.event_name }}"
-        }
-        EOF
-        
-        echo "✅ Specification files updated"
-    
-    - name: 🔧 Regenerate Pruned Specification
-      if: steps.check-changes.outputs.changes_detected == 'true' || github.event.inputs.force_regeneration == 'true'
-      run: |
-        echo "🔧 Regenerating pruned specification..."
-        python3 Scripts/prune-openapi-spec.py
-        echo "✅ Pruned specification regenerated"
-    
-    - name: 📊 Generate Diff Report
-      if: steps.check-changes.outputs.changes_detected == 'true' || github.event.inputs.force_regeneration == 'true'
-      id: diff-report
-      run: |
-        echo "📊 Generating detailed diff report..."
-        
-        # Create diff report
-        cat > diff-report.md << 'EOF'
-        # 🔄 OpenAPI Specification Update Report
-        
-        **Generated on:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
-        **Source:** ${{ steps.download.outputs.source_url }}
-        **Workflow Run:** https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        
-        ## Summary
-        
-        The Azure OpenAI API specification has been updated and the pruned specification has been regenerated.
-        
-        ## Files Updated
-        
-        - `Specs/azure-openai-full.json` - Full Azure OpenAI specification
-        - `Specs/pruned-openapi.json` - Pruned specification (responses, files, embeddings only)  
-        - `Specs/spec-metadata.json` - Update metadata
-        
-        ## Next Steps
-        
-        1. **Review Changes:** Examine the updated specifications for any breaking changes
-        2. **Update Generated Models:** Consider updating generated models in `Sources/SwiftAzureOpenAI/Generated/`
-        3. **Update Tests:** Ensure tests still pass with the updated specifications
-        4. **Update Documentation:** Update API documentation if needed
-        
-        ## Generated Models Location
-        
-        Generated Swift models should be placed in:
-        ```
-        Sources/SwiftAzureOpenAI/Generated/
-        ```
-        
-        ## Code Generation
-        
-        To regenerate Swift models from the pruned specification:
-        ```bash
-        # Use your preferred OpenAPI code generator
-        # Example with openapi-generator:
-        openapi-generator generate \
-          -i Specs/pruned-openapi.json \
-          -g swift5 \
-          -o Sources/SwiftAzureOpenAI/Generated/ \
-          --additional-properties=projectName=SwiftAzureOpenAI
-        ```
-        EOF
-        
-        echo "diff_report_created=true" >> $GITHUB_OUTPUT
-    
-    - name: 🔧 Build and Test
-      if: steps.check-changes.outputs.changes_detected == 'true' || github.event.inputs.force_regeneration == 'true'
-      run: |
-        echo "🔧 Building project to ensure no breaking changes..."
-        swift build
-        echo "✅ Build successful"
-        
-        echo "🧪 Running tests to ensure compatibility..."
-        swift test
-        echo "✅ Tests passed"
-    
-    - name: 📤 Commit Changes
-      if: steps.check-changes.outputs.changes_detected == 'true' || github.event.inputs.force_regeneration == 'true'
-      run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        
-        git add Specs/
-        
-        if git diff --cached --quiet; then
-          echo "📝 No changes to commit"
-        else
-          git commit -m "🔄 Automated OpenAPI specification update
-          
-          - Updated Azure OpenAI API specification
-          - Regenerated pruned specification  
-          - Source: ${{ steps.download.outputs.source_url }}
-          - Workflow: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          
-          [skip ci]"
-          
-          git push
-          echo "✅ Changes committed and pushed"
-        fi
-    
-    - name: 📋 Create Issue for Manual Review
-      if: steps.check-changes.outputs.changes_detected == 'true'
-      uses: actions/github-script@v7
-      with:
-        script: |
-          const fs = require('fs');
-          
-          // Read the diff report
-          const diffReport = fs.readFileSync('diff-report.md', 'utf8');
-          
-          // Create issue
-          const { data: issue } = await github.rest.issues.create({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            title: `🔄 OpenAPI Specification Updated - Manual Review Required`,
-            body: diffReport,
-            labels: ['enhancement', 'automated', 'openapi']
-          });
-          
-          console.log(`✅ Created issue #${issue.number} for manual review`);
-    
-    - name: 📊 Summary
-      if: always()
-      run: |
-        echo "🎯 Nightly OpenAPI Specification Regeneration Complete"
-        echo "=================================================="
-        
-        if [ "${{ steps.check-changes.outputs.changes_detected }}" = "true" ]; then
-          echo "✅ Changes detected and processed"
-          echo "📝 Specifications updated and committed"
-          echo "🔍 Issue created for manual review"
-        else
-          echo "✅ No changes detected - specifications up to date"
-        fi
-        
-        echo ""
-        echo "📁 Key Files:"
-        echo "   • Specs/azure-openai-full.json - Full specification" 
-        echo "   • Specs/pruned-openapi.json - Pruned for SwiftAzureOpenAI"
-        echo "   • Sources/SwiftAzureOpenAI/Generated/ - Generated models location"
-        echo ""
-        echo "🔗 Workflow: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-        
-    - name: 🧹 Cleanup
-      if: always()
-      run: |
-        # Clean up temporary files
-        rm -f Specs/azure-openai-full-new.json diff-report.md || true
+
+      - name: 🔄 Update Specification
+        if: >-
+          steps.check-changes.outputs.changes_detected == 'true' ||
+          github.event.inputs.force_regeneration == 'true'
+        run: |
+          echo "📝 Updating specification files..."
+          mv Specs/azure-openai-full-new.json Specs/azure-openai-full.json
+
+          # Record metadata about the update
+          cat > Specs/spec-metadata.json << EOF
+          {
+            "last_updated": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "source_url": "${{ steps.download.outputs.source_url }}",
+            "workflow_run": "${{ github.run_id }}",
+            "triggered_by": "${{ github.event_name }}"
+          }
+          EOF
+
+          echo "✅ Specification files updated"
+
+      - name: 🔧 Regenerate Pruned Specification
+        if: >-
+          steps.check-changes.outputs.changes_detected == 'true' ||
+          github.event.inputs.force_regeneration == 'true'
+        run: |
+          echo "🔧 Regenerating pruned specification..."
+          python3 Scripts/prune-openapi-spec.py
+          echo "✅ Pruned specification regenerated"
+
+      - name: 📊 Generate Diff Report
+        if: >-
+          steps.check-changes.outputs.changes_detected == 'true' ||
+          github.event.inputs.force_regeneration == 'true'
+        id: diff-report
+        run: |
+          echo "📊 Generating detailed diff report..."
+
+          # Create diff report
+          cat > diff-report.md << 'EOF'
+          # 🔄 OpenAPI Specification Update Report
+
+          **Generated on:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          **Source:** ${{ steps.download.outputs.source_url }}
+          **Workflow Run:** 
+          https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+          ## Summary
+
+          The Azure OpenAI API specification has been updated and the pruned
+          specification has been regenerated.
+
+          ## Files Updated
+
+          - `Specs/azure-openai-full.json` - Full Azure OpenAI specification
+          - `Specs/pruned-openapi.json` - Pruned specification
+            (responses, files, embeddings only)
+          - `Specs/spec-metadata.json` - Update metadata
+
+          ## Next Steps
+
+          1. **Review Changes:** Examine the updated specifications for any
+             breaking changes
+          2. **Update Generated Models:** Consider updating generated models in
+             `Sources/SwiftAzureOpenAI/Generated/`
+          3. **Update Tests:** Ensure tests still pass with updated specs
+          4. **Update Documentation:** Update API documentation if needed
+
+          ## Generated Models Location
+
+          Generated Swift models should be placed in:
+          ```
+          Sources/SwiftAzureOpenAI/Generated/
+          ```
+
+          ## Code Generation
+
+          To regenerate Swift models from the pruned specification:
+          ```bash
+          # Use your preferred OpenAPI code generator
+          # Example with openapi-generator:
+          openapi-generator generate \
+            -i Specs/pruned-openapi.json \
+            -g swift5 \
+            -o Sources/SwiftAzureOpenAI/Generated/ \
+            --additional-properties=projectName=SwiftAzureOpenAI
+          ```
+          EOF
+
+          echo "diff_report_created=true" >> $GITHUB_OUTPUT
+
+      - name: 🔧 Build and Test
+        if: >-
+          steps.check-changes.outputs.changes_detected == 'true' ||
+          github.event.inputs.force_regeneration == 'true'
+        run: |
+          echo "🔧 Building project to ensure no breaking changes..."
+          swift build
+          echo "✅ Build successful"
+
+          echo "🧪 Running tests to ensure compatibility..."
+          swift test
+          echo "✅ Tests passed"
+
+      - name: 📤 Commit Changes
+        if: >-
+          steps.check-changes.outputs.changes_detected == 'true' ||
+          github.event.inputs.force_regeneration == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+          git add Specs/
+
+          if git diff --cached --quiet; then
+            echo "📝 No changes to commit"
+          else
+            git commit -m "🔄 Automated OpenAI specification update
+
+            - Updated Azure OpenAI API specification
+            - Regenerated pruned specification
+            - Source: ${{ steps.download.outputs.source_url }}
+            - Workflow: 
+              https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            [skip ci]"
+
+            git push
+            echo "✅ Changes committed and pushed"
+          fi
+
+      - name: 📋 Create Issue for Manual Review
+        if: steps.check-changes.outputs.changes_detected == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+
+            // Read the diff report
+            const diffReport = fs.readFileSync('diff-report.md', 'utf8');
+
+            // Create issue
+            const { data: issue } = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              `🔄 OpenAPI Specification Updated - Manual Review Required`
+              body: diffReport,
+              labels: ['enhancement', 'automated', 'openapi']
+            });
+
+            console.log(`✅ Created issue #${issue.number} for manual review`);
+
+      - name: 📊 Summary
+        if: always()
+        run: |
+          echo "🎯 Nightly OpenAPI Specification Regeneration Complete"
+          echo "=================================================="
+
+          if [ "${{ steps.check-changes.outputs.changes_detected }}" = "true" ]; then
+            echo "✅ Changes detected and processed"
+            echo "📝 Specifications updated and committed"
+            echo "🔍 Issue created for manual review"
+          else
+            echo "✅ No changes detected - specifications up to date"
+          fi
+
+          echo ""
+          echo "📁 Key Files:"
+          echo "   • Specs/azure-openai-full.json - Full specification"
+          echo "   • Specs/pruned-openapi.json - Pruned for SwiftAzureOpenAI"
+          echo "   • Sources/SwiftAzureOpenAI/Generated/ - Generated models location"
+          echo ""
+          echo "🔗 Workflow: 
+          https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+      - name: 🧹 Cleanup
+        if: always()
+        run: |
+          # Clean up temporary files
+          rm -f Specs/azure-openai-full-new.json diff-report.md || true
