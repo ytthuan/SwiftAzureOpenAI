@@ -232,7 +232,7 @@ jobs:
             const { data: issue } = await github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              `🔄 OpenAPI Specification Updated - Manual Review Required`
+              title: '🔄 OpenAPI Specification Updated - Manual Review Required',
               body: diffReport,
               labels: ['enhancement', 'automated', 'openapi']
             });
