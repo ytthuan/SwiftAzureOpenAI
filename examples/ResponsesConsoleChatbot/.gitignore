@@ -13,3 +13,4 @@ xcuserdata/
 # Linux
 *.swp
 *.tmp
+.env
