@@ -122,54 +122,78 @@ final class FlexibleReasoningParameterTests: XCTestCase {
     
     // MARK: - Client API Tests
     
-    func testResponsesClientWithFlexibleParameters() async throws {
-        // Mock configuration for testing
+    func testResponsesClientWithFlexibleParameters() throws {
+        // Mock configuration for testing (no network calls)
         let config = SAOAIAzureConfiguration(
             endpoint: "https://192.0.2.1",
             apiKey: "test-key",
             deploymentName: "test-deployment"
         )
         
-        let client = SAOAIClient(configuration: config)
+        _ = SAOAIClient(configuration: config)
         let reasoning = SAOAIReasoning(effort: "medium", summary: "concise")
         let text = SAOAIText(verbosity: "low")
         
-        // Test that client accepts new parameters (this will fail on actual call but validates API surface)
-        do {
-            _ = try await client.responses.create(
-                model: "gpt-4o",
-                input: "Test input",
-                reasoning: reasoning,
-                text: text
-            )
-        } catch {
-            // Expected to fail since we don't have real credentials, but API surface is validated
-            XCTAssertTrue(error is SAOAIError || error is URLError)
-        }
-    }
-    
-    func testStreamingResponsesClientWithFlexibleParameters() {
-        // Mock configuration for testing
-        let config = SAOAIAzureConfiguration(
-            endpoint: "https://192.0.2.1",
-            apiKey: "test-key",
-            deploymentName: "test-deployment"
+        // Test API surface validation without network calls
+        // Validate that the request can be constructed with new parameters
+        let message = SAOAIMessage(
+            role: .user,
+            content: [.inputText(.init(text: "Test input"))]
         )
         
-        let client = SAOAIClient(configuration: config)
-        let reasoning = SAOAIReasoning(effort: "high", summary: "detailed")
-        let text = SAOAIText(verbosity: "high")
-        
-        // Test that streaming client accepts new parameters
-        let stream = client.responses.createStreaming(
+        let request = SAOAIRequest(
             model: "gpt-4o",
-            input: "Test streaming input",
+            input: [.message(message)],
             reasoning: reasoning,
             text: text
         )
         
-        // Validate that stream is created (actual streaming would require real API)
-        XCTAssertNotNil(stream)
+        // Verify the request structure is valid
+        XCTAssertEqual(request.reasoning?.effort, "medium")
+        XCTAssertEqual(request.reasoning?.summary, "concise")
+        XCTAssertEqual(request.text?.verbosity, "low")
+        
+        // Test JSON encoding works properly
+        let encoded = try JSONEncoder().encode(request)
+        XCTAssertGreaterThan(encoded.count, 0)
+    }
+    
+    func testStreamingResponsesClientWithFlexibleParameters() throws {
+        // Mock configuration for testing (no network calls)
+        let config = SAOAIAzureConfiguration(
+            endpoint: "https://192.0.2.1",
+            apiKey: "test-key",
+            deploymentName: "test-deployment"
+        )
+        
+        _ = SAOAIClient(configuration: config)
+        let reasoning = SAOAIReasoning(effort: "high", summary: "detailed")
+        let text = SAOAIText(verbosity: "high")
+        
+        // Test that streaming client accepts new parameters (API surface validation)
+        let message = SAOAIMessage(
+            role: .user,
+            content: [.inputText(.init(text: "Test streaming input"))]
+        )
+        
+        let request = SAOAIRequest(
+            model: "gpt-4o",
+            input: [.message(message)],
+            reasoning: reasoning,
+            text: text,
+            stream: true
+        )
+        
+        // Validate streaming request structure
+        XCTAssertEqual(request.reasoning?.effort, "high")
+        XCTAssertEqual(request.reasoning?.summary, "detailed")
+        XCTAssertEqual(request.text?.verbosity, "high")
+        XCTAssertTrue(request.stream == true)
+        
+        // Test JSON encoding works for streaming
+        let encoded = try JSONEncoder().encode(request)
+        let json = try JSONSerialization.jsonObject(with: encoded) as! [String: Any]
+        XCTAssertEqual(json["stream"] as? Bool, true)
     }
     
     // MARK: - Edge Cases and Validation
