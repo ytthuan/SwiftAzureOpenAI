@@ -46,21 +46,15 @@ public final class EmbeddingBatchService: @unchecked Sendable {
         // Process batches with concurrency limit using controlled task spawning
         return try await withThrowingTaskGroup(of: (Int, [SAOAIEmbedding]).self) { group in
             var processedCount = 0
-            var activeTasks = 0
+            var batchResults: [(Int, [SAOAIEmbedding])] = []
+            var nextBatchIndex = 0
+            let totalBatches = batches.count
             
-            for (batchIndex, batch) in batches.enumerated() {
-                // Wait if we've reached concurrency limit
-                while activeTasks >= concurrencyLimit {
-                    // Process one completed task to make room
-                    if let (_, completedEmbeddings) = try await group.next() {
-                        allEmbeddings.append(contentsOf: completedEmbeddings)
-                        processedCount += completedEmbeddings.count
-                        progressCallback?(processedCount, texts.count)
-                        activeTasks -= 1
-                    }
-                }
+            // Add initial tasks up to concurrency limit
+            while nextBatchIndex < totalBatches && nextBatchIndex < concurrencyLimit {
+                let batchIndex = nextBatchIndex
+                let batch = batches[batchIndex]
                 
-                // Add new task
                 group.addTask {
                     // Add delay between batches to avoid rate limiting
                     if batchIndex > 0 {
@@ -70,15 +64,31 @@ public final class EmbeddingBatchService: @unchecked Sendable {
                     let response = try await self.client.create(texts: batch, model: model)
                     return (batchIndex, response.data)
                 }
-                activeTasks += 1
+                nextBatchIndex += 1
             }
             
-            // Collect remaining results
-            var batchResults: [(Int, [SAOAIEmbedding])] = []
+            // Process completed tasks and add new ones
             for try await (batchIndex, embeddings) in group {
                 batchResults.append((batchIndex, embeddings))
                 processedCount += embeddings.count
                 progressCallback?(processedCount, texts.count)
+                
+                // Add next batch if available
+                if nextBatchIndex < totalBatches {
+                    let newBatchIndex = nextBatchIndex
+                    let newBatch = batches[newBatchIndex]
+                    
+                    group.addTask {
+                        // Add delay between batches to avoid rate limiting
+                        if newBatchIndex > 0 {
+                            try await Task.sleep(nanoseconds: UInt64(self.delayBetweenBatches * 1_000_000_000))
+                        }
+                        
+                        let response = try await self.client.create(texts: newBatch, model: model)
+                        return (newBatchIndex, response.data)
+                    }
+                    nextBatchIndex += 1
+                }
             }
             
             // Sort by batch index to maintain order
@@ -113,21 +123,15 @@ public final class EmbeddingBatchService: @unchecked Sendable {
         var processedCount = 0
         
         try await withThrowingTaskGroup(of: (Int, [SAOAIEmbedding]).self) { group in
-            var activeTasks = 0
+            var batchResults: [(Int, [SAOAIEmbedding])] = []
+            var nextBatchIndex = 0
+            let totalBatches = batches.count
             
-            for (batchIndex, batch) in batches.enumerated() {
-                // Wait if we've reached concurrency limit
-                while activeTasks >= concurrencyLimit {
-                    // Process one completed task to make room
-                    if let (_, completedEmbeddings) = try await group.next() {
-                        allEmbeddings.append(contentsOf: completedEmbeddings)
-                        processedCount += completedEmbeddings.count
-                        progressCallback?(processedCount, texts.count, 0)
-                        activeTasks -= 1
-                    }
-                }
+            // Add initial tasks up to concurrency limit
+            while nextBatchIndex < totalBatches && nextBatchIndex < concurrencyLimit {
+                let batchIndex = nextBatchIndex
+                let batch = batches[batchIndex]
                 
-                // Add new task
                 group.addTask {
                     var attempts = 0
                     var lastError: Error?
@@ -157,15 +161,51 @@ public final class EmbeddingBatchService: @unchecked Sendable {
                     
                     throw lastError ?? SAOAIError.timeoutError(30.0)
                 }
-                activeTasks += 1
+                nextBatchIndex += 1
             }
             
-            // Collect remaining results
-            var batchResults: [(Int, [SAOAIEmbedding])] = []
+            // Process completed tasks and add new ones
             for try await (batchIndex, embeddings) in group {
                 batchResults.append((batchIndex, embeddings))
                 processedCount += embeddings.count
                 progressCallback?(processedCount, texts.count, 0)
+                
+                // Add next batch if available
+                if nextBatchIndex < totalBatches {
+                    let newBatchIndex = nextBatchIndex
+                    let newBatch = batches[newBatchIndex]
+                    
+                    group.addTask {
+                        var attempts = 0
+                        var lastError: Error?
+                        
+                        while attempts <= maxRetries {
+                            do {
+                                // Add delay for retries and between batches
+                                if attempts > 0 || newBatchIndex > 0 {
+                                    let delay = attempts > 0 ? 
+                                        self.delayBetweenBatches * Double(attempts + 1) : 
+                                        self.delayBetweenBatches
+                                    try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+                                }
+                                
+                                let response = try await self.client.create(texts: newBatch, model: model)
+                                return (newBatchIndex, response.data)
+                            } catch {
+                                lastError = error
+                                attempts += 1
+                                
+                                // Only retry for certain types of errors
+                                if !self.shouldRetry(error: error) {
+                                    break
+                                }
+                            }
+                        }
+                        
+                        throw lastError ?? SAOAIError.timeoutError(30.0)
+                    }
+                    nextBatchIndex += 1
+                }
             }
             
             // Sort and combine results
