@@ -147,7 +147,7 @@ final class ResponsesClientTests: XCTestCase {
 /// A testable configuration that provides a valid URL and headers without making network calls
 private struct TestableConfiguration: SAOAIConfiguration {
     var baseURL: URL {
-        URL(string: "https://api.openai.com/v1/responses")!
+        URL(string: "https://192.0.2.1/openai/v1/responses")!
     }
     
     var headers: [String: String] {
