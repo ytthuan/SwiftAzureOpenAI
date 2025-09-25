@@ -147,10 +147,10 @@ public protocol EmbeddingBatchHelperProtocol {
 /// Foundation for the actual batch helper implementation
 /// This will be implemented in a future PR as part of Phase 4 completion
 public final class EmbeddingBatchHelper: EmbeddingBatchHelperProtocol {
-    private let client: SAOAIEmbeddingsClient
+    // Placeholder - will be replaced with actual embedding client when Phase 4 is complete
     
-    public init(client: SAOAIEmbeddingsClient) {
-        self.client = client
+    public init() {
+        // Placeholder initialization
     }
     
     public func processEmbeddings(

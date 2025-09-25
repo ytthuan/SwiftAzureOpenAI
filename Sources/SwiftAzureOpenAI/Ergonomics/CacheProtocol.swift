@@ -108,7 +108,7 @@ struct CacheEntry<T> {
 // MARK: - In-Memory Cache Implementation
 
 /// Thread-safe in-memory cache with LRU eviction and expiration support
-public class InMemoryCache<Key: Hashable, Value>: CacheProtocol {
+public class InMemoryCache<Key: Hashable & Sendable, Value: Sendable>: CacheProtocol, @unchecked Sendable {
     private let queue = DispatchQueue(label: "com.swiftazureopenai.cache", attributes: .concurrent)
     private var storage: [Key: CacheEntry<Value>] = [:]
     private var accessOrder: [Key] = []
@@ -191,7 +191,6 @@ public class InMemoryCache<Key: Hashable, Value>: CacheProtocol {
     
     private func evictIfNeeded() {
         // Remove expired entries first
-        let now = Date()
         let expiredKeys = storage.compactMap { key, entry in
             entry.isExpired ? key : nil
         }
@@ -212,7 +211,7 @@ public class InMemoryCache<Key: Hashable, Value>: CacheProtocol {
 // MARK: - Embedding Cache Implementation
 
 /// Specialized in-memory cache for embeddings
-public final class EmbeddingCache: InMemoryCache<String, SAOAIEmbedding>, EmbeddingCacheProtocol {
+public final class EmbeddingCache: InMemoryCache<String, SAOAIEmbedding>, EmbeddingCacheProtocol, @unchecked Sendable {
     
     public func cacheEmbedding(
         _ embedding: SAOAIEmbedding,
@@ -232,30 +231,14 @@ public final class EmbeddingCache: InMemoryCache<String, SAOAIEmbedding>, Embedd
     public func cacheKey(for text: String, model: String) -> String {
         // Create a deterministic cache key
         let combined = "\(model):\(text)"
-        return combined.sha256
+        return combined.simpleHash
     }
 }
 
-// MARK: - String SHA256 Extension
-
 extension String {
-    /// Simple SHA256 hash for cache keys
-    var sha256: String {
-        let data = self.data(using: .utf8) ?? Data()
-        let hash = data.withUnsafeBytes { bytes in
-            var hash = [UInt8](repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))
-            CC_SHA256(bytes.baseAddress, CC_LONG(data.count), &hash)
-            return hash
-        }
-        return hash.map { String(format: "%02x", $0) }.joined()
-    }
-}
-
-// Note: CC_SHA256 would need to be imported from CommonCrypto
-// For now, using a simple hash alternative
-extension String {
+    /// Simple hash for cache keys (avoiding CommonCrypto dependency)
     var simpleHash: String {
-        return String(self.hashValue)
+        return String(abs(self.hashValue))
     }
 }
 

@@ -159,13 +159,13 @@ public struct StreamingEvent: Sendable {
     public let timestamp: Date
     
     /// Additional data specific to the event type
-    public let data: [String: Any]
+    public let data: [String: String]  // Use String instead of Any for Sendable
     
     public init(
         correlationId: String,
         eventType: StreamingEventType,
         timestamp: Date = Date(),
-        data: [String: Any] = [:]
+        data: [String: String] = [:]
     ) {
         self.correlationId = correlationId
         self.eventType = eventType
@@ -174,7 +174,7 @@ public struct StreamingEvent: Sendable {
     }
 }
 
-public enum StreamingEventType {
+public enum StreamingEventType: Sendable {
     case streamStarted
     case chunkReceived(size: Int)
     case streamCompleted
@@ -211,7 +211,7 @@ public struct CacheEvent: Sendable {
     }
 }
 
-public enum CacheEventType {
+public enum CacheEventType: Sendable {
     case hit
     case miss
     case set
@@ -245,7 +245,7 @@ public struct CorrelationIdGenerator {
 public final class ConsoleMetricsDelegate: MetricsDelegate {
     private let logLevel: LogLevel
     
-    public enum LogLevel {
+    public enum LogLevel: Comparable {
         case minimal    // Only errors
         case normal     // Errors + completion
         case verbose    // All events

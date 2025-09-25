@@ -80,22 +80,18 @@ open class BaseModelAdapter {
 // MARK: - Adapter Registry
 
 /// Registry for managing model adapters
+@MainActor
 public final class ModelAdapterRegistry {
-    private static let queue = DispatchQueue(label: "com.swiftazureopenai.adapters", attributes: .concurrent)
     private static var adapters: [String: Any] = [:]
     
     /// Register an adapter for a specific model type
     public static func register<A: ModelAdapter>(_ adapter: A.Type, for key: String) {
-        queue.async(flags: .barrier) {
-            adapters[key] = adapter
-        }
+        adapters[key] = adapter
     }
     
     /// Get an adapter for a specific model type
     public static func adapter<A: ModelAdapter>(for key: String, as type: A.Type) -> A.Type? {
-        return queue.sync {
-            return adapters[key] as? A.Type
-        }
+        return adapters[key] as? A.Type
     }
     
     /// Initialize default adapters
@@ -112,12 +108,10 @@ extension SAOAIJSONValue {
         switch value {
         case let string as String:
             return .string(string)
+        case let bool as Bool:
+            return .bool(bool)
         case let number as NSNumber:
-            if number === kCFBooleanTrue || number === kCFBooleanFalse {
-                return .bool(number.boolValue)
-            } else {
-                return .number(number.doubleValue)
-            }
+            return .number(number.doubleValue)
         case let array as [Any]:
             let converted = array.compactMap { SAOAIJSONValue.from(any: $0) }
             return .array(converted)
