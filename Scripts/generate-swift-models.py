@@ -25,7 +25,17 @@ class SwiftModelGenerator:
             ref = schema['$ref']
             if ref.startswith('#/components/schemas/'):
                 ref_name = ref.replace('#/components/schemas/', '')
+                # Special handling for anyOf schemas - just use String
+                if ref_name in self.spec.get('components', {}).get('schemas', {}):
+                    ref_schema = self.spec['components']['schemas'][ref_name]
+                    if 'anyOf' in ref_schema:
+                        return 'String'
                 return self.swift_class_name(ref_name)
+        
+        # Handle anyOf schemas directly
+        if 'anyOf' in schema:
+            # For anyOf schemas that typically mix string and enum, use String
+            return 'String'
         
         schema_type = schema.get('type', 'string')
         schema_format = schema.get('format')
@@ -57,13 +67,10 @@ class SwiftModelGenerator:
             return f'[{item_type}]'
         elif schema_type == 'object':
             if 'properties' in schema:
-                # This is an inline object, we should generate a struct for it
-                if schema_name:
-                    return self.swift_class_name(schema_name)
-                else:
-                    return '[String: Any]'  # Fallback for anonymous objects
+                # For inline objects, use SAOAIJSONValue which is Codable and Equatable
+                return 'SAOAIJSONValue'
             else:
-                return '[String: Any]'
+                return 'SAOAIJSONValue'
         
         return 'Any'  # Fallback
     
@@ -73,10 +80,25 @@ class SwiftModelGenerator:
         name = name.replace('OpenAI.', '')
         name = name.replace('Azure', '')
         
+        # Handle special problematic names first
+        if name == 'expires_after':
+            return 'GeneratedExpiresAfter'
+        elif name == 'error':
+            return 'GeneratedError'
+        
         # Convert names to PascalCase
         if '.' in name:
             parts = name.split('.')
             name = ''.join(part.capitalize() for part in parts)
+        
+        # Convert snake_case to PascalCase
+        if '_' in name:
+            parts = name.split('_')
+            name = ''.join(part.capitalize() for part in parts)
+        
+        # Ensure first letter is capitalized
+        if name and name[0].islower():
+            name = name[0].upper() + name[1:]
         
         # Handle special cases
         name = name.replace('CreateEmbeddingRequest', 'EmbeddingRequest')
@@ -109,7 +131,19 @@ class SwiftModelGenerator:
         ]
         
         for value in enum_values:
-            case_name = value.lower().replace('-', '').replace('_', '')
+            # Create a valid Swift identifier from the enum value
+            case_name = value.lower()
+            # Replace dots, dashes, and other special characters
+            case_name = case_name.replace('.', '_').replace('-', '_').replace(' ', '_')
+            # Remove any other non-alphanumeric characters except underscores
+            case_name = ''.join(c if c.isalnum() or c == '_' else '_' for c in case_name)
+            # Ensure it doesn't start with a number
+            if case_name and case_name[0].isdigit():
+                case_name = f'case_{case_name}'
+            # Handle empty case names
+            if not case_name:
+                case_name = 'unknown'
+            
             lines.append(f'    case {case_name} = "{value}"')
         
         lines.extend([
@@ -118,6 +152,27 @@ class SwiftModelGenerator:
         ])
         
         return '\n'.join(lines)
+    
+    def clean_description(self, description: str) -> str:
+        """Clean up description text for Swift comments."""
+        if not description:
+            return ""
+        
+        # Remove markdown links [text](url) -> text
+        import re
+        description = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', description)
+        
+        # Remove standalone markdown links that start lines
+        description = re.sub(r'^- `[^`]+`:', '', description, flags=re.MULTILINE)
+        
+        # Clean up extra whitespace and newlines
+        description = ' '.join(description.split())
+        
+        # Truncate very long descriptions
+        if len(description) > 200:
+            description = description[:197] + "..."
+        
+        return description
     
     def generate_struct(self, name: str, schema: Dict[str, Any]) -> str:
         """Generate Swift struct from OpenAPI object schema."""
@@ -139,7 +194,42 @@ class SwiftModelGenerator:
             if prop_name not in required:
                 swift_type = f'{swift_type}?'
             
-            description = prop_schema.get('description', '')
+            description = self.clean_description(prop_schema.get('description', ''))
+            if description:
+                lines.append(f'    /// {description}')
+            lines.append(f'    public let {swift_prop_name}: {swift_type}')
+            lines.append('')
+        
+    def generate_struct(self, name: str, schema: Dict[str, Any]) -> str:
+        """Generate Swift struct from OpenAPI object schema."""
+        swift_name = self.swift_class_name(name)
+        properties = schema.get('properties', {})
+        required = set(schema.get('required', []))
+        
+        # Check if any properties use non-Equatable types (SAOAIJSONValue is Equatable)
+        has_non_equatable = any(
+            '[String: Any]' in self.swift_type_from_schema(prop_schema, prop_name)
+            for prop_name, prop_schema in properties.items()
+        )
+        
+        # Use Codable only if we have non-Equatable types
+        conformance = 'Codable' if has_non_equatable else 'Codable, Equatable'
+        
+        lines = [
+            f'/// Generated model for {name}',
+            f'public struct {swift_name}: {conformance} {{',
+        ]
+        
+        # Generate properties
+        for prop_name, prop_schema in properties.items():
+            swift_prop_name = self.swift_property_name(prop_name)
+            swift_type = self.swift_type_from_schema(prop_schema, prop_name)
+            
+            # Make optional if not required
+            if prop_name not in required:
+                swift_type = f'{swift_type}?'
+            
+            description = self.clean_description(prop_schema.get('description', ''))
             if description:
                 lines.append(f'    /// {description}')
             lines.append(f'    public let {swift_prop_name}: {swift_type}')
@@ -185,6 +275,10 @@ class SwiftModelGenerator:
         for name, schema in schemas.items():
             if schema.get('type') == 'string' and 'enum' in schema:
                 lines.append(self.generate_enum(name, schema))
+            elif 'anyOf' in schema:
+                # For anyOf schemas that mix string and enum, just treat as String for simplicity
+                # In a more complete implementation, we might generate a proper enum
+                continue
         
         # Generate structs
         for name, schema in schemas.items():

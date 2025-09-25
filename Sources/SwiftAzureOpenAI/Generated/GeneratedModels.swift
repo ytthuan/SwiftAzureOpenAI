@@ -11,49 +11,49 @@ public enum GeneratedAIFoundryModelsApiVersion: String, Codable, CaseIterable {
 
 /// Generated enum for AzureFileExpiryAnchor
 public enum GeneratedFileExpiryAnchor: String, Codable, CaseIterable {
-    case createdat = "created_at"
+    case created_at = "created_at"
 }
 
 /// Generated enum for OpenAI.Includable
 public enum GeneratedIncludable: String, Codable, CaseIterable {
-    case codeinterpretercall.outputs = "code_interpreter_call.outputs"
-    case computercalloutput.output.imageurl = "computer_call_output.output.image_url"
-    case filesearchcall.results = "file_search_call.results"
-    case message.inputimage.imageurl = "message.input_image.image_url"
-    case message.outputtext.logprobs = "message.output_text.logprobs"
-    case reasoning.encryptedcontent = "reasoning.encrypted_content"
+    case code_interpreter_call_outputs = "code_interpreter_call.outputs"
+    case computer_call_output_output_image_url = "computer_call_output.output.image_url"
+    case file_search_call_results = "file_search_call.results"
+    case message_input_image_image_url = "message.input_image.image_url"
+    case message_output_text_logprobs = "message.output_text.logprobs"
+    case reasoning_encrypted_content = "reasoning.encrypted_content"
 }
 
 /// Generated enum for OpenAI.ItemContentType
 public enum GeneratedItemContentType: String, Codable, CaseIterable {
-    case inputtext = "input_text"
-    case inputaudio = "input_audio"
-    case inputimage = "input_image"
-    case inputfile = "input_file"
-    case outputtext = "output_text"
-    case outputaudio = "output_audio"
+    case input_text = "input_text"
+    case input_audio = "input_audio"
+    case input_image = "input_image"
+    case input_file = "input_file"
+    case output_text = "output_text"
+    case output_audio = "output_audio"
     case refusal = "refusal"
 }
 
 /// Generated enum for OpenAI.ItemType
 public enum GeneratedItemType: String, Codable, CaseIterable {
     case message = "message"
-    case filesearchcall = "file_search_call"
-    case functioncall = "function_call"
-    case functioncalloutput = "function_call_output"
-    case computercall = "computer_call"
-    case computercalloutput = "computer_call_output"
-    case websearchcall = "web_search_call"
+    case file_search_call = "file_search_call"
+    case function_call = "function_call"
+    case function_call_output = "function_call_output"
+    case computer_call = "computer_call"
+    case computer_call_output = "computer_call_output"
+    case web_search_call = "web_search_call"
     case reasoning = "reasoning"
-    case itemreference = "item_reference"
-    case imagegenerationcall = "image_generation_call"
-    case codeinterpretercall = "code_interpreter_call"
-    case localshellcall = "local_shell_call"
-    case localshellcalloutput = "local_shell_call_output"
-    case mcplisttools = "mcp_list_tools"
-    case mcpapprovalrequest = "mcp_approval_request"
-    case mcpapprovalresponse = "mcp_approval_response"
-    case mcpcall = "mcp_call"
+    case item_reference = "item_reference"
+    case image_generation_call = "image_generation_call"
+    case code_interpreter_call = "code_interpreter_call"
+    case local_shell_call = "local_shell_call"
+    case local_shell_call_output = "local_shell_call_output"
+    case mcp_list_tools = "mcp_list_tools"
+    case mcp_approval_request = "mcp_approval_request"
+    case mcp_approval_response = "mcp_approval_response"
+    case mcp_call = "mcp_call"
 }
 
 /// Generated enum for OpenAI.ReasoningEffort
@@ -65,24 +65,24 @@ public enum GeneratedReasoningEffort: String, Codable, CaseIterable {
 
 /// Generated enum for OpenAI.ResponseErrorCode
 public enum GeneratedResponseErrorCode: String, Codable, CaseIterable {
-    case servererror = "server_error"
-    case ratelimitexceeded = "rate_limit_exceeded"
-    case invalidprompt = "invalid_prompt"
-    case vectorstoretimeout = "vector_store_timeout"
-    case invalidimage = "invalid_image"
-    case invalidimageformat = "invalid_image_format"
-    case invalidbase64image = "invalid_base64_image"
-    case invalidimageurl = "invalid_image_url"
-    case imagetoolarge = "image_too_large"
-    case imagetoosmall = "image_too_small"
-    case imageparseerror = "image_parse_error"
-    case imagecontentpolicyviolation = "image_content_policy_violation"
-    case invalidimagemode = "invalid_image_mode"
-    case imagefiletoolarge = "image_file_too_large"
-    case unsupportedimagemediatype = "unsupported_image_media_type"
-    case emptyimagefile = "empty_image_file"
-    case failedtodownloadimage = "failed_to_download_image"
-    case imagefilenotfound = "image_file_not_found"
+    case server_error = "server_error"
+    case rate_limit_exceeded = "rate_limit_exceeded"
+    case invalid_prompt = "invalid_prompt"
+    case vector_store_timeout = "vector_store_timeout"
+    case invalid_image = "invalid_image"
+    case invalid_image_format = "invalid_image_format"
+    case invalid_base64_image = "invalid_base64_image"
+    case invalid_image_url = "invalid_image_url"
+    case image_too_large = "image_too_large"
+    case image_too_small = "image_too_small"
+    case image_parse_error = "image_parse_error"
+    case image_content_policy_violation = "image_content_policy_violation"
+    case invalid_image_mode = "invalid_image_mode"
+    case image_file_too_large = "image_file_too_large"
+    case unsupported_image_media_type = "unsupported_image_media_type"
+    case empty_image_file = "empty_image_file"
+    case failed_to_download_image = "failed_to_download_image"
+    case image_file_not_found = "image_file_not_found"
 }
 
 /// Generated enum for OpenAI.ToolChoiceOptions
@@ -97,16 +97,16 @@ public struct GeneratedEmbeddingRequest: Codable, Equatable {
     /// The number of dimensions the resulting output embeddings should have. Only supported in `text-embedding-3` and later models.
     public let dimensions: Int?
 
-    /// The format to return the embeddings in. Can be either `float` or [`base64`](https://pypi.org/project/pybase64/).
+    /// The format to return the embeddings in. Can be either `float` or `base64`.
     public let encodingFormat: String?
 
-    /// Input text to embed, encoded as a string or array of tokens. To embed multiple inputs in a single request, pass an array of strings or array of token arrays. The input must not exceed the max input tokens for the model (8192 tokens for all embedding models), cannot be an empty string, and any array must be 2048 dimensions or less. [Example Python code](https://cookbook.openai.com/examples/how_to_count_tokens_with_tiktoken) for counting tokens. In addition to the per-input token limit, all embedding  models enforce a maximum of 300,000 tokens summed across all inputs in a  single request.
+    /// Input text to embed, encoded as a string or array of tokens. To embed multiple inputs in a single request, pass an array of strings or array of token arrays. The input must not exceed the max input...
     public let input: String
 
     /// The model to use for the embedding request.
     public let model: String
 
-    /// A unique identifier representing your end-user, which can help OpenAI to monitor and detect abuse. [Learn more](/docs/guides/safety-best-practices#end-user-ids).
+    /// A unique identifier representing your end-user, which can help OpenAI to monitor and detect abuse. Learn more.
     public let user: String?
 
     private enum CodingKeys: String, CodingKey {
@@ -121,7 +121,7 @@ public struct GeneratedEmbeddingRequest: Codable, Equatable {
 
 /// Generated model for AzureCreateFileRequestMultiPart
 public struct GeneratedFileRequestMultiPart: Codable, Equatable {
-    public let expiresAfter: Generatedexpires_after
+    public let expiresAfter: SAOAIJSONValue
 
     public let file: String
 
@@ -138,56 +138,26 @@ public struct GeneratedFileRequestMultiPart: Codable, Equatable {
 
 /// Generated model for AzureCreateResponse
 public struct GeneratedResponseRequest: Codable, Equatable {
-    /// Whether to run the model response in the background.
-[Learn more](/docs/guides/background).
+    /// Whether to run the model response in the background. Learn more.
     public let background: Bool?
 
-    /// Specify additional output data to include in the model response. Currently
-supported values are:
-- `code_interpreter_call.outputs`: Includes the outputs of python code execution
-  in code interpreter tool call items.
-- `computer_call_output.output.image_url`: Include image urls from the computer call output.
-- `file_search_call.results`: Include the search results of
-  the file search tool call.
-- `message.input_image.image_url`: Include image urls from the input message.
-- `message.output_text.logprobs`: Include logprobs with assistant messages.
-- `reasoning.encrypted_content`: Includes an encrypted version of reasoning
-  tokens in reasoning item outputs. This enables reasoning items to be used in
-  multi-turn conversations when using the Responses API statelessly (like
-  when the `store` parameter is set to `false`, or when an organization is
-  enrolled in the zero data retention program).
+    /// Specify additional output data to include in the model response. Currently supported values are: Includes the outputs of python code execution in code interpreter tool call items. Include image url...
     public let include: [GeneratedIncludable]?
 
-    /// Text, image, or file inputs to the model, used to generate a response.
-
-Learn more:
-- [Text inputs and outputs](/docs/guides/text)
-- [Image inputs](/docs/guides/images)
-- [File inputs](/docs/guides/pdf-files)
-- [Conversation state](/docs/guides/conversation-state)
-- [Function calling](/docs/guides/function-calling)
+    /// Text, image, or file inputs to the model, used to generate a response. Learn more: - Text inputs and outputs - Image inputs - File inputs - Conversation state - Function calling
     public let input: String?
 
-    /// A system (or developer) message inserted into the model's context.
-
-When using along with `previous_response_id`, the instructions from a previous
-response will not be carried over to the next response. This makes it simple
-to swap out system (or developer) messages in new responses.
+    /// A system (or developer) message inserted into the model's context. When using along with `previous_response_id`, the instructions from a previous response will not be carried over to the next respo...
     public let instructions: String?
 
-    /// An upper bound for the number of tokens that can be generated for a response, including visible output tokens and [reasoning tokens](/docs/guides/reasoning).
+    /// An upper bound for the number of tokens that can be generated for a response, including visible output tokens and reasoning tokens.
     public let maxOutputTokens: Int?
 
-    /// The maximum number of total calls to built-in tools that can be processed in a response. This maximum number applies across all built-in tool calls, not per individual tool. Any further attempts to call a tool by the model will be ignored.
+    /// The maximum number of total calls to built-in tools that can be processed in a response. This maximum number applies across all built-in tool calls, not per individual tool. Any further attempts to...
     public let maxToolCalls: Int?
 
-    /// Set of 16 key-value pairs that can be attached to an object. This can be
-useful for storing additional information about the object in a structured
-format, and querying for objects via API or the dashboard.
-
-Keys are strings with a maximum length of 64 characters. Values are strings
-with a maximum length of 512 characters.
-    public let metadata: [String: Any]?
+    /// Set of 16 key-value pairs that can be attached to an object. This can be useful for storing additional information about the object in a structured format, and querying for objects via API or the d...
+    public let metadata: SAOAIJSONValue?
 
     /// The model deployment to use for the creation of this response.
     public let model: String
@@ -195,72 +165,41 @@ with a maximum length of 512 characters.
     /// Whether to allow the model to run tool calls in parallel.
     public let parallelToolCalls: Bool?
 
-    /// The unique ID of the previous response to the model. Use this to
-create multi-turn conversations. Learn more about
-[conversation state](/docs/guides/conversation-state).
+    /// The unique ID of the previous response to the model. Use this to create multi-turn conversations. Learn more about conversation state.
     public let previousResponseId: String?
 
-    public let prompt: [String: Any]?
+    public let prompt: SAOAIJSONValue?
 
-    public let reasoning: [String: Any]?
+    public let reasoning: SAOAIJSONValue?
 
-    /// Whether to store the generated model response for later retrieval via
-API.
+    /// Whether to store the generated model response for later retrieval via API.
     public let store: Bool?
 
-    /// If set to true, the model response data will be streamed to the client
-as it is generated using [server-sent events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events#Event_stream_format).
-See the [Streaming section below](/docs/api-reference/responses-streaming)
-for more information.
+    /// If set to true, the model response data will be streamed to the client as it is generated using server-sent events. See the Streaming section below for more information.
     public let stream: Bool?
 
-    /// What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic.
-We generally recommend altering this or `top_p` but not both.
+    /// What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic. We generally rec...
     public let temperature: Float?
 
-    /// Configuration options for a text response from the model. Can be plain
-text or structured JSON data. Learn more:
-- [Text inputs and outputs](/docs/guides/text)
-- [Structured Outputs](/docs/guides/structured-outputs)
-    public let text: Generatedtext?
+    /// Configuration options for a text response from the model. Can be plain text or structured JSON data. Learn more: - Text inputs and outputs - Structured Outputs
+    public let text: SAOAIJSONValue?
 
-    /// How the model should select which tool (or tools) to use when generating
-a response. See the `tools` parameter to see how to specify which tools
-the model can call.
+    /// How the model should select which tool (or tools) to use when generating a response. See the `tools` parameter to see how to specify which tools the model can call.
     public let toolChoice: String?
 
-    /// An array of tools the model may call while generating a response. You 
-can specify which tool to use by setting the `tool_choice` parameter.
-
-The two categories of tools you can provide the model are:
-
-- **Built-in tools**: Tools that are provided by OpenAI that extend the
-  model's capabilities, like file search.
-- **Function calls (custom tools)**: Functions that are defined by you,
-  enabling the model to call your own code.
+    /// An array of tools the model may call while generating a response. You can specify which tool to use by setting the `tool_choice` parameter. The two categories of tools you can provide the model are...
     public let tools: [GeneratedTool]?
 
     /// An integer between 0 and 20 specifying the number of most likely tokens to return at each token position, each with an associated log probability.
     public let topLogprobs: Int?
 
-    /// An alternative to sampling with temperature, called nucleus sampling,
-where the model considers the results of the tokens with top_p probability
-mass. So 0.1 means only the tokens comprising the top 10% probability mass
-are considered.
-
-We generally recommend altering this or `temperature` but not both.
+    /// An alternative to sampling with temperature, called nucleus sampling, where the model considers the results of the tokens with top_p probability mass. So 0.1 means only the tokens comprising the to...
     public let topP: Float?
 
-    /// The truncation strategy to use for the model response.
-- `auto`: If the context of this response and previous ones exceeds
-  the model's context window size, the model will truncate the
-  response to fit the context window by dropping input items in the
-  middle of the conversation.
-- `disabled` (default): If a model response will exceed the context window
-  size for a model, the request will fail with a 400 error.
+    /// The truncation strategy to use for the model response. If the context of this response and previous ones exceeds the model's context window size, the model will truncate the response to fit the con...
     public let truncation: String?
 
-    /// A unique identifier representing your end-user, which can help OpenAI to monitor and detect abuse. [Learn more](/docs/guides/safety-best-practices#end-user-ids).
+    /// A unique identifier representing your end-user, which can help OpenAI to monitor and detect abuse. Learn more.
     public let user: String?
 
     private enum CodingKeys: String, CodingKey {
@@ -293,7 +232,7 @@ We generally recommend altering this or `temperature` but not both.
 /// Generated model for AzureErrorResponse
 public struct GeneratedErrorResponse: Codable, Equatable {
     /// The error details.
-    public let error: Generatederror?
+    public let error: SAOAIJSONValue?
 
 }
 
@@ -363,41 +302,31 @@ public struct GeneratedOpenAIFile: Codable, Equatable {
 
 /// Generated model for AzureResponse
 public struct GeneratedResponse: Codable, Equatable {
-    /// Whether to run the model response in the background.
-[Learn more](/docs/guides/background).
+    /// Whether to run the model response in the background. Learn more.
     public let background: Bool?
 
     /// Unix timestamp (in seconds) of when this Response was created.
     public let createdAt: Int
 
-    public let error: [String: Any]
+    public let error: SAOAIJSONValue
 
     /// Unique identifier for this Response.
     public let id: String
 
     /// Details about why the response is incomplete.
-    public let incompleteDetails: Generatedincomplete_details
+    public let incompleteDetails: SAOAIJSONValue
 
-    /// A system (or developer) message inserted into the model's context.
-
-When using along with `previous_response_id`, the instructions from a previous
-response will not be carried over to the next response. This makes it simple
-to swap out system (or developer) messages in new responses.
+    /// A system (or developer) message inserted into the model's context. When using along with `previous_response_id`, the instructions from a previous response will not be carried over to the next respo...
     public let instructions: String
 
-    /// An upper bound for the number of tokens that can be generated for a response, including visible output tokens and [reasoning tokens](/docs/guides/reasoning).
+    /// An upper bound for the number of tokens that can be generated for a response, including visible output tokens and reasoning tokens.
     public let maxOutputTokens: Int?
 
-    /// The maximum number of total calls to built-in tools that can be processed in a response. This maximum number applies across all built-in tool calls, not per individual tool. Any further attempts to call a tool by the model will be ignored.
+    /// The maximum number of total calls to built-in tools that can be processed in a response. This maximum number applies across all built-in tool calls, not per individual tool. Any further attempts to...
     public let maxToolCalls: Int?
 
-    /// Set of 16 key-value pairs that can be attached to an object. This can be
-useful for storing additional information about the object in a structured
-format, and querying for objects via API or the dashboard.
-
-Keys are strings with a maximum length of 64 characters. Values are strings
-with a maximum length of 512 characters.
-    public let metadata: [String: Any]
+    /// Set of 16 key-value pairs that can be attached to an object. This can be useful for storing additional information about the object in a structured format, and querying for objects via API or the d...
+    public let metadata: SAOAIJSONValue
 
     /// The model used to generate this response.
     public let model: String
@@ -405,89 +334,49 @@ with a maximum length of 512 characters.
     /// The object type of this resource - always set to `response`.
     public let object: String
 
-    /// An array of content items generated by the model.
-
-- The length and order of items in the `output` array is dependent
-  on the model's response.
-- Rather than accessing the first item in the `output` array and
-  assuming it's an `assistant` message with the content generated by
-  the model, you might consider using the `output_text` property where
-  supported in SDKs.
+    /// An array of content items generated by the model. - The length and order of items in the `output` array is dependent on the model's response. - Rather than accessing the first item in the `output` ...
     public let output: [GeneratedItemResource]
 
-    /// SDK-only convenience property that contains the aggregated text output
-from all `output_text` items in the `output` array, if any are present.
-Supported in the Python and JavaScript SDKs.
+    /// SDK-only convenience property that contains the aggregated text output from all `output_text` items in the `output` array, if any are present. Supported in the Python and JavaScript SDKs.
     public let outputText: String?
 
     /// Whether to allow the model to run tool calls in parallel.
     public let parallelToolCalls: Bool
 
-    /// The unique ID of the previous response to the model. Use this to
-create multi-turn conversations. Learn more about
-[conversation state](/docs/guides/conversation-state).
+    /// The unique ID of the previous response to the model. Use this to create multi-turn conversations. Learn more about conversation state.
     public let previousResponseId: String?
 
-    public let prompt: [String: Any]?
+    public let prompt: SAOAIJSONValue?
 
-    public let reasoning: [String: Any]?
+    public let reasoning: SAOAIJSONValue?
 
-    /// The status of the response generation. One of `completed`, `failed`,
-`in_progress`, `cancelled`, `queued`, or `incomplete`.
+    /// The status of the response generation. One of `completed`, `failed`, `in_progress`, `cancelled`, `queued`, or `incomplete`.
     public let status: String?
 
-    /// What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic.
-We generally recommend altering this or `top_p` but not both.
+    /// What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic. We generally rec...
     public let temperature: Float
 
-    /// Configuration options for a text response from the model. Can be plain
-text or structured JSON data. Learn more:
-- [Text inputs and outputs](/docs/guides/text)
-- [Structured Outputs](/docs/guides/structured-outputs)
-    public let text: Generatedtext?
+    /// Configuration options for a text response from the model. Can be plain text or structured JSON data. Learn more: - Text inputs and outputs - Structured Outputs
+    public let text: SAOAIJSONValue?
 
-    /// How the model should select which tool (or tools) to use when generating
-a response. See the `tools` parameter to see how to specify which tools
-the model can call.
+    /// How the model should select which tool (or tools) to use when generating a response. See the `tools` parameter to see how to specify which tools the model can call.
     public let toolChoice: String?
 
-    /// An array of tools the model may call while generating a response. You
-can specify which tool to use by setting the `tool_choice` parameter.
-
-The two categories of tools you can provide the model are:
-
-- **Built-in tools**: Tools that are provided by OpenAI that extend the
-  model's capabilities, like [web search](/docs/guides/tools-web-search)
-  or [file search](/docs/guides/tools-file-search). Learn more about
-  [built-in tools](/docs/guides/tools).
-- **Function calls (custom tools)**: Functions that are defined by you,
-  enabling the model to call your own code. Learn more about
-  [function calling](/docs/guides/function-calling).
+    /// An array of tools the model may call while generating a response. You can specify which tool to use by setting the `tool_choice` parameter. The two categories of tools you can provide the model are...
     public let tools: [GeneratedTool]?
 
     /// An integer between 0 and 20 specifying the number of most likely tokens to return at each token position, each with an associated log probability.
     public let topLogprobs: Int?
 
-    /// An alternative to sampling with temperature, called nucleus sampling,
-where the model considers the results of the tokens with top_p probability
-mass. So 0.1 means only the tokens comprising the top 10% probability mass
-are considered.
-
-We generally recommend altering this or `temperature` but not both.
+    /// An alternative to sampling with temperature, called nucleus sampling, where the model considers the results of the tokens with top_p probability mass. So 0.1 means only the tokens comprising the to...
     public let topP: Float
 
-    /// The truncation strategy to use for the model response.
-- `auto`: If the context of this response and previous ones exceeds
-  the model's context window size, the model will truncate the
-  response to fit the context window by dropping input items in the
-  middle of the conversation.
-- `disabled` (default): If a model response will exceed the context window
-  size for a model, the request will fail with a 400 error.
+    /// The truncation strategy to use for the model response. If the context of this response and previous ones exceeds the model's context window size, the model will truncate the response to fit the con...
     public let truncation: String?
 
     public let usage: GeneratedResponseUsage?
 
-    /// A unique identifier representing your end-user, which can help OpenAI to monitor and detect abuse. [Learn more](/docs/guides/safety-best-practices#end-user-ids).
+    /// A unique identifier representing your end-user, which can help OpenAI to monitor and detect abuse. Learn more.
     public let user: String
 
     private enum CodingKeys: String, CodingKey {
@@ -534,7 +423,7 @@ public struct GeneratedEmbeddingResponse: Codable, Equatable {
     public let object: String
 
     /// The usage information for the request.
-    public let usage: Generatedusage
+    public let usage: SAOAIJSONValue
 
 }
 
@@ -550,7 +439,7 @@ public struct GeneratedDeleteFileResponse: Codable, Equatable {
 
 /// Generated model for OpenAI.Embedding
 public struct GeneratedEmbedding: Codable, Equatable {
-    /// The embedding vector, which is a list of floats. The length of vector depends on the model as listed in the [embedding guide](/docs/guides/embeddings).
+    /// The embedding vector, which is a list of floats. The length of vector depends on the model as listed in the embedding guide.
     public let embedding: String
 
     /// The index of the embedding in the list of embeddings.
@@ -592,7 +481,7 @@ public struct GeneratedPrompt: Codable, Equatable {
     /// The unique identifier of the prompt template to use.
     public let id: String
 
-    public let variables: [String: Any]?
+    public let variables: SAOAIJSONValue?
 
     /// Optional version of the prompt template.
     public let version: String?
@@ -603,16 +492,10 @@ public struct GeneratedPrompt: Codable, Equatable {
 public struct GeneratedReasoning: Codable, Equatable {
     public let effort: String?
 
-    /// **Deprecated:** use `summary` instead.
-
-A summary of the reasoning performed by the model. This can be
-useful for debugging and understanding the model's reasoning process.
-One of `auto`, `concise`, or `detailed`.
+    /// **Deprecated:** use `summary` instead. A summary of the reasoning performed by the model. This can be useful for debugging and understanding the model's reasoning process. One of `auto`, `concise`,...
     public let generateSummary: String?
 
-    /// A summary of the reasoning performed by the model. This can be
-useful for debugging and understanding the model's reasoning process.
-One of `auto`, `concise`, or `detailed`.
+    /// A summary of the reasoning performed by the model. This can be useful for debugging and understanding the model's reasoning process. One of `auto`, `concise`, or `detailed`.
     public let summary: String?
 
     private enum CodingKeys: String, CodingKey {
@@ -668,7 +551,7 @@ public struct GeneratedResponseStreamEvent: Codable, Equatable {
     /// The sequence number for this event.
     public let sequenceNumber: Int
 
-    public let type: GeneratedResponseStreamEventType
+    public let type: String
 
     private enum CodingKeys: String, CodingKey {
         case sequenceNumber = "sequence_number"
@@ -679,7 +562,7 @@ public struct GeneratedResponseStreamEvent: Codable, Equatable {
 
 /// Generated model for OpenAI.ResponseTextFormatConfiguration
 public struct GeneratedResponseTextFormatConfiguration: Codable, Equatable {
-    public let type: GeneratedResponseTextFormatConfigurationType
+    public let type: String
 
 }
 
@@ -689,13 +572,13 @@ public struct GeneratedResponseUsage: Codable, Equatable {
     public let inputTokens: Int
 
     /// A detailed breakdown of the input tokens.
-    public let inputTokensDetails: Generatedinput_tokens_details
+    public let inputTokensDetails: SAOAIJSONValue
 
     /// The number of output tokens.
     public let outputTokens: Int
 
     /// A detailed breakdown of the output tokens.
-    public let outputTokensDetails: Generatedoutput_tokens_details
+    public let outputTokensDetails: SAOAIJSONValue
 
     /// The total number of tokens used.
     public let totalTokens: Int
@@ -712,12 +595,12 @@ public struct GeneratedResponseUsage: Codable, Equatable {
 
 /// Generated model for OpenAI.Tool
 public struct GeneratedTool: Codable, Equatable {
-    public let type: GeneratedToolType
+    public let type: String
 
 }
 
 /// Generated model for OpenAI.ToolChoiceObject
 public struct GeneratedToolChoiceObject: Codable, Equatable {
-    public let type: GeneratedToolChoiceObjectType
+    public let type: String
 
 }
