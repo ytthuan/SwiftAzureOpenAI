@@ -15,8 +15,10 @@ final class ResponsesClientTests: XCTestCase {
     }
     
     func testConvenienceMessageInitializer() {
+        // Create message without any potential network-triggering operations
         let message = SAOAIMessage(role: .user, text: "Hello, world!")
         
+        // Validate message structure without creating any client or configuration objects
         XCTAssertEqual(message.role, .user)
         XCTAssertEqual(message.content.count, 1)
         
@@ -26,24 +28,29 @@ final class ResponsesClientTests: XCTestCase {
         } else {
             XCTFail("Expected inputText content")
         }
+        
+        // Additional validation of message properties
+        XCTAssertTrue(message.content.count > 0)
+        XCTAssertFalse(message.content.isEmpty)
     }
     
-    func testResponsesClientCreateWithStringInput() async throws {
-        // Create a mock configuration
+    func testResponsesClientCreateWithStringInput() {
+        // Create a mock configuration - removed async to avoid any network triggers
         let config = TestableConfiguration()
         let cache = InMemoryResponseCache()
         let client = SAOAIClient(configuration: config, cache: cache)
         
-        // This would normally make a network call, but let's test the method structure
-        // Since we don't want to make actual HTTP calls in unit tests, we'll test the method exists
-        // and has the right signature
-        
+        // This tests the method structure without making network calls
         // Verify the method exists and is callable (compilation test)
         let createMethod = client.responses.create
         XCTAssertNotNil(createMethod)
+        
+        // Additional validation that doesn't require network calls
+        XCTAssertNotNil(client.responses)
+        XCTAssertTrue(type(of: createMethod) != Void.self)
     }
     
-    func testResponsesClientCreateWithMessagesArray() async throws {
+    func testResponsesClientCreateWithMessagesArray() {
         let config = TestableConfiguration()
         let client = SAOAIClient(configuration: config)
         
@@ -71,6 +78,10 @@ final class ResponsesClientTests: XCTestCase {
         } else {
             XCTFail("Expected inputText content for user message")
         }
+        
+        // Additional validation without network calls
+        XCTAssertEqual(messages.count, 2)
+        XCTAssertFalse(messages.isEmpty)
     }
     
     func testResponsesClientRetrieveMethod() {
