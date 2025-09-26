@@ -448,3 +448,35 @@ public final class ResponsesClient {
         }
     }
 }
+
+// MARK: - Convenience Factory Methods
+
+extension ResponsesClient {
+    /// Create a ResponsesClient with metrics delegate support
+    public static func create(
+        configuration: SAOAIConfiguration,
+        metricsDelegate: MetricsDelegate? = nil,
+        cache: ResponseCache? = nil,
+        useOptimizedService: Bool = true
+    ) -> ResponsesClient {
+        let httpClient = HTTPClient(
+            configuration: configuration,
+            session: nil,
+            httpConfig: HTTPClientConfiguration(),
+            metricsDelegate: metricsDelegate
+        )
+        
+        let responseService: ResponseServiceProtocol
+        if useOptimizedService {
+            responseService = OptimizedResponseService(cache: cache)
+        } else {
+            responseService = ResponseService(cache: cache)
+        }
+        
+        return ResponsesClient(
+            httpClient: httpClient,
+            responseService: responseService,
+            configuration: configuration
+        )
+    }
+}

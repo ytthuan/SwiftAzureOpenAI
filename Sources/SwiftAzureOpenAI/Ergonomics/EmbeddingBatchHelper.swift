@@ -142,15 +142,16 @@ public protocol EmbeddingBatchHelperProtocol {
     ) async throws -> EmbeddingBatchResult
 }
 
-// MARK: - Future Implementation Foundation
+// MARK: - Embedding Batch Helper Implementation
 
-/// Foundation for the actual batch helper implementation
-/// This will be implemented in a future PR as part of Phase 4 completion
+/// Production implementation of embedding batch processing with concurrency throttling
 public final class EmbeddingBatchHelper: EmbeddingBatchHelperProtocol {
-    // Placeholder - will be replaced with actual embedding client when Phase 4 is complete
+    private let embeddingsClient: EmbeddingsClient
+    private let cache: EmbeddingCache?
     
-    public init() {
-        // Placeholder initialization
+    public init(embeddingsClient: EmbeddingsClient, cache: EmbeddingCache? = nil) {
+        self.embeddingsClient = embeddingsClient
+        self.cache = cache
     }
     
     public func processEmbeddings(
@@ -159,9 +160,181 @@ public final class EmbeddingBatchHelper: EmbeddingBatchHelperProtocol {
         configuration: EmbeddingBatchConfiguration = .default,
         progressHandler: ((Double) -> Void)? = nil
     ) async throws -> EmbeddingBatchResult {
-        // TODO: Implement actual batch processing logic
-        // This is a placeholder for the full implementation
-        fatalError("EmbeddingBatchHelper not yet fully implemented. This is a foundation for Phase 4.")
+        let startTime = Date()
+        let throttle = ConcurrencyThrottle(maxConcurrency: configuration.maxConcurrency)
+        var embeddings: [(index: Int, embedding: SAOAIEmbedding)] = []
+        var failures: [(index: Int, error: Error)] = []
+        var processedCount = 0
+        var batchCount = 0
+        var retryCount = 0
+        
+        // Group texts into batches
+        let batches = texts.chunked(into: configuration.batchSize)
+        let totalBatches = batches.count
+        
+        // Process all batches concurrently with throttling
+        await withTaskGroup(of: BatchResult.self) { taskGroup in
+            for (batchIndex, batch) in batches.enumerated() {
+                // Capture needed values for the task
+                let embeddingsClient = self.embeddingsClient
+                let cache = self.cache
+                
+                taskGroup.addTask {
+                    await throttle.acquire()
+                    defer {
+                        Task {
+                            await throttle.release()
+                        }
+                    }
+                    
+                    return await Self.processBatch(
+                        batch: batch,
+                        batchIndex: batchIndex,
+                        model: model,
+                        configuration: configuration,
+                        embeddingsClient: embeddingsClient,
+                        cache: cache
+                    )
+                }
+            }
+            
+            // Collect results
+            for await result in taskGroup {
+                embeddings.append(contentsOf: result.embeddings)
+                failures.append(contentsOf: result.failures)
+                processedCount += result.processedCount
+                batchCount += 1
+                retryCount += result.retryCount
+                
+                // Report progress
+                let progress = Double(batchCount) / Double(totalBatches)
+                progressHandler?(progress)
+                
+                // Add delay between batch completions if configured
+                if batchCount < totalBatches && configuration.delayBetweenBatches > 0 {
+                    try? await Task.sleep(nanoseconds: UInt64(configuration.delayBetweenBatches * 1_000_000_000))
+                }
+            }
+        }
+        
+        let totalDuration = Date().timeIntervalSince(startTime)
+        let statistics = EmbeddingBatchStatistics(
+            totalDuration: totalDuration,
+            batchCount: batchCount,
+            retryCount: retryCount
+        )
+        
+        return EmbeddingBatchResult(
+            embeddings: embeddings.sorted { $0.index < $1.index },
+            failures: failures.sorted { $0.index < $1.index },
+            statistics: statistics
+        )
+    }
+    
+    // MARK: - Private Methods
+    
+    private static func processBatch(
+        batch: [(index: Int, text: String)],
+        batchIndex: Int,
+        model: String,
+        configuration: EmbeddingBatchConfiguration,
+        embeddingsClient: EmbeddingsClient,
+        cache: EmbeddingCache?
+    ) async -> BatchResult {
+        var embeddings: [(index: Int, embedding: SAOAIEmbedding)] = []
+        var failures: [(index: Int, error: Error)] = []
+        var retryCount = 0
+        
+        for (originalIndex, text) in batch {
+            // Check cache first
+            if let cache = cache, let cachedEmbedding = cache.getCachedEmbedding(for: text, model: model) {
+                embeddings.append((index: originalIndex, embedding: cachedEmbedding))
+                continue
+            }
+            
+            // Process with retries
+            var attempt = 0
+            var lastError: Error?
+            
+            while attempt <= configuration.maxRetries {
+                do {
+                    let request = SAOAIEmbeddingsRequest(
+                        input: .text(text),
+                        model: model
+                    )
+                    
+                    let response = try await embeddingsClient.create(request)
+                    if let firstEmbedding = response.data.first {
+                        // Create embedding with original index
+                        let embedding = SAOAIEmbedding(
+                            object: firstEmbedding.object,
+                            embedding: firstEmbedding.embedding,
+                            index: originalIndex
+                        )
+                        embeddings.append((index: originalIndex, embedding: embedding))
+                        
+                        // Cache the result
+                        cache?.cacheEmbedding(embedding, for: text, model: model, expiresIn: nil)
+                    }
+                    break // Success
+                } catch {
+                    lastError = error
+                    attempt += 1
+                    retryCount += 1
+                    
+                    if attempt <= configuration.maxRetries {
+                        // Wait before retry
+                        try? await Task.sleep(nanoseconds: UInt64(configuration.retryDelay * 1_000_000_000))
+                    }
+                }
+            }
+            
+            if let error = lastError {
+                failures.append((index: originalIndex, error: error))
+            }
+        }
+        
+        return BatchResult(
+            embeddings: embeddings,
+            failures: failures,
+            processedCount: batch.count,
+            retryCount: retryCount
+        )
+    }
+}
+
+// MARK: - Helper Types
+
+private struct BatchResult {
+    let embeddings: [(index: Int, embedding: SAOAIEmbedding)]
+    let failures: [(index: Int, error: Error)]
+    let processedCount: Int
+    let retryCount: Int
+}
+
+// MARK: - Array Extension for Chunking
+
+private extension Array {
+    func chunked(into size: Int) -> [[(index: Int, text: Element)]] {
+        guard size > 0 else { return [] }
+        
+        var chunks: [[(index: Int, text: Element)]] = []
+        var currentChunk: [(index: Int, text: Element)] = []
+        
+        for (index, element) in self.enumerated() {
+            currentChunk.append((index: index, text: element))
+            
+            if currentChunk.count == size {
+                chunks.append(currentChunk)
+                currentChunk = []
+            }
+        }
+        
+        if !currentChunk.isEmpty {
+            chunks.append(currentChunk)
+        }
+        
+        return chunks
     }
 }
 
