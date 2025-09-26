@@ -58,6 +58,7 @@ public final class HTTPClient: HTTPClientProtocol, @unchecked Sendable {
     private let urlSession: URLSession
     private let httpConfig: HTTPClientConfiguration
     private let logger: InternalLogger
+    private weak var metricsDelegate: MetricsDelegate?
 
     /// Primary initializer for backward compatibility
     public init(configuration: SAOAIConfiguration, session: URLSession? = nil, maxRetries: Int = 2) {
@@ -66,6 +67,7 @@ public final class HTTPClient: HTTPClientProtocol, @unchecked Sendable {
         self.urlSession = session ?? OptimizedURLSession.shared.urlSession
         self.httpConfig = httpConfig
         self.logger = InternalLogger(config: configuration.loggerConfiguration)
+        self.metricsDelegate = nil
     }
     
     /// Advanced initializer with full HTTP configuration
@@ -78,19 +80,43 @@ public final class HTTPClient: HTTPClientProtocol, @unchecked Sendable {
         self.urlSession = session ?? OptimizedURLSession.shared.urlSession
         self.httpConfig = httpConfig
         self.logger = InternalLogger(config: configuration.loggerConfiguration)
+        self.metricsDelegate = nil
+    }
+    
+    /// Initializer with metrics delegate support
+    public init(
+        configuration: SAOAIConfiguration,
+        session: URLSession? = nil,
+        httpConfig: HTTPClientConfiguration = HTTPClientConfiguration(),
+        metricsDelegate: MetricsDelegate? = nil
+    ) {
+        self.configuration = configuration
+        self.urlSession = session ?? OptimizedURLSession.shared.urlSession
+        self.httpConfig = httpConfig
+        self.logger = InternalLogger(config: configuration.loggerConfiguration)
+        self.metricsDelegate = metricsDelegate
     }
 
     public func send(_ request: APIRequest) async throws -> (Data, HTTPURLResponse) {
-        let requestId = UUID().uuidString
+        let correlationId = CorrelationIdGenerator.generate()
         let startTime = Date()
         var attempts = 0
         var lastError: Error?
         
         let logContext = LogContext(
-            requestId: requestId,
+            requestId: correlationId,
             endpoint: request.url.absoluteString,
             method: request.method
         )
+        
+        // Emit request started event
+        metricsDelegate?.requestStarted(RequestStartedEvent(
+            correlationId: correlationId,
+            method: request.method,
+            endpoint: request.url.absoluteString,
+            timestamp: startTime,
+            metadata: [:]
+        ))
         
         logger.info("Starting HTTP request", context: logContext)
 
@@ -100,7 +126,7 @@ public final class HTTPClient: HTTPClientProtocol, @unchecked Sendable {
                 
                 if attempts > 0 {
                     let retryContext = LogContext(
-                        requestId: requestId,
+                        requestId: correlationId,
                         endpoint: request.url.absoluteString,
                         method: request.method,
                         retryAttempt: attempts
@@ -115,7 +141,7 @@ public final class HTTPClient: HTTPClientProtocol, @unchecked Sendable {
                 
                 let duration = Date().timeIntervalSince(startTime)
                 let responseContext = LogContext(
-                    requestId: requestId,
+                    requestId: correlationId,
                     endpoint: request.url.absoluteString,
                     method: request.method,
                     statusCode: http.statusCode,
@@ -133,13 +159,26 @@ public final class HTTPClient: HTTPClientProtocol, @unchecked Sendable {
                 }
                 
                 logger.info("HTTP request completed", context: responseContext)
+                
+                // Emit request completed event
+                let responseId = extractResponseId(from: http)
+                metricsDelegate?.requestCompleted(RequestCompletedEvent(
+                    correlationId: correlationId,
+                    statusCode: http.statusCode,
+                    duration: duration,
+                    responseSize: data.count,
+                    timestamp: Date(),
+                    responseId: responseId,
+                    metadata: [:]
+                ))
+                
                 return (data, http)
             } catch {
                 lastError = error
                 attempts += 1
                 
                 let errorContext = LogContext(
-                    requestId: requestId,
+                    requestId: correlationId,
                     endpoint: request.url.absoluteString,
                     method: request.method,
                     retryAttempt: attempts
@@ -156,7 +195,20 @@ public final class HTTPClient: HTTPClientProtocol, @unchecked Sendable {
                 try? await Task.sleep(nanoseconds: sleepMs * 1_000_000)
             }
         }
-        throw SAOAIError.networkError(lastError ?? URLError(.unknown))
+        
+        // Emit request failed event
+        let finalError = SAOAIError.networkError(lastError ?? URLError(.unknown))
+        metricsDelegate?.requestFailed(RequestFailedEvent(
+            correlationId: correlationId,
+            statusCode: nil,
+            duration: Date().timeIntervalSince(startTime),
+            error: finalError,
+            timestamp: Date(),
+            retryAttempt: attempts - 1,
+            metadata: [:]
+        ))
+        
+        throw finalError
     }
     
     /// Send a streaming request that returns Server-Sent Events with optimized performance
@@ -355,6 +407,14 @@ public final class HTTPClient: HTTPClientProtocol, @unchecked Sendable {
         }
         
         return urlRequest
+    }
+    
+    /// Extract response ID from HTTP response headers for correlation tracking
+    private func extractResponseId(from response: HTTPURLResponse) -> String? {
+        // Check common headers where response IDs might be found
+        return response.value(forHTTPHeaderField: "x-request-id") ??
+               response.value(forHTTPHeaderField: "x-ms-request-id") ??
+               response.value(forHTTPHeaderField: "request-id")
     }
 }
 

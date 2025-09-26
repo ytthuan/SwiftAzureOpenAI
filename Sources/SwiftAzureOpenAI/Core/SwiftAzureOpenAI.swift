@@ -7,6 +7,7 @@ public final class SAOAIClient: @unchecked Sendable {
     private let configuration: SAOAIConfiguration
     private let httpClient: HTTPClient
     private let responseService: ResponseServiceProtocol
+    private weak var metricsDelegate: MetricsDelegate?
     
     /// Python-style responses client for simplified API access
     public lazy var responses: ResponsesClient = {
@@ -26,6 +27,31 @@ public final class SAOAIClient: @unchecked Sendable {
     public init(configuration: SAOAIConfiguration, cache: ResponseCache? = nil, useOptimizedService: Bool = true) {
         self.configuration = configuration
         self.httpClient = HTTPClient(configuration: configuration, session: nil, maxRetries: 2)
+        
+        // Use optimized service by default for better performance
+        if useOptimizedService {
+            self.responseService = OptimizedResponseService(cache: cache)
+        } else {
+            self.responseService = ResponseService(cache: cache)
+        }
+        self.metricsDelegate = nil
+    }
+    
+    /// Enhanced initializer with metrics delegate support
+    public init(
+        configuration: SAOAIConfiguration,
+        cache: ResponseCache? = nil,
+        useOptimizedService: Bool = true,
+        metricsDelegate: MetricsDelegate? = nil
+    ) {
+        self.configuration = configuration
+        self.metricsDelegate = metricsDelegate
+        self.httpClient = HTTPClient(
+            configuration: configuration,
+            session: nil,
+            httpConfig: HTTPClientConfiguration(),
+            metricsDelegate: metricsDelegate
+        )
         
         // Use optimized service by default for better performance
         if useOptimizedService {
