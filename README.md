@@ -330,6 +330,108 @@ for (text, index, similarity) in similarities {
 }
 ```
 
+### 🛠️ Ergonomics and Observability Utilities
+
+SwiftAzureOpenAI provides production-ready utilities for enhanced developer experience and observability:
+
+#### Embedding Batch Helper
+
+Process large sets of texts efficiently with automatic batching, concurrency control, and retry logic:
+
+```swift
+// Setup
+let cache = EmbeddingCache(maxCapacity: 10000)
+let batchHelper = EmbeddingBatchHelper(
+    embeddingsClient: client.embeddings,
+    cache: cache
+)
+
+// Process many texts efficiently
+let texts = ["Text 1", "Text 2", "Text 3", /* ... hundreds more ... */]
+
+let result = try await batchHelper.processEmbeddings(
+    texts: texts,
+    model: "text-embedding-ada-002",
+    configuration: .highThroughput // or .default, .conservative
+) { progress in
+    print("Progress: \(Int(progress * 100))%")
+}
+
+print("Processed \(result.embeddings.count) embeddings")
+print("Success rate: \(Int(result.successRate * 100))%")
+print("Throughput: \(result.statistics.throughput(for: texts.count)) items/second")
+```
+
+Configuration options:
+- **Default**: 5 concurrent requests, batch size 100
+- **High Throughput**: 10 concurrent requests, batch size 200  
+- **Conservative**: 2 concurrent requests, batch size 50
+
+#### In-Memory Embedding Cache
+
+Automatic caching with TTL and LRU eviction:
+
+```swift
+let cache = EmbeddingCache(maxCapacity: 5000)
+
+// Cache embeddings automatically when using batch helper
+// Or manually:
+cache.cacheEmbedding(embedding, for: "text", model: "model", expiresIn: 3600)
+
+// Retrieve cached embeddings
+if let cached = cache.getCachedEmbedding(for: "text", model: "model") {
+    print("Cache hit! Vector: \(cached.embedding.prefix(3))")
+}
+
+// Monitor cache performance
+let stats = cache.statistics
+print("Hit rate: \(Int(stats.hitRate * 100))%")
+print("Utilization: \(Int(stats.utilization * 100))%")
+```
+
+#### Metrics Delegation and Correlation Logging
+
+Track request performance and enable distributed tracing:
+
+```swift
+// Setup observability
+let metricsDelegate = ConsoleMetricsDelegate(logLevel: .verbose)
+let aggregatingDelegate = AggregatingMetricsDelegate()
+
+// Create client with metrics integration
+let client = SAOAIClient(
+    configuration: config,
+    metricsDelegate: metricsDelegate
+)
+
+// Or use the factory method
+let responsesClient = ResponsesClient.create(
+    configuration: config,
+    metricsDelegate: metricsDelegate
+)
+
+// Requests automatically generate correlation IDs and emit metrics
+let response = try await client.responses.create(...)
+
+// Access aggregated statistics
+let stats = aggregatingDelegate.statistics
+print("Success rate: \(Int(stats.successRate * 100))%")
+print("Average duration: \(String(format: "%.3fs", stats.averageRequestDuration))")
+```
+
+Available metrics delegates:
+- **ConsoleMetricsDelegate**: Logs events to console with correlation IDs
+- **AggregatingMetricsDelegate**: Collects statistics for analysis
+- **Custom**: Implement `MetricsDelegate` for integration with your monitoring system
+
+#### Complete Example
+
+See `examples/ErgonomicsUtilitiesExample.swift` for a comprehensive example demonstrating:
+- Batch processing with different configurations
+- Caching benefits and performance improvements  
+- Metrics collection and correlation ID tracking
+- Integration of all utilities in a production workflow
+
 ### File Input and Processing
 
 SwiftAzureOpenAI supports file inputs (especially PDFs) following Azure AI Foundry guidelines. Files can be provided as Base64-encoded data or as file IDs from previously uploaded files.
