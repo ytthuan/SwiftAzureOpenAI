@@ -1,5 +1,7 @@
 # NonStreamingResponseConsoleChatbot
 
+> **⚠️ Internal Development Example**: This non-streaming console chatbot demonstrates SwiftAzureOpenAI SDK capabilities during internal development. It showcases a simplified, blocking-only approach for internal testing and development.
+
 A **non-streaming only** console example for SwiftAzureOpenAI that demonstrates blocking response handling with the Azure OpenAI Responses API. This example focuses specifically on non-streaming mode, providing a simpler alternative to the unified `ResponsesConsoleChatbot` example.
 
 ## Features

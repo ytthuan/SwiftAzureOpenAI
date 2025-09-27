@@ -1,5 +1,7 @@
 # Code Generation Documentation
 
+> **⚠️ Internal Development**: This document describes the automated code generation system implemented during internal development of the SwiftAzureOpenAI SDK.
+
 This document explains the automated code generation system in SwiftAzureOpenAI and how it benefits the Swift SDK project.
 
 ## Overview

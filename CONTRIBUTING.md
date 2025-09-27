@@ -1,5 +1,7 @@
 # Contributing to SwiftAzureOpenAI
 
+> **⚠️ Internal Development**: This contributing guide is for internal development team members working on the SwiftAzureOpenAI SDK. The project is currently under active internal development and not open for external contributions.
+
 Thank you for your interest in contributing to SwiftAzureOpenAI! This guide covers the development workflow, including our code generation system.
 
 ## Development Setup

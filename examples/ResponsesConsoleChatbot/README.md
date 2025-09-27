@@ -1,5 +1,7 @@
 # ResponsesConsoleChatbot
 
+> **⚠️ Internal Development Example**: This console chatbot demonstrates current SwiftAzureOpenAI SDK capabilities during internal development. It showcases production-ready APIs but is intended for internal testing and development.
+
 A Swift console chatbot implementation using Azure OpenAI Responses API, converted from a Python script. This example demonstrates streaming responses, function calling, and code interpreter capabilities in a terminal interface.
 
 ## Features

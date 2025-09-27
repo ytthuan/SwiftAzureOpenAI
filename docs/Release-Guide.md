@@ -1,5 +1,7 @@
 # Release Workflow Quick Reference
 
+> **⚠️ Internal Development**: This guide describes the release workflow used for internal development versions of the SwiftAzureOpenAI SDK. These releases are for internal testing and development purposes.
+
 ## 🚀 Recommended Release Process (with Human Approval)
 
 ### For Regular Releases:
