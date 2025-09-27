@@ -1,5 +1,7 @@
 # SwiftAzureOpenAI Examples
 
+> **⚠️ Internal Development**: These examples are part of our internal development and testing process. They demonstrate the latest SDK capabilities but are not intended for external production use.
+
 This directory contains complete, compilable Swift Package examples demonstrating SwiftAzureOpenAI capabilities. Each example is a standalone Swift package that you can download, build, and run independently.
 
 ## Available Examples
@@ -164,3 +166,25 @@ All examples demonstrate the latest SwiftAzureOpenAI v2.0+ features:
 - macOS 10.15+ / iOS 13.0+ / watchOS 6.0+ / tvOS 13.0+
 
 Each example can run in demo mode without API credentials and will show you what it would do with real API access.
+
+## Environment Variables for Testing
+
+For internal development and live API testing, set these environment variables:
+
+```bash
+export AZURE_OPENAI_ENDPOINT="https://your-resource.openai.azure.com"
+export AZURE_OPENAI_API_KEY="your-api-key"  
+# Alternative: COPILOT_AGENT_AZURE_OPENAI_API_KEY
+export AZURE_OPENAI_DEPLOYMENT="your-deployment-name"
+```
+
+## Current Status
+
+All examples reflect the **current state** of the SwiftAzureOpenAI SDK after completing the internal roadmap phases. They demonstrate production-ready APIs including:
+
+- Modern async/await Swift 6.0 concurrency
+- Complete Responses API implementation 
+- Full Azure OpenAI File API integration
+- Vector embeddings with batch processing
+- Streaming and non-streaming modes
+- Advanced error handling and observability
