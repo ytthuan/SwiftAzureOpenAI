@@ -1,5 +1,7 @@
 # Live API Testing Guide
 
+> **⚠️ Internal Development**: This guide is for internal development and testing of the SwiftAzureOpenAI SDK. It describes testing procedures used during our internal development process.
+
 This document explains how to run the live API tests that use pure URLSession to verify streaming and non-streaming functionality with real Azure OpenAI services.
 
 ## Prerequisites

@@ -99,7 +99,7 @@ import SwiftAzureOpenAI
 - `SAOAIRequest`, `SAOAIResponse`, `SAOAIMessage` (request/response models)
 - `SAOAIEmbeddingsRequest`, `SAOAIEmbeddingsResponse` (embeddings models)
 - `EmbeddingBatchHelper` (batch processing utilities)
-- `ResponseCacheService` (caching with TTL support)
+- `InMemoryResponseCache`, `EmbeddingCache` (caching with TTL support)
 - `MetricsDelegate` (observability and performance tracking)
 - `SAOAIRequest`, `SAOAIMessage`, `SAOAIInputContent`
 - `SAOAIResponse`, `SAOAIOutput`, `SAOAIOutputContent`
@@ -514,7 +514,7 @@ let request = SAOAIRequest(
 )
 ```
 
-The `input` parameter uses an array of `SAOAIMessage` objects, each containing structured content parts. This unified approach replaces the separate `messages` parameter from legacy chat completions APIs.
+The `input` parameter uses an array of `SAOAIMessage` objects, each containing structured content parts for the Responses API.
 
 ### Decode a Responses API response
 

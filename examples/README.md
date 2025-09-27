@@ -147,7 +147,7 @@ Each example is a complete Swift Package that:
 
 ## Modern API Features
 
-All examples demonstrate the latest SwiftAzureOpenAI v2.0+ features:
+All examples demonstrate the current SwiftAzureOpenAI SDK features:
 - **SAOAI-prefixed class names**: `SAOAIClient`, `SAOAIMessage`, etc.
 - **Python-style convenience methods**: Simplified API calls
 - **Multi-modal support**: Text + images in single requests
@@ -155,7 +155,6 @@ All examples demonstrate the latest SwiftAzureOpenAI v2.0+ features:
 - **Function calling**: Tool integration with AI responses
 - **Streaming support**: Real-time response processing
 - **Code interpreter tools**: Execute code within AI workflows
-- **Full backward compatibility**: Complex patterns still supported
 
  
 
