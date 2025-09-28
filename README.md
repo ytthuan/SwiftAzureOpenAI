@@ -2,6 +2,8 @@
 
 A Swift package focused on the Azure OpenAI/OpenAI Responses API for iOS, macOS, watchOS, tvOS, and other Apple platforms.
 
+> **⚠️ Internal Development Notice**: This SDK is currently under active internal development and testing. It is not yet published or intended for external production use. The API surface and features are subject to change as we complete our internal roadmap.
+
 ## Overview
 
 SwiftAzureOpenAI provides Swift-native models and utilities for working with the Azure/OpenAI Responses API, a unified, stateful API that combines chat, tools, and assistants patterns.
@@ -25,7 +27,7 @@ This package emphasizes strongly typed request/response models, response metadat
 
 - iOS 13.0+ / macOS 10.15+ / watchOS 6.0+ / tvOS 13.0+
 - Xcode 15.0+
-- Swift 5.9+
+- Swift 6.0+ (currently developed with Swift 6.2)
 
 ## API Support
 
@@ -51,22 +53,17 @@ Supported operations:
 - `client.files.delete()` - Remove files
 - `client.files.streamContent()` - Stream file content for large downloads
 
-## Installation
+## Installation (Internal Development)
+
+> **Note**: This package is not yet published to public package managers. For internal development and testing, use local package references or direct GitHub integration.
 
 ### Swift Package Manager
 
-Add SwiftAzureOpenAI to your project using Xcode:
-
-1. In Xcode, go to `File` → `Add Package Dependencies...`
-2. Enter the repository URL: `https://github.com/ytthuan/SwiftAzureOpenAI`
-3. Select the version you want to use
-4. Add the package to your target
-
-Or add it to your `Package.swift` file:
+For internal development, add SwiftAzureOpenAI as a local package or via GitHub:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/ytthuan/SwiftAzureOpenAI", from: "1.0.0")
+    .package(url: "https://github.com/ytthuan/SwiftAzureOpenAI", branch: "main")
 ]
 ```
 
@@ -97,7 +94,13 @@ import SwiftAzureOpenAI
 - `SAOAIClient` (main client)
 - `ResponsesClient` (Python-style client at `client.responses`)
 - `EmbeddingsClient` (embeddings client at `client.embeddings`)
+- `FilesClient` (files client at `client.files`)
 - `SAOAIAzureConfiguration`, `SAOAIOpenAIConfiguration`
+- `SAOAIRequest`, `SAOAIResponse`, `SAOAIMessage` (request/response models)
+- `SAOAIEmbeddingsRequest`, `SAOAIEmbeddingsResponse` (embeddings models)
+- `EmbeddingBatchHelper` (batch processing utilities)
+- `InMemoryResponseCache`, `EmbeddingCache` (caching with TTL support)
+- `MetricsDelegate` (observability and performance tracking)
 - `SAOAIRequest`, `SAOAIMessage`, `SAOAIInputContent`
 - `SAOAIResponse`, `SAOAIOutput`, `SAOAIOutputContent`
 - `SAOAIStreamingResponse` (SSE events)
@@ -511,7 +514,7 @@ let request = SAOAIRequest(
 )
 ```
 
-The `input` parameter uses an array of `SAOAIMessage` objects, each containing structured content parts. This unified approach replaces the separate `messages` parameter from legacy chat completions APIs.
+The `input` parameter uses an array of `SAOAIMessage` objects, each containing structured content parts for the Responses API.
 
 ### Decode a Responses API response
 
@@ -932,9 +935,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - 📖 Documentation: project README (this file) and [docs/](docs/) directory
 - 🧪 Live API Testing: [Live API Testing Guide](docs/LIVE_API_TESTING.md)
-- 🐛 Issues: [GitHub Issues](https://github.com/ytthuan/SwiftAzureOpenAI/issues)
+- 🔧 Internal Development: [Contributing Guide](CONTRIBUTING.md) and [CI/CD Documentation](docs/CI-CD.md)
+- 🐛 Issues: [GitHub Issues](https://github.com/ytthuan/SwiftAzureOpenAI/issues) (internal development tracking)
 - 📚 Azure OpenAI Responses API: [Official Documentation](https://learn.microsoft.com/en-us/azure/ai-services/openai/reference-preview-latest#create-response)
 
 ---
 
-**Note:** This package is community-maintained and not officially affiliated with OpenAI or Microsoft. It provides Swift-native data models and client utilities designed for the Azure/OpenAI Responses API.
+**Note:** This package is under active internal development and not officially affiliated with OpenAI or Microsoft. It provides Swift-native data models and client utilities designed for the Azure/OpenAI Responses API for internal use and testing.

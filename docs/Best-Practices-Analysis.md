@@ -1,5 +1,7 @@
 # Release Workflow Best Practices & Implementation Guide
 
+> **⚠️ Internal Development**: This document analyzes the best practices implemented in our internal development workflow for the SwiftAzureOpenAI SDK.
+
 ## ✅ Is This Best Practice? **YES!**
 
 The implemented workflow follows **industry best practices** for package publishing and addresses your specific requirements perfectly.

@@ -1,8 +1,10 @@
 # SwiftAzureOpenAI CI/CD Documentation
 
+> **⚠️ Internal Development**: This document describes the CI/CD workflows implemented for internal development and testing of the SwiftAzureOpenAI SDK.
+
 ## Overview
 
-This package includes comprehensive CI/CD automation through GitHub Actions to ensure code quality, testing, and automated releases.
+This package includes comprehensive CI/CD automation through GitHub Actions to ensure code quality, testing, and automated releases during our internal development process.
 
 ## GitHub Actions Workflows
 

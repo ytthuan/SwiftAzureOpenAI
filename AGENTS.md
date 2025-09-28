@@ -1,5 +1,7 @@
 # AGENTS.md
 
+> **⚠️ Internal Development**: This document provides coding agent instructions for the internal development team working on the SwiftAzureOpenAI SDK. It contains development procedures and standards for our internal development process.
+
 ## Project Overview
 SwiftAzureOpenAI is a Swift Package that provides Swift-native models, client utilities, and services for Azure OpenAI and OpenAI Responses API. It targets Apple platforms (iOS, macOS, watchOS, tvOS) and supports both non-streaming and streaming (SSE) responses with strong typing, metadata extraction, and optional response caching.
 

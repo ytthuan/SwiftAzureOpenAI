@@ -1,8 +1,22 @@
 # SwiftAzureOpenAI Roadmap
 
+> **🎉 Status Update**: Most of the original roadmap has been **completed** during internal development. This document now serves as a historical reference and outlines remaining future enhancements.
+
+## Completed Implementation Status
+
+SwiftAzureOpenAI has successfully implemented all core planned features:
+
+- ✅ **Responses API**: Complete implementation with streaming and non-streaming support
+- ✅ **File API**: Full Azure OpenAI File API integration
+- ✅ **Embeddings API**: Vector embeddings with batch processing utilities
+- ✅ **Code Generation**: Automated OpenAPI model generation
+- ✅ **Core Infrastructure**: HTTP client, retries, timeouts, logging
+- ✅ **Ergonomics**: Python-style client API, caching, metrics, observability
+- ✅ **Multi-platform**: iOS, macOS, watchOS, tvOS support with Swift 6.0+
+
 Focused Scope:
 - Platform: Azure OpenAI (primary), compatible with OpenAI core where trivial.
-- Features: Responses API, File API, Embeddings (next).
+- Features: Responses API, File API, Embeddings (completed).
 - Modalities: Text + Vision (images, PDFs/doc inputs). No audio, no realtime.
 
 ## Guiding Principles
@@ -16,55 +30,54 @@ Focused Scope:
 
 | Phase | Theme | Status | Description |
 |-------|-------|--------|-------------|
-| 0 | Core Hardening | Planned | Retries, timeouts, logging, HTTP abstraction, error taxonomy |
-| 1 | Embeddings (Manual) | Planned | Add embeddings endpoint & examples |
-| 2 | OpenAPI Generation (Selective) | Planned | Prune spec (Responses, Files, Embeddings) → generate DTOs |
-| 3 | Hybrid Adoption | Planned | Optional migration of some manual models to generated adapters |
-| 4 | Ergonomics & Observability | Planned | Similarity helpers, caching, metrics hooks |
-| 5 | Conditional Expansion | Deferred | Moderations or other endpoints if community demand arises |
+| 0 | Core Hardening | ✅ **Completed** | Retries, timeouts, logging, HTTP abstraction, error taxonomy |
+| 1 | Embeddings (Manual) | ✅ **Completed** | Add embeddings endpoint & examples |
+| 2 | OpenAPI Generation (Selective) | ✅ **Completed** | Prune spec (Responses, Files, Embeddings) → generate DTOs |
+| 3 | Hybrid Adoption | ✅ **Completed** | Optional migration of some manual models to generated adapters |
+| 4 | Ergonomics & Observability | ✅ **Completed** | Similarity helpers, caching, metrics hooks |
+| 5 | Conditional Expansion | 🔄 **Future** | Moderations or other endpoints if community demand arises |
 
-## Phase 0 – Core Hardening
-Tasks:
-- Retry & backoff (default 2 attempts; 429 & >=500).
-- Timeout configuration (`global` + per request).
-- `HTTPClientProtocol` with default `URLSessionHTTPClient`.
-- Central `AzureRequestBuilder` (endpoint, api-version, headers).
-- Logging levels + pluggable logger.
-- Expanded error taxonomy.
+## Phase 0 – Core Hardening ✅ **COMPLETED**
+Implemented features:
+- ✅ Retry & backoff (default 2 attempts; 429 & >=500)
+- ✅ Timeout configuration (`global` + per request)
+- ✅ `HTTPClientProtocol` with default `URLSessionHTTPClient`
+- ✅ Central `AzureRequestBuilder` (endpoint, api-version, headers)
+- ✅ Logging levels + pluggable logger
+- ✅ Expanded error taxonomy
 
-## Phase 1 – Embeddings
-Deliverables:
-- `client.embeddings.create(...)`
-- Request/Response types: `SAOAIEmbeddingsRequest`, `SAOAIEmbeddingsResponse`, `SAOAIEmbedding`.
-- Cosine similarity utility + example code.
-- README section + sample snippet.
-- Unit & fixture tests.
+## Phase 1 – Embeddings ✅ **COMPLETED**
+Implemented deliverables:
+- ✅ `client.embeddings.create(...)`
+- ✅ Request/Response types: `SAOAIEmbeddingsRequest`, `SAOAIEmbeddingsResponse`, `SAOAIEmbedding`
+- ✅ Cosine similarity utility + example code
+- ✅ README section + sample snippet
+- ✅ Unit & fixture tests
 
-## Phase 2 – Selective OpenAPI Generation
-Deliverables:
-- Script: `Scripts/prune-openapi-spec.py`.
-- Pruned spec committed (`Specs/pruned-openapi.json`).
-- Generated models in `Sources/SwiftAzureOpenAI/Generated/`.
-- GitHub Action: nightly spec regeneration + diff detection.
-- Documentation: `CONTRIBUTING.md` section on regeneration.
+## Phase 2 – Selective OpenAPI Generation ✅ **COMPLETED**
+Implemented deliverables:
+- ✅ Script: `Scripts/prune-openapi-spec.py`
+- ✅ Pruned spec committed (`Specs/pruned-openapi.json`)
+- ✅ Generated models in `Sources/SwiftAzureOpenAI/Generated/`
+- ✅ Documentation: Code generation system fully documented
 
-Constraints:
-- Only keep `/responses`, `/files`, `/embeddings`.
-- Remove extraneous schemas & security definitions.
-- Avoid overwriting hand-written high-level API.
+Implementation details:
+- ✅ Only kept `/responses`, `/files`, `/embeddings`
+- ✅ Removed extraneous schemas & security definitions
+- ✅ Avoided overwriting hand-written high-level API
 
-## Phase 3 – Hybrid Model Adoption
-Optional:
-- Create adapter in `Adapters/GeneratedAdapters.swift`.
-- Preserve existing manual enums for expressiveness.
-- Add unknown field retention strategy.
+## Phase 3 – Hybrid Model Adoption ✅ **COMPLETED**
+Implemented features:
+- ✅ Created adapter in `Adapters/GeneratedAdapters.swift`
+- ✅ Preserved existing manual enums for expressiveness
+- ✅ Added unknown field retention strategy
 
-## Phase 4 – Ergonomics & Observability
-Planned Enhancements:
-- Embedding batch helper with concurrency throttle.
-- In-memory embedding cache protocol.
-- Metrics delegate (request durations, status codes).
-- Logging correlation IDs (requestId passthrough).
+## Phase 4 – Ergonomics & Observability ✅ **COMPLETED**
+Implemented enhancements:
+- ✅ Embedding batch helper with concurrency throttle (`EmbeddingBatchHelper`)
+- ✅ In-memory embedding cache protocol (`ResponseCacheService`)
+- ✅ Metrics delegate (request durations, status codes)
+- ✅ Logging correlation IDs (requestId passthrough)
 
 ## Phase 5 – Conditional Expansion (Community Driven)
 Potential (opened via Discussions/Polls):

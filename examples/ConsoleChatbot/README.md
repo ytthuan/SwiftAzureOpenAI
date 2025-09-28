@@ -1,5 +1,7 @@
 # Enhanced Console Chatbot with Tools Example
 
+> **⚠️ Internal Development Example**: This enhanced console chatbot demonstrates the latest SwiftAzureOpenAI SDK capabilities during internal development. It showcases production-ready APIs but is intended for internal testing and development.
+
 This is a complete, compilable Swift Package demonstrating an interactive console chatbot with tools support using SwiftAzureOpenAI.
 
 ## Features
