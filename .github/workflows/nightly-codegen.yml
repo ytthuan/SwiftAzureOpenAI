@@ -1,188 +1,266 @@
-name: Nightly Code Generation
-
-# Environment Fix (Issue #3, #2): Changed from ubuntu-latest to macos-15
-# - ubuntu-latest resolves to Ubuntu 24.04 which is not supported by swift-actions/setup-swift@v1
-# - macOS 15 provides better Swift toolchain compatibility and consistency with main CI workflow
-# - Uses Xcode 16.0 with Swift 6.0.2 for reliable code generation environment
+name: Nightly Code Generation (Enhanced)
 
 on:
   schedule:
-    # Run every night at 2 AM UTC
-    - cron: '0 2 * * *'
+    - cron: "0 2 * * *"   # 02:00 UTC nightly
   workflow_dispatch:
     inputs:
       force_regeneration:
-        description: 'Force regeneration even if no changes detected'
+        description: "Force regeneration even if spec hash unchanged"
         required: false
-        default: 'false'
+        default: "false"
         type: boolean
 
+concurrency:
+  group: nightly-codegen
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  SPEC_URL: https://raw.githubusercontent.com/Azure/azure-rest-api-specs/main/specification/ai/data-plane/OpenAI.v1/azure-v1-v1-generated.json
+  GENERATED_FILE: Sources/SwiftAzureOpenAI/Generated/GeneratedModels.swift
+  MODULE_NAME: SwiftAzureOpenAI
+
 jobs:
-  check-and-regenerate:
-    runs-on: macos-15
-    permissions:
-      contents: write
-      pull-requests: write
-      
+  nightly-codegen:
+    runs-on: ubuntu-latest
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.9'
-        
-    - name: Select Xcode version
-      run: |
-        # Use Xcode 16.0 which includes Swift 6.0.2
-        sudo xcode-select -s /Applications/Xcode_16.0.app/Contents/Developer || {
-          echo "Xcode 16.0 not available, using default"
-          sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
-        }
-    
-    - name: Show Xcode and Swift versions
-      run: |
-        xcodebuild -version
-        swift --version
-    
-    - name: Download current OpenAPI spec
-      run: |
-        curl -o Specs/current-openapi.json https://raw.githubusercontent.com/Azure/azure-rest-api-specs/main/specification/ai/data-plane/OpenAI.v1/azure-v1-v1-generated.json
-        
-    - name: Check for spec changes
-      id: spec-changes
-      run: |
-        if [ -f "Specs/full-openapi.json" ]; then
-          if ! cmp -s "Specs/current-openapi.json" "Specs/full-openapi.json"; then
-            echo "changes_detected=true" >> $GITHUB_OUTPUT
-            echo "OpenAPI spec changes detected"
-          else
-            echo "changes_detected=false" >> $GITHUB_OUTPUT
-            echo "No OpenAPI spec changes detected"
-          fi
-        else
-          echo "changes_detected=true" >> $GITHUB_OUTPUT
-          echo "No existing spec found, treating as change"
-        fi
-        
-    - name: Backup current generated models
-      if: steps.spec-changes.outputs.changes_detected == 'true' || github.event.inputs.force_regeneration == 'true'
-      run: |
-        if [ -f "Sources/SwiftAzureOpenAI/Generated/GeneratedModels.swift" ]; then
-          cp "Sources/SwiftAzureOpenAI/Generated/GeneratedModels.swift" "Sources/SwiftAzureOpenAI/Generated/GeneratedModels.swift.backup"
-        fi
-        
-    - name: Update spec and regenerate models
-      if: steps.spec-changes.outputs.changes_detected == 'true' || github.event.inputs.force_regeneration == 'true'
-      run: |
-        # Update the stored spec
-        cp Specs/current-openapi.json Specs/full-openapi.json
-        
-        # Regenerate models
-        python3 Scripts/prune-openapi-spec.py
-        python3 Scripts/generate-swift-models.py
-        
-    - name: Test build with new models
-      if: steps.spec-changes.outputs.changes_detected == 'true' || github.event.inputs.force_regeneration == 'true'
-      run: |
-        swift build
-        
-    - name: Run tests with new models
-      if: steps.spec-changes.outputs.changes_detected == 'true' || github.event.inputs.force_regeneration == 'true'
-      run: |
-        swift test --parallel
-        
-    - name: Check for model changes
-      if: steps.spec-changes.outputs.changes_detected == 'true' || github.event.inputs.force_regeneration == 'true'
-      id: model-changes
-      run: |
-        if git diff --quiet Sources/SwiftAzureOpenAI/Generated/GeneratedModels.swift; then
-          echo "model_changes=false" >> $GITHUB_OUTPUT
-          echo "No model changes generated"
-        else
-          echo "model_changes=true" >> $GITHUB_OUTPUT
-          echo "Model changes detected"
-        fi
-        
-    - name: Generate diff report
-      if: steps.model-changes.outputs.model_changes == 'true'
-      run: |
-        echo "# Generated Model Changes" > model-changes.md
-        echo "" >> model-changes.md
-        echo "The OpenAPI specification has been updated. Here are the changes to generated models:" >> model-changes.md
-        echo "" >> model-changes.md
-        echo "## File Changes" >> model-changes.md
-        echo "" >> model-changes.md
-        echo '```diff' >> model-changes.md
-        git diff --no-index Sources/SwiftAzureOpenAI/Generated/GeneratedModels.swift.backup Sources/SwiftAzureOpenAI/Generated/GeneratedModels.swift || true >> model-changes.md
-        echo '```' >> model-changes.md
-        echo "" >> model-changes.md
-        echo "## Summary" >> model-changes.md
-        echo "" >> model-changes.md
-        
-        # Count changes
-        ADDED_STRUCTS=$(git diff Sources/SwiftAzureOpenAI/Generated/GeneratedModels.swift | grep "^+public struct" | wc -l)
-        REMOVED_STRUCTS=$(git diff Sources/SwiftAzureOpenAI/Generated/GeneratedModels.swift | grep "^-public struct" | wc -l)
-        ADDED_ENUMS=$(git diff Sources/SwiftAzureOpenAI/Generated/GeneratedModels.swift | grep "^+public enum" | wc -l)
-        REMOVED_ENUMS=$(git diff Sources/SwiftAzureOpenAI/Generated/GeneratedModels.swift | grep "^-public enum" | wc -l)
-        
-        echo "- Added structs: $ADDED_STRUCTS" >> model-changes.md
-        echo "- Removed structs: $REMOVED_STRUCTS" >> model-changes.md  
-        echo "- Added enums: $ADDED_ENUMS" >> model-changes.md
-        echo "- Removed enums: $REMOVED_ENUMS" >> model-changes.md
-        echo "" >> model-changes.md
-        echo "## Next Steps" >> model-changes.md
-        echo "" >> model-changes.md
-        echo "Please review these changes carefully:" >> model-changes.md
-        echo "1. Verify all tests pass" >> model-changes.md
-        echo "2. Check for breaking changes in public APIs" >> model-changes.md
-        echo "3. Update any manual models that depend on these generated models" >> model-changes.md
-        echo "4. Update documentation if needed" >> model-changes.md
-        
-    - name: Commit changes
-      if: steps.model-changes.outputs.model_changes == 'true'
-      run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git add Specs/full-openapi.json Specs/pruned-openapi.json Sources/SwiftAzureOpenAI/Generated/GeneratedModels.swift
-        git commit -m "codegen: regenerate models from updated OpenAPI spec
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-        - Updated OpenAPI specification
-        - Regenerated Swift models  
-        - All tests pass
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
 
-        [skip ci]"
-        
-    - name: Create Pull Request
-      if: steps.model-changes.outputs.model_changes == 'true'
-      uses: peter-evans/create-pull-request@v5
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        commit-message: "codegen: regenerate models from updated OpenAPI spec"
-        title: "🤖 Auto-generated model updates from OpenAPI spec changes"
-        body-path: model-changes.md
-        branch: codegen/auto-update-models
-        delete-branch: true
-        labels: |
-          codegen
-          automated
-        
-    - name: Cleanup
-      if: always()
-      run: |
-        rm -f Specs/current-openapi.json
-        rm -f Sources/SwiftAzureOpenAI/Generated/GeneratedModels.swift.backup
-        rm -f model-changes.md
-        
-    - name: Report status
-      run: |
-        if [ "${{ steps.spec-changes.outputs.changes_detected }}" == "true" ]; then
-          if [ "${{ steps.model-changes.outputs.model_changes }}" == "true" ]; then
-            echo "✅ OpenAPI spec updated and models regenerated successfully"
-          else
-            echo "ℹ️ OpenAPI spec updated but no model changes were needed"
+      - name: Set up Swift
+        uses: swift-actions/setup-swift@v1
+        with:
+            swift-version: "6.0.2"
+
+      - name: Install utilities (jq)
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y jq
+
+      - name: Prepare directories
+        run: |
+          mkdir -p Specs
+          mkdir -p symbolgraph/before symbolgraph/after
+          mkdir -p docs
+          mkdir -p Reports
+
+      - name: Download current upstream spec
+        id: fetch-spec
+        run: |
+          curl -sSL "$SPEC_URL" -o Specs/current-openapi.json
+          if [ ! -s Specs/current-openapi.json ]; then
+            echo "Spec download failed or empty."
+            exit 1
           fi
-        else
-          echo "✅ No OpenAPI spec changes detected"
-        fi
+          echo "spec_size=$(wc -c < Specs/current-openapi.json)" >> $GITHUB_OUTPUT
+          sha=$(sha256sum Specs/current-openapi.json | awk '{print $1}')
+          echo "spec_sha=$sha" >> $GITHUB_OUTPUT
+          echo "Downloaded spec SHA: $sha"
+
+      - name: Detect previous spec hash
+        id: prev-spec
+        run: |
+          if [ -f Specs/full-openapi.json ]; then
+            old_sha=$(sha256sum Specs/full-openapi.json | awk '{print $1}')
+            echo "prev_spec_sha=$old_sha" >> $GITHUB_OUTPUT
+            echo "Previous spec SHA: $old_sha"
+          else
+            echo "prev_spec_sha=none" >> $GITHUB_OUTPUT
+            echo "No previous stored spec."
+          fi
+
+      - name: Decide if spec changed
+        id: spec-change
+        run: |
+          FORCE="${{ github.event.inputs.force_regeneration }}"
+          NEW_SHA="${{ steps.fetch-spec.outputs.spec_sha }}"
+          OLD_SHA="${{ steps.prev-spec.outputs.prev_spec_sha }}"
+          if [ "$FORCE" = "true" ]; then
+            echo "force=true" >> $GITHUB_OUTPUT
+            echo "Spec marked as changed (forced)."
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            if [ "$OLD_SHA" = "none" ] || [ "$NEW_SHA" != "$OLD_SHA" ]; then
+              echo "changed=true" >> $GITHUB_OUTPUT
+              echo "Spec content changed."
+            else
+              echo "changed=false" >> $GITHUB_OUTPUT
+              echo "Spec unchanged."
+            fi
+          fi
+
+      - name: Build (baseline) + capture public API (before)
+        if: steps.spec-change.outputs.changed == 'true'
+        run: |
+          swift build
+          # Create a simple public API snapshot by extracting public declarations
+          grep -r "^public " Sources/SwiftAzureOpenAI/ | sort > symbolgraph/before/public-api.txt || echo "// No public API found" > symbolgraph/before/public-api.txt
+
+      - name: Backup current generated models
+        if: steps.spec-change.outputs.changed == 'true'
+        run: |
+          if [ -f "$GENERATED_FILE" ]; then
+            cp "$GENERATED_FILE" "$GENERATED_FILE.before"
+          else
+            echo "// Empty baseline" > "$GENERATED_FILE.before"
+          fi
+
+      - name: Update stored spec (always commit spec change even if no model diff later)
+        if: steps.spec-change.outputs.changed == 'true'
+        run: |
+          cp Specs/current-openapi.json Specs/full-openapi.json
+
+      - name: Prune + regenerate models
+        if: steps.spec-change.outputs.changed == 'true'
+        run: |
+          python3 Scripts/prune-openapi-spec.py
+          python3 Scripts/generate-swift-models.py
+          if [ ! -f "$GENERATED_FILE" ]; then
+            echo "Generated file missing after generation."
+            exit 1
+          fi
+
+      - name: Build with new models
+        if: steps.spec-change.outputs.changed == 'true'
+        run: |
+          swift build
+
+      - name: Run test suite
+        if: steps.spec-change.outputs.changed == 'true'
+        run: |
+          swift test --parallel
+
+      - name: Capture public API (after)
+        if: steps.spec-change.outputs.changed == 'true'
+        run: |
+          # Create a simple public API snapshot by extracting public declarations
+          grep -r "^public " Sources/SwiftAzureOpenAI/ | sort > symbolgraph/after/public-api.txt || echo "// No public API found" > symbolgraph/after/public-api.txt
+
+      - name: Determine model file diff
+        if: steps.spec-change.outputs.changed == 'true'
+        id: model-diff
+        run: |
+          if diff -q "$GENERATED_FILE.before" "$GENERATED_FILE" >/dev/null 2>&1; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "No model file diff."
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "Model file changed."
+          fi
+
+      - name: Classify semantic changes
+        if: steps.spec-change.outputs.changed == 'true'
+        id: classify
+        run: |
+          python3 Scripts/classify-model-changes.py \
+            --old "$GENERATED_FILE.before" \
+            --new "$GENERATED_FILE" \
+            --out Reports/model-changes.md \
+            --json Reports/model-changes.json \
+            --model-changed "${{ steps.model-diff.outputs.changed }}"
+          SEMVER=$(jq -r '.semver' Reports/model-changes.json)
+          echo "semver_label=semver:${SEMVER}" >> $GITHUB_OUTPUT
+          echo "recommended_bump=$SEMVER" >> $GITHUB_OUTPUT
+
+      - name: Public API surface diff (symbolgraph)
+        if: steps.spec-change.outputs.changed == 'true'
+        run: |
+          bash Scripts/diff-symbols.sh symbolgraph/before symbolgraph/after > Reports/symbol-diff.md || echo "Symbol diff script failed." >> Reports/symbol-diff.md
+
+      - name: Compose PR body
+        if: steps.spec-change.outputs.changed == 'true'
+        run: |
+          echo "# Nightly Codegen Report" > Reports/pr-body.md
+          echo "" >> Reports/pr-body.md
+          echo "**Spec SHA (new):** ${{ steps.fetch-spec.outputs.spec_sha }}" >> Reports/pr-body.md
+          echo "**Spec SHA (previous):** ${{ steps.prev-spec.outputs.prev_spec_sha }}" >> Reports/pr-body.md
+          echo "**Model file changed:** ${{ steps.model-diff.outputs.changed }}" >> Reports/pr-body.md
+          echo "**Recommended semantic version bump:** ${{ steps.classify.outputs.recommended_bump }}" >> Reports/pr-body.md
+          echo "" >> Reports/pr-body.md
+          if [ -f Reports/model-changes.md ]; then
+            echo "## Model Changes" >> Reports/pr-body.md
+            cat Reports/model-changes.md >> Reports/pr-body.md
+            echo "" >> Reports/pr-body.md
+          fi
+          if [ -f Reports/symbol-diff.md ]; then
+            echo "## Public API Symbol Diff" >> Reports/pr-body.md
+            cat Reports/symbol-diff.md >> Reports/pr-body.md
+            echo "" >> Reports/pr-body.md
+          fi
+          echo "## Next Steps" >> Reports/pr-body.md
+          echo "1. Review semantic classification & added/removed types." >> Reports/pr-body.md
+          echo "2. Confirm no unintended breaking changes." >> Reports/pr-body.md
+          echo "3. Update docs/examples if new features added." >> Reports/pr-body.md
+          echo "4. Merge and then decide on release pipeline trigger." >> Reports/pr-body.md
+
+      - name: Update CHANGELOG_PENDING
+        if: steps.spec-change.outputs.changed == 'true'
+        run: |
+          ts=$(date -u +"%Y-%m-%d")
+          bump=${{ steps.classify.outputs.recommended_bump }}
+          {
+            echo "### $ts (auto-detected: $bump)"
+            echo "- Nightly codegen update. Spec SHA: ${{ steps.fetch-spec.outputs.spec_sha }}"
+            if [ "${{ steps.model-diff.outputs.changed }}" = "true" ]; then
+              echo "- Model changes detected (see PR body for detail)."
+            else
+              echo "- Spec changed but generated models unaffected."
+            fi
+            echo ""
+          } >> docs/CHANGELOG_PENDING.md
+
+      - name: Commit spec (always when spec changed)
+        if: steps.spec-change.outputs.changed == 'true'
+        run: |
+          git config user.email "action@github.com"
+          git config user.name "GitHub Action"
+          git add Specs/full-openapi.json Specs/pruned-openapi.json || true
+          git add docs/CHANGELOG_PENDING.md || true
+          if [ "${{ steps.model-diff.outputs.changed }}" = "true" ]; then
+            git add "$GENERATED_FILE"
+          fi
+          if git diff --cached --quiet; then
+            echo "Nothing to commit."
+          else
+            msg="codegen: nightly spec sync"
+            if [ "${{ steps.model-diff.outputs.changed }}" = "true" ]; then
+              msg="$msg + regenerated models"
+            else
+              msg="$msg (no model diff)"
+            fi
+            git commit -m "$msg"
+          fi
+
+      - name: Create Pull Request (only if something committed)
+        if: steps.spec-change.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "codegen: nightly spec sync"
+          title: "🤖 Nightly Codegen: Spec sync (${{ steps.classify.outputs.recommended_bump }})"
+          body-path: Reports/pr-body.md
+          branch: codegen/auto-update-models
+          delete-branch: true
+          labels: |
+            codegen
+            automated
+            ${{ steps.classify.outputs.semver_label }}
+
+      - name: Final status
+        run: |
+          if [ "${{ steps.spec-change.outputs.changed }}" = "true" ]; then
+            echo "Nightly codegen run completed (spec changed)."
+          else
+            echo "Spec unchanged. Nothing to do."
+          fi
