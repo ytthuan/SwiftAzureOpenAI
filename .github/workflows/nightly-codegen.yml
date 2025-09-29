@@ -1,5 +1,10 @@
 name: Nightly Code Generation
 
+# Environment Fix (Issue #3, #2): Changed from ubuntu-latest to macos-15
+# - ubuntu-latest resolves to Ubuntu 24.04 which is not supported by swift-actions/setup-swift@v1
+# - macOS 15 provides better Swift toolchain compatibility and consistency with main CI workflow
+# - Uses Xcode 16.0 with Swift 6.0.2 for reliable code generation environment
+
 on:
   schedule:
     # Run every night at 2 AM UTC
@@ -14,7 +19,7 @@ on:
 
 jobs:
   check-and-regenerate:
-    runs-on: ubuntu-latest
+    runs-on: macos-15
     permissions:
       contents: write
       pull-requests: write
@@ -28,10 +33,18 @@ jobs:
       with:
         python-version: '3.9'
         
-    - name: Set up Swift
-      uses: swift-actions/setup-swift@v1
-      with:
-        swift-version: '6.0.2'
+    - name: Select Xcode version
+      run: |
+        # Use Xcode 16.0 which includes Swift 6.0.2
+        sudo xcode-select -s /Applications/Xcode_16.0.app/Contents/Developer || {
+          echo "Xcode 16.0 not available, using default"
+          sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+        }
+    
+    - name: Show Xcode and Swift versions
+      run: |
+        xcodebuild -version
+        swift --version
     
     - name: Download current OpenAPI spec
       run: |
