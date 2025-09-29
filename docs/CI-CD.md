@@ -66,6 +66,34 @@ This package includes comprehensive CI/CD automation through GitHub Actions to e
 - Installation validation with test projects
 - Support for both `v1.0.0` and `1.0.0` tag formats
 
+### 4. Nightly Code Generation (`.github/workflows/nightly-codegen.yml`)
+
+**Triggers:**
+- Scheduled nightly at 2 AM UTC
+- Manual workflow dispatch with optional force regeneration
+
+**Jobs:**
+- **check-and-regenerate**: Automated model regeneration on macOS 15
+
+**Features:**
+- Downloads latest Azure OpenAPI specification
+- Compares with current specification for changes
+- Automatically regenerates Swift models if changes detected
+- Creates pull requests with generated model updates
+- Runs full test suite to validate generated code
+- Provides detailed diff reports for code review
+
+**Environment:**
+- **Platform**: macOS 15 (changed from Ubuntu for better Swift toolchain compatibility)
+- **Swift**: 6.0.2 via Xcode 16.0
+- **Python**: 3.9 for code generation scripts
+
+**Benefits:**
+- Zero manual intervention for API updates
+- Fast update cycle (changes reflected within 24 hours)
+- Quality assurance through automated testing
+- Transparent process with pull request workflow
+
 ## Release Process
 
 ### Option 1: Automated Release with Human Approval (Recommended)
