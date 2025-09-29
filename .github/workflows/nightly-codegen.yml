@@ -100,11 +100,12 @@ jobs:
             fi
           fi
 
-      - name: Build (baseline) + extract symbolgraph (before)
+      - name: Build (baseline) + capture public API (before)
         if: steps.spec-change.outputs.changed == 'true'
         run: |
           swift build
-          swift symbolgraph-extract --module-name "$MODULE_NAME" --pretty-print --output-dir symbolgraph/before || echo "Symbolgraph (before) extraction failed (continuing)."
+          # Create a simple public API snapshot by extracting public declarations
+          grep -r "^public " Sources/SwiftAzureOpenAI/ | sort > symbolgraph/before/public-api.txt || echo "// No public API found" > symbolgraph/before/public-api.txt
 
       - name: Backup current generated models
         if: steps.spec-change.outputs.changed == 'true'
@@ -140,10 +141,11 @@ jobs:
         run: |
           swift test --parallel
 
-      - name: Extract symbolgraph (after)
+      - name: Capture public API (after)
         if: steps.spec-change.outputs.changed == 'true'
         run: |
-          swift symbolgraph-extract --module-name "$MODULE_NAME" --pretty-print --output-dir symbolgraph/after || echo "Symbolgraph (after) extraction failed."
+          # Create a simple public API snapshot by extracting public declarations
+          grep -r "^public " Sources/SwiftAzureOpenAI/ | sort > symbolgraph/after/public-api.txt || echo "// No public API found" > symbolgraph/after/public-api.txt
 
       - name: Determine model file diff
         if: steps.spec-change.outputs.changed == 'true'
