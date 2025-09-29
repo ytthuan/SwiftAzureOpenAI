@@ -10,3 +10,9 @@ build.log
 Package.resolved
 *.log
 mcp.json
+# Temporary files from nightly codegen workflow
+Reports/
+symbolgraph/
+Sources/SwiftAzureOpenAI/Generated/GeneratedModels.swift.before
+Sources/SwiftAzureOpenAI/Generated/GeneratedModels.swift.backup
+Specs/current-openapi.json
