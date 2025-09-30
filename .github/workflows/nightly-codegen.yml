@@ -26,7 +26,7 @@ env:
 
 jobs:
   nightly-codegen:
-    runs-on: macos-15
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -38,23 +38,35 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Select Xcode version
+      - name: Install Swift dependencies
         run: |
-          # Use Xcode 16.0 which includes Swift 6.0.2
-          sudo xcode-select -s /Applications/Xcode_16.0.app/Contents/Developer || {
-            echo "Xcode 16.0 not available, using default"
-            sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
-          }
+          sudo apt-get update
+          sudo apt-get install -y libc6-dev libicu-dev libcurl4-openssl-dev libssl-dev curl jq
 
-      - name: Show Xcode and Swift versions
+      - name: Install Swift
         run: |
-          xcodebuild -version
-          swift --version
+          # Download and install Swift 6.0.2 from Swift.org (matching CI workflow)
+          SWIFT_VERSION="6.0.2"
+          SWIFT_URL="https://download.swift.org/swift-${SWIFT_VERSION}-release/ubuntu2204/swift-${SWIFT_VERSION}-RELEASE/swift-${SWIFT_VERSION}-RELEASE-ubuntu22.04.tar.gz"
+          
+          echo "Installing Swift ${SWIFT_VERSION} from ${SWIFT_URL}"
+          
+          # Download Swift
+          curl -fsSL "${SWIFT_URL}" -o swift.tar.gz
+          
+          # Extract Swift
+          sudo tar -xzf swift.tar.gz -C /opt/
+          
+          # Add to PATH
+          echo "/opt/swift-${SWIFT_VERSION}-RELEASE-ubuntu22.04/usr/bin" >> $GITHUB_PATH
+          
+          # Verify installation
+          /opt/swift-${SWIFT_VERSION}-RELEASE-ubuntu22.04/usr/bin/swift --version
+          
+          echo "✅ Swift ${SWIFT_VERSION} installed successfully"
 
-      - name: Install utilities (jq)
-        run: |
-          # Install jq using Homebrew on macOS
-          brew install jq
+      - name: Show Swift version
+        run: swift --version
 
       - name: Prepare directories
         run: |
