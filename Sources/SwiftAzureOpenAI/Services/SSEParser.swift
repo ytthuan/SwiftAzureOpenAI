@@ -200,96 +200,17 @@ public final class SSEParser: Sendable {
     
     /// Handle delta events containing incremental streaming content
     private static func handleDeltaEvent(event: AzureOpenAISSEEvent, contentType: String) -> SAOAIStreamingResponse? {
-        guard let delta = event.delta else { 
-            return nil 
-        }
-        
-        let content = SAOAIStreamingContent(type: contentType, text: delta, index: event.outputIndex ?? 0)
-        let output = SAOAIStreamingOutput(content: [content], role: "assistant")
-        
-        // Convert event type to enum
-        let eventType = SAOAIStreamingEventType(rawValue: event.type)
-        
-        // Convert item if present, or create minimal item from itemId for delta events
-        let item: SAOAIStreamingItem? = {
-            if let eventItem = event.item {
-                return SAOAIStreamingItem(from: eventItem)
-            } else if let itemId = event.itemId {
-                // Create minimal streaming item for delta events that only have itemId
-                return SAOAIStreamingItem(
-                    type: nil,  // We don't know the type from delta events
-                    id: itemId,
-                    status: nil,
-                    arguments: nil,
-                    callId: nil,
-                    name: nil,
-                    summary: nil,
-                    containerId: nil
-                )
-            } else {
-                return nil
-            }
-        }()
-        
-        let result = SAOAIStreamingResponse(
-            id: event.itemId, // Use item_id for delta events
-            model: nil,
-            created: nil,
-            output: [output],
-            usage: nil,
-            eventType: eventType,
-            item: item
-        )
-        
-        return result
+        return SSEResponseBuilder().createDeltaResponse(event: event, contentType: contentType)
     }
     
     /// Handle done events indicating completion of streaming content
     private static func handleDoneEvent(event: AzureOpenAISSEEvent, contentType: String) -> SAOAIStreamingResponse? {
-        // For done events, use arguments if available, otherwise use empty text to avoid displaying "[DONE]" to users
-        let finalContent = event.arguments ?? ""
-        
-        let content = SAOAIStreamingContent(type: contentType, text: finalContent, index: event.outputIndex ?? 0)
-        let output = SAOAIStreamingOutput(content: [content], role: "assistant")
-        
-        // Convert event type to enum
-        let eventType = SAOAIStreamingEventType(rawValue: event.type)
-        
-        // Convert item if present
-        let item = event.item.map { SAOAIStreamingItem(from: $0) }
-        
-        return SAOAIStreamingResponse(
-            id: event.itemId,
-            model: nil,
-            created: nil,
-            output: [output],
-            usage: nil,
-            eventType: eventType,
-            item: item
-        )
+        return SSEResponseBuilder().createDoneResponse(event: event, contentType: contentType)
     }
     
     /// Handle response lifecycle events (created, in_progress, completed)
     private static func handleResponseLifecycleEvent(event: AzureOpenAISSEEvent) -> SAOAIStreamingResponse? {
-        guard let response = event.response else { return nil }
-        
-        let streamingOutput = convertAzureOutputToStreamingOutput(response.output)
-        
-        // Convert event type to enum
-        let eventType = SAOAIStreamingEventType(rawValue: event.type)
-        
-        // Convert item if present
-        let item = event.item.map { SAOAIStreamingItem(from: $0) }
-        
-        return SAOAIStreamingResponse(
-            id: response.id,
-            model: response.model,
-            created: response.createdAt,
-            output: streamingOutput,
-            usage: response.usage,
-            eventType: eventType,
-            item: item
-        )
+        return SSEResponseBuilder().createLifecycleResponse(event: event)
     }
     
     /// Handle response failure events
@@ -392,43 +313,8 @@ public final class SSEParser: Sendable {
             }
         }
         
-        // Create content based on item type
-        let content: SAOAIStreamingContent
-        if item.type == "function_call" {
-            // For function call items, don't create text content as this should be handled by event processing
-            content = SAOAIStreamingContent(type: "status", text: "", index: 0)
-        } else if item.type == "reasoning" {
-            // Keep reasoning content but without debug text
-            content = SAOAIStreamingContent(type: "reasoning", text: "", index: 0)
-        } else if item.type == "code_interpreter_call" {
-            // Enhanced code interpreter status tracking
-            let statusText = event.type == "response.output_item.added" ? "Code interpreter started" : "Code interpreter completed"
-            content = SAOAIStreamingContent(type: "code_interpreter_status", text: statusText, index: 0)
-        } else if event.type == "response.output_item.added" || event.type == "response.output_item.done" {
-            // For pure status events like added/done, create status content with empty text
-            content = SAOAIStreamingContent(type: "status", text: "", index: 0)
-        } else {
-            // For other item types, preserve the type but with empty text
-            content = SAOAIStreamingContent(type: item.type ?? "output_item", text: "", index: 0)
-        }
-        
-        let output = SAOAIStreamingOutput(content: [content], role: "assistant")
-        
-        // Convert event type to enum
-        let eventType = SAOAIStreamingEventType(rawValue: event.type)
-        
-        // Convert item
-        let streamingItem = SAOAIStreamingItem(from: item)
-        
-        return SAOAIStreamingResponse(
-            id: item.id,
-            model: nil,
-            created: nil,
-            output: [output],
-            usage: nil,
-            eventType: eventType,
-            item: streamingItem
-        )
+        // Use shared builder for consistency
+        return SSEResponseBuilder().createOutputItemResponse(event: event)
     }
     
     /// Handle tool call events (file search, code interpreter, etc.)
@@ -478,17 +364,7 @@ public final class SSEParser: Sendable {
     
     /// Handle reasoning summary part events
     private static func handleReasoningSummaryPartEvent(event: AzureOpenAISSEEvent) -> SAOAIStreamingResponse? {
-        let statusText = event.type.contains("added") ? "added" : "done"
-        let content = SAOAIStreamingContent(type: "reasoning_summary_part", text: "Reasoning summary part \(statusText)", index: event.outputIndex ?? 0)
-        let output = SAOAIStreamingOutput(content: [content], role: "assistant")
-        
-        return SAOAIStreamingResponse(
-            id: event.itemId,
-            model: nil,
-            created: nil,
-            output: [output],
-            usage: nil
-        )
+        return SSEResponseBuilder().createReasoningSummaryPartResponse(event: event)
     }
     
     /// Handle error events

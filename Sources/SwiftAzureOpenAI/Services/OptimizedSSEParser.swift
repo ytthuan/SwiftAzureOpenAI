@@ -137,78 +137,49 @@ public final class OptimizedSSEParser: Sendable {
     
     /// Optimized conversion from Azure event to streaming response
     private static func convertAzureEventToStreamingResponseOptimized(_ event: AzureOpenAISSEEvent) -> SAOAIStreamingResponse? {
+        // Use shared response builder for consistency
+        let builder = SSEResponseBuilder()
+        
         // Fast path for most common delta events
         switch event.type {
         case "response.text.delta", "response.output_text.delta":
-            return createDeltaResponse(event: event, contentType: "text")
+            return builder.createDeltaResponse(event: event, contentType: "text")
         case "response.function_call_arguments.delta":
-            return createDeltaResponse(event: event, contentType: "function_call_arguments")
+            return builder.createDeltaResponse(event: event, contentType: "function_call_arguments")
         case "response.reasoning.delta":
-            return createDeltaResponse(event: event, contentType: "reasoning")
+            return builder.createDeltaResponse(event: event, contentType: "reasoning")
         case "response.reasoning_summary.delta":
-            return createDeltaResponse(event: event, contentType: "reasoning_summary")
+            return builder.createDeltaResponse(event: event, contentType: "reasoning_summary")
         case "response.reasoning_summary_text.delta":
-            return createDeltaResponse(event: event, contentType: "reasoning_summary_text")
+            return builder.createDeltaResponse(event: event, contentType: "reasoning_summary_text")
         case "response.reasoning.done":
-            return createDoneResponse(event: event, contentType: "reasoning")
+            return builder.createDoneResponse(event: event, contentType: "reasoning")
         case "response.reasoning_summary.done":
-            return createDoneResponse(event: event, contentType: "reasoning_summary")
+            return builder.createDoneResponse(event: event, contentType: "reasoning_summary")
         case "response.reasoning_summary_text.done":
-            return createDoneResponse(event: event, contentType: "reasoning_summary_text")
+            return builder.createDoneResponse(event: event, contentType: "reasoning_summary_text")
         case "response.created", "response.in_progress", "response.completed":
-            return createLifecycleResponse(event: event)
+            return builder.createLifecycleResponse(event: event)
         case "response.output_item.added", "response.output_item.done":
-            return createOutputItemResponse(event: event)
+            return builder.createOutputItemResponse(event: event)
         case "response.function_call_arguments.done":
             return createArgumentsDoneResponse(event: event)
         case "response.reasoning_summary_part.added", "response.reasoning_summary_part.done":
-            return createReasoningSummaryPartResponse(event: event)
+            return builder.createReasoningSummaryPartResponse(event: event)
         default:
             // Use the SSE parser helper for less common events  
             return SSEParser.convertLifecycleEvent(event)
         }
     }
     
-    /// Fast delta response creation for common cases
+    /// Fast delta response creation for common cases (kept for backward compatibility with optimized parser)
     private static func createDeltaResponse(event: AzureOpenAISSEEvent, contentType: String) -> SAOAIStreamingResponse? {
-        guard let delta = event.delta else { return nil }
-        
-        let content = SAOAIStreamingContent(type: contentType, text: delta, index: event.outputIndex ?? 0)
-        let output = SAOAIStreamingOutput(content: [content], role: "assistant")
-        
-        // Convert event type to enum
-        let eventType = SAOAIStreamingEventType(rawValue: event.type)
-        
-        // Convert item if present
-        let item = event.item.map { SAOAIStreamingItem(from: $0) }
-        
-        return SAOAIStreamingResponse(
-            id: event.itemId,
-            model: nil,
-            created: nil,
-            output: [output],
-            usage: nil,
-            eventType: eventType,
-            item: item
-        )
+        return SSEResponseBuilder().createDeltaResponse(event: event, contentType: contentType)
     }
     
-    /// Fast lifecycle response creation
+    /// Fast lifecycle response creation (kept for backward compatibility with optimized parser)
     private static func createLifecycleResponse(event: AzureOpenAISSEEvent) -> SAOAIStreamingResponse? {
-        guard let response = event.response else { return nil }
-        
-        // Convert event type to enum
-        let eventType = SAOAIStreamingEventType(rawValue: event.type)
-        
-        return SAOAIStreamingResponse(
-            id: response.id,
-            model: response.model,
-            created: response.createdAt,
-            output: response.output?.compactMap { convertOutputOptimized($0) },
-            usage: response.usage,
-            eventType: eventType,
-            item: nil
-        )
+        return SSEResponseBuilder().createLifecycleResponse(event: event)
     }
     
     /// Optimized output conversion
@@ -252,27 +223,7 @@ public final class OptimizedSSEParser: Sendable {
 extension OptimizedSSEParser {
     /// Fast output item response creation (response.output_item.added/done)
     private static func createOutputItemResponse(event: AzureOpenAISSEEvent) -> SAOAIStreamingResponse? {
-        guard let item = event.item else { return nil }
-        
-        // Create status content without any text to prevent function names from being printed
-        let content = SAOAIStreamingContent(type: "status", text: "", index: 0)
-        let output = SAOAIStreamingOutput(content: [content], role: "assistant")
-        
-        // Convert event type to enum
-        let eventType = SAOAIStreamingEventType(rawValue: event.type)
-        
-        // Convert item
-        let streamingItem = SAOAIStreamingItem(from: item)
-        
-        return SAOAIStreamingResponse(
-            id: item.id,
-            model: nil,
-            created: nil,
-            output: [output],
-            usage: nil,
-            eventType: eventType,
-            item: streamingItem
-        )
+        return SSEResponseBuilder().createOutputItemResponse(event: event)
     }
     
     /// Fast function call arguments done response creation
@@ -302,37 +253,12 @@ extension OptimizedSSEParser {
 
     /// Fast reasoning done response creation
     private static func createDoneResponse(event: AzureOpenAISSEEvent, contentType: String) -> SAOAIStreamingResponse? {
-        let content = SAOAIStreamingContent(type: contentType, text: event.arguments ?? "", index: event.outputIndex ?? 0)
-        let output = SAOAIStreamingOutput(content: [content], role: "assistant")
-        let eventType = SAOAIStreamingEventType(rawValue: event.type)
-        let item = event.item.map { SAOAIStreamingItem(from: $0) }
-        return SAOAIStreamingResponse(
-            id: event.itemId,
-            model: nil,
-            created: nil,
-            output: [output],
-            usage: nil,
-            eventType: eventType,
-            item: item
-        )
+        return SSEResponseBuilder().createDoneResponse(event: event, contentType: contentType)
     }
 
     /// Fast reasoning summary part response creation
     private static func createReasoningSummaryPartResponse(event: AzureOpenAISSEEvent) -> SAOAIStreamingResponse? {
-        let statusText = event.type.contains("added") ? "added" : "done"
-        let content = SAOAIStreamingContent(type: "reasoning_summary_part", text: "Reasoning summary part \(statusText)", index: event.outputIndex ?? 0)
-        let output = SAOAIStreamingOutput(content: [content], role: "assistant")
-        let eventType = SAOAIStreamingEventType(rawValue: event.type)
-        let item = event.item.map { SAOAIStreamingItem(from: $0) }
-        return SAOAIStreamingResponse(
-            id: event.itemId,
-            model: nil,
-            created: nil,
-            output: [output],
-            usage: nil,
-            eventType: eventType,
-            item: item
-        )
+        return SSEResponseBuilder().createReasoningSummaryPartResponse(event: event)
     }
 }
 
