@@ -163,23 +163,27 @@ public final class OptimizedSSEParser: Sendable {
         case "response.output_item.added", "response.output_item.done":
             return builder.createOutputItemResponse(event: event)
         case "response.function_call_arguments.done":
-            return createArgumentsDoneResponse(event: event)
+            // Special case: function call arguments done with item status
+            guard let item = event.item else { return nil }
+            let content = SAOAIStreamingContent(type: "status", text: "", index: 0)
+            let output = SAOAIStreamingOutput(content: [content], role: "assistant")
+            let eventType = SAOAIStreamingEventType(rawValue: event.type)
+            let streamingItem = SAOAIStreamingItem(from: item)
+            return SAOAIStreamingResponse(
+                id: item.id,
+                model: nil,
+                created: nil,
+                output: [output],
+                usage: nil,
+                eventType: eventType,
+                item: streamingItem
+            )
         case "response.reasoning_summary_part.added", "response.reasoning_summary_part.done":
             return builder.createReasoningSummaryPartResponse(event: event)
         default:
             // Use the SSE parser helper for less common events  
             return SSEParser.convertLifecycleEvent(event)
         }
-    }
-    
-    /// Fast delta response creation for common cases (kept for backward compatibility with optimized parser)
-    private static func createDeltaResponse(event: AzureOpenAISSEEvent, contentType: String) -> SAOAIStreamingResponse? {
-        return SSEResponseBuilder().createDeltaResponse(event: event, contentType: contentType)
-    }
-    
-    /// Fast lifecycle response creation (kept for backward compatibility with optimized parser)
-    private static func createLifecycleResponse(event: AzureOpenAISSEEvent) -> SAOAIStreamingResponse? {
-        return SSEResponseBuilder().createLifecycleResponse(event: event)
     }
     
     /// Optimized output conversion
@@ -217,50 +221,6 @@ public final class OptimizedSSEParser: Sendable {
 }
 
 
-
-// MARK: - Additional methods for OptimizedSSEParser
-
-extension OptimizedSSEParser {
-    /// Fast output item response creation (response.output_item.added/done)
-    private static func createOutputItemResponse(event: AzureOpenAISSEEvent) -> SAOAIStreamingResponse? {
-        return SSEResponseBuilder().createOutputItemResponse(event: event)
-    }
-    
-    /// Fast function call arguments done response creation
-    private static func createArgumentsDoneResponse(event: AzureOpenAISSEEvent) -> SAOAIStreamingResponse? {
-        guard let item = event.item else { return nil }
-        
-        // Create status content without any text  
-        let content = SAOAIStreamingContent(type: "status", text: "", index: 0)
-        let output = SAOAIStreamingOutput(content: [content], role: "assistant")
-        
-        // Convert event type to enum
-        let eventType = SAOAIStreamingEventType(rawValue: event.type)
-        
-        // Convert item
-        let streamingItem = SAOAIStreamingItem(from: item)
-        
-        return SAOAIStreamingResponse(
-            id: item.id,
-            model: nil,
-            created: nil,
-            output: [output],
-            usage: nil,
-            eventType: eventType,
-            item: streamingItem
-        )
-    }
-
-    /// Fast reasoning done response creation
-    private static func createDoneResponse(event: AzureOpenAISSEEvent, contentType: String) -> SAOAIStreamingResponse? {
-        return SSEResponseBuilder().createDoneResponse(event: event, contentType: contentType)
-    }
-
-    /// Fast reasoning summary part response creation
-    private static func createReasoningSummaryPartResponse(event: AzureOpenAISSEEvent) -> SAOAIStreamingResponse? {
-        return SSEResponseBuilder().createReasoningSummaryPartResponse(event: event)
-    }
-}
 
 // MARK: - Extensions for compatibility
 

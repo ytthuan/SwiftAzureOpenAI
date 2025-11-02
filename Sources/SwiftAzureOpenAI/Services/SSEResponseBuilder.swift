@@ -25,6 +25,7 @@ public struct SSEResponseBuilder: Sendable {
                 return SAOAIStreamingItem(from: eventItem)
             } else if let itemId = event.itemId {
                 // Create minimal streaming item for delta events that only have itemId
+                // We don't know the full item type from delta events, so we use minimal fields
                 return SAOAIStreamingItem(
                     type: nil,
                     id: itemId,
