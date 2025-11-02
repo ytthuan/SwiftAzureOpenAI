@@ -10,6 +10,7 @@ public final class OptimizedResponseService: ResponseServiceProtocol, @unchecked
     private let parser: ResponseParser
     private let validator: ResponseValidator
     private let cache: ResponseCache?
+    private let metadataExtractor: MetadataExtractor
     
     public init(
         parser: ResponseParser = OptimizedResponseParsingService(),
@@ -19,6 +20,7 @@ public final class OptimizedResponseService: ResponseServiceProtocol, @unchecked
         self.parser = parser
         self.validator = validator
         self.cache = cache
+        self.metadataExtractor = MetadataExtractor()
     }
     
     public func processResponse<T: Codable>(_ data: Data, response: HTTPURLResponse, type: T.Type) async throws -> APIResponse<T> {
@@ -33,8 +35,8 @@ public final class OptimizedResponseService: ResponseServiceProtocol, @unchecked
         // Parse data
         let parsed = try await parser.parse(data, as: type)
         
-        // Streamlined metadata extraction
-        let metadata = extractMetadataStreamlined(from: response)
+        // Use shared metadata extraction
+        let metadata = metadataExtractor.extractMetadata(from: response)
         
         // Create response
         let apiResponse = APIResponse(
@@ -57,47 +59,6 @@ public final class OptimizedResponseService: ResponseServiceProtocol, @unchecked
     }
     
     public func extractMetadata(from response: HTTPURLResponse) -> ResponseMetadata {
-        return extractMetadataStreamlined(from: response)
-    }
-    
-    /// Streamlined metadata extraction with minimal overhead
-    private func extractMetadataStreamlined(from response: HTTPURLResponse) -> ResponseMetadata {
-        let headers = response.normalizedHeaders
-        
-        // Simple, direct header lookups
-        let requestId = headers["x-request-id"] ?? headers["x-ms-request-id"]
-        
-        let processingTimeSeconds: TimeInterval? = {
-            if let msString = headers["openai-processing-ms"] ?? headers["x-processing-ms"],
-               let ms = Double(msString) {
-                return ms / 1000.0
-            }
-            return nil
-        }()
-        
-        // Simple rate limit extraction
-        let remaining = headers["x-ratelimit-remaining-requests"]
-            .flatMap(Int.init) ?? headers["x-ratelimit-remaining"].flatMap(Int.init)
-        let limit = headers["x-ratelimit-limit-requests"]
-            .flatMap(Int.init) ?? headers["x-ratelimit-limit"].flatMap(Int.init)
-        
-        let resetTime: Date? = {
-            if let resetStr = headers["x-ratelimit-reset-requests"] ?? headers["x-ratelimit-reset"],
-               let value = Double(resetStr) {
-                return value > 1_000_000_000 
-                    ? Date(timeIntervalSince1970: value) 
-                    : Date().addingTimeInterval(value)
-            }
-            return nil
-        }()
-        
-        let rateLimit = RateLimitInfo(remaining: remaining, resetTime: resetTime, limit: limit)
-        
-        return ResponseMetadata(
-            requestId: requestId,
-            timestamp: Date(),
-            processingTime: processingTimeSeconds,
-            rateLimit: rateLimit
-        )
+        return metadataExtractor.extractMetadata(from: response)
     }
 }
