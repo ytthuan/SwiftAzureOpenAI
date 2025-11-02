@@ -30,29 +30,16 @@ public final class OptimizedResponseParsingService: ResponseParser, @unchecked S
     }
 }
 
-/// Minimal-overhead response validator optimized for performance
+/// Minimal-overhead response validator optimized for performance - now delegates to shared implementation
 public final class OptimizedResponseValidator: ResponseValidator, @unchecked Sendable {
     
-    // Shared error decoder to avoid repeated allocations
-    private static let sharedErrorDecoder = JSONDecoder()
+    private let sharedValidator: SharedResponseValidator
     
-    public init() {}
+    public init() {
+        self.sharedValidator = SharedResponseValidator()
+    }
     
     public func validate(_ response: HTTPURLResponse, data: Data) throws {
-        let statusCode = response.statusCode
-        
-        // Fast path for successful responses (most common case)
-        if (200..<300).contains(statusCode) { return }
-        
-        // Error handling - same as original but with shared decoder
-        if let error = try? Self.sharedErrorDecoder.decode(ErrorResponse.self, from: data) {
-            throw SAOAIError.apiError(error)
-        }
-        
-        if let specific = SAOAIError.from(statusCode: statusCode) { 
-            throw specific 
-        }
-        
-        throw SAOAIError.serverError(statusCode: statusCode)
+        try sharedValidator.validate(response, data: data)
     }
 }
