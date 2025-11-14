@@ -16,3 +16,9 @@ symbolgraph/
 Sources/SwiftAzureOpenAI/Generated/GeneratedModels.swift.before
 Sources/SwiftAzureOpenAI/Generated/GeneratedModels.swift.backup
 Specs/current-openapi.json
+
+# Build artifacts and downloads (prevent accidental commits)
+*.tar.gz
+*.zip
+*.gz
+swift.tar.gz

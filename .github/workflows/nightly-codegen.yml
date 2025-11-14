@@ -57,6 +57,9 @@ jobs:
           # Extract Swift
           sudo tar -xzf swift.tar.gz -C /opt/
           
+          # Clean up tarball immediately to prevent accidental commits
+          rm -f swift.tar.gz
+          
           # Add to PATH
           echo "/opt/swift-${SWIFT_VERSION}-RELEASE-ubuntu22.04/usr/bin" >> $GITHUB_PATH
           
