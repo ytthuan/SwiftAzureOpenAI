@@ -265,11 +265,16 @@ jobs:
             git commit -m "$msg"
           fi
 
+      # Create Pull Request
+      # Note: Uses PAT_TOKEN if available, falls back to GITHUB_TOKEN
+      # PAT_TOKEN is required when GitHub Actions is not permitted to create PRs
+      # To configure: Settings > Secrets and variables > Actions > New repository secret
+      # Name: PAT_TOKEN, Value: Personal Access Token with repo scope
       - name: Create Pull Request (only if something committed)
         if: steps.spec-change.outputs.changed == 'true'
         uses: peter-evans/create-pull-request@v5
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
           commit-message: "codegen: nightly spec sync"
           title: "🤖 Nightly Codegen: Spec sync (${{ steps.classify.outputs.recommended_bump }})"
           body-path: Reports/pr-body.md
