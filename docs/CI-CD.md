@@ -88,6 +88,13 @@ This package includes comprehensive CI/CD automation through GitHub Actions to e
 - **Swift**: 6.0.2 via Xcode 16.0
 - **Python**: 3.9 for code generation scripts
 
+**Required Secrets:**
+- **PAT_TOKEN** (recommended): Personal Access Token with `repo` scope
+  - Required when GitHub Actions is not permitted to create or approve pull requests
+  - Create at: Settings > Developer settings > Personal access tokens > Generate new token
+  - Add to repository: Settings > Secrets and variables > Actions > New repository secret
+  - Fallback: Uses `GITHUB_TOKEN` if `PAT_TOKEN` is not available
+
 **Benefits:**
 - Zero manual intervention for API updates
 - Fast update cycle (changes reflected within 24 hours)
@@ -279,4 +286,80 @@ dependencies: [
 3. **Efficient CI Process**: Single CI run per push, no duplicate workflows
 4. **Zero-Downtime Releases**: Automated release process with human approval
 5. **Installation Validation**: Confirms packages work for end users
+
+## Troubleshooting
+
+### Nightly Code Generation Issues
+
+#### Error: "GitHub Actions is not permitted to create or approve pull requests"
+
+**Cause**: The default `GITHUB_TOKEN` has restrictions that prevent automated PR creation in some repository configurations.
+
+**Solution**:
+1. Create a Personal Access Token (PAT):
+   - Go to GitHub: Settings → Developer settings → Personal access tokens → Tokens (classic)
+   - Click "Generate new token (classic)"
+   - Name: `Nightly Codegen Token`
+   - Scopes: Select `repo` (Full control of private repositories)
+   - Click "Generate token" and copy the token value
+
+2. Add the PAT to repository secrets:
+   - Go to repository: Settings → Secrets and variables → Actions
+   - Click "New repository secret"
+   - Name: `PAT_TOKEN`
+   - Value: Paste the PAT token
+   - Click "Add secret"
+
+3. The workflow will automatically use `PAT_TOKEN` if available, falling back to `GITHUB_TOKEN` if not.
+
+**Verification**:
+- Re-run the nightly codegen workflow manually or wait for the next scheduled run
+- The PR creation step should succeed
+
+#### Error: "Spec download failed or empty"
+
+**Cause**: Network issues or the spec URL is temporarily unavailable.
+
+**Solution**:
+1. Verify the spec URL is accessible:
+   ```bash
+   curl -I https://raw.githubusercontent.com/Azure/azure-rest-api-specs/main/specification/ai/data-plane/OpenAI.v1/azure-v1-v1-generated.json
+   ```
+2. Check GitHub Actions network connectivity
+3. Re-run the workflow after a few minutes
+
+#### Workflow Not Triggering on Schedule
+
+**Cause**: GitHub Actions scheduled workflows may be delayed or disabled on inactive repositories.
+
+**Solution**:
+- Manually trigger the workflow: Actions → Nightly Code Generation → Run workflow
+- Ensure repository has recent activity
+- Check if workflow is enabled: Actions → Workflows → Nightly Code Generation → Enable
+
+### Release Workflow Issues
+
+#### Release Approval Not Triggering
+
+**Cause**: CI workflow must complete successfully first.
+
+**Solution**:
+1. Check CI workflow status: Actions → CI
+2. Ensure all tests pass
+3. Release approval will trigger automatically after CI success
+
+#### Version Tag Creation Fails
+
+**Cause**: Tag already exists or invalid version format.
+
+**Solution**:
+- Use unique version numbers (e.g., `v1.0.1`, `v1.1.0`)
+- Follow semantic versioning: `major.minor.patch`
+- Check existing tags: `git tag -l`
+
+### Getting Help
+
+- **GitHub Issues**: Report bugs or request features
+- **GitHub Discussions**: Ask questions or share ideas
+- **CI/CD Logs**: Check workflow logs for detailed error messages
 6. **Comprehensive Testing**: 85+ tests ensure reliability
