@@ -265,6 +265,13 @@ jobs:
             git commit -m "$msg"
           fi
 
+      # Push changes to branch (when PAT_TOKEN not available)
+      # When PAT_TOKEN is available, peter-evans/create-pull-request will handle pushing
+      - name: Push changes to branch (no PAT_TOKEN)
+        if: steps.spec-change.outputs.changed == 'true' && !secrets.PAT_TOKEN
+        run: |
+          git push origin HEAD:codegen/auto-update-models
+
       # Create Pull Request
       # Note: Requires PAT_TOKEN for scheduled workflow runs
       # PAT_TOKEN is required because GitHub Actions GITHUB_TOKEN cannot create PRs from scheduled events
