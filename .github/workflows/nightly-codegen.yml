@@ -293,17 +293,18 @@ jobs:
             automated
             ${{ steps.classify.outputs.semver_label }}
 
-      - name: PR Creation Status
-        if: steps.spec-change.outputs.changed == 'true'
+      - name: PR Creation Status - No PAT_TOKEN
+        if: steps.spec-change.outputs.changed == 'true' && !secrets.PAT_TOKEN
         run: |
-          if [ -z "${{ secrets.PAT_TOKEN }}" ]; then
-            echo "⚠️  WARNING: PAT_TOKEN not configured. Changes pushed to branch 'codegen/auto-update-models' but PR not created."
-            echo "📝 To auto-create PRs, configure PAT_TOKEN secret with 'repo' scope."
-            echo "🔗 Branch with changes: https://github.com/${{ github.repository }}/tree/codegen/auto-update-models"
-            echo "::warning::PAT_TOKEN not configured - PR creation skipped"
-          else
-            echo "✅ Pull request created/updated successfully"
-          fi
+          echo "⚠️  WARNING: PAT_TOKEN not configured. Changes pushed to branch 'codegen/auto-update-models' but PR not created."
+          echo "📝 To auto-create PRs, configure PAT_TOKEN secret with 'repo' scope."
+          echo "🔗 Branch with changes: https://github.com/${{ github.repository }}/tree/codegen/auto-update-models"
+          echo "::warning::PAT_TOKEN not configured - PR creation skipped"
+
+      - name: PR Creation Status - With PAT_TOKEN
+        if: steps.spec-change.outputs.changed == 'true' && secrets.PAT_TOKEN
+        run: |
+          echo "✅ Pull request created/updated successfully"
 
       - name: Final status
         run: |
