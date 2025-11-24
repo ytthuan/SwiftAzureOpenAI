@@ -271,7 +271,7 @@ jobs:
       # To configure: Settings > Secrets and variables > Actions > New repository secret
       # Name: PAT_TOKEN, Value: Personal Access Token with repo scope
       - name: Create Pull Request (with PAT_TOKEN)
-        if: steps.spec-change.outputs.changed == 'true' && secrets.PAT_TOKEN != ''
+        if: steps.spec-change.outputs.changed == 'true' && secrets.PAT_TOKEN
         id: create-pr
         uses: peter-evans/create-pull-request@v5
         with:
@@ -289,7 +289,7 @@ jobs:
       - name: PR Creation Status
         if: steps.spec-change.outputs.changed == 'true'
         run: |
-          if [ "${{ secrets.PAT_TOKEN }}" = "" ]; then
+          if [ -z "${{ secrets.PAT_TOKEN }}" ]; then
             echo "⚠️  WARNING: PAT_TOKEN not configured. Changes pushed to branch 'codegen/auto-update-models' but PR not created."
             echo "📝 To auto-create PRs, configure PAT_TOKEN secret with 'repo' scope."
             echo "🔗 Branch with changes: https://github.com/${{ github.repository }}/tree/codegen/auto-update-models"
