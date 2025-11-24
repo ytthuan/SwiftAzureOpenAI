@@ -89,11 +89,12 @@ This package includes comprehensive CI/CD automation through GitHub Actions to e
 - **Python**: 3.9 for code generation scripts
 
 **Required Secrets:**
-- **PAT_TOKEN** (recommended): Personal Access Token with `repo` scope
-  - Required when GitHub Actions is not permitted to create or approve pull requests
+- **PAT_TOKEN** (required for automatic PR creation): Personal Access Token with `repo` scope
+  - Required because GitHub Actions `GITHUB_TOKEN` cannot create PRs from scheduled events
   - Create at: Settings > Developer settings > Personal access tokens > Generate new token
   - Add to repository: Settings > Secrets and variables > Actions > New repository secret
-  - Fallback: Uses `GITHUB_TOKEN` if `PAT_TOKEN` is not available
+  - If not configured: Changes are pushed to `codegen/auto-update-models` branch, but PR creation is skipped
+  - The workflow will succeed with a warning and provide a link to the branch with changes
 
 **Benefits:**
 - Zero manual intervention for API updates
@@ -291,11 +292,17 @@ dependencies: [
 
 ### Nightly Code Generation Issues
 
-#### Error: "GitHub Actions is not permitted to create or approve pull requests"
+#### Workflow Completes but No PR Created
 
-**Cause**: The default `GITHUB_TOKEN` has restrictions that prevent automated PR creation in some repository configurations.
+**Cause**: The default `GITHUB_TOKEN` cannot create PRs from scheduled workflows due to GitHub security restrictions.
 
-**Solution**:
+**Current Behavior (Fixed)**:
+- The workflow completes successfully with a warning
+- Changes are pushed to the `codegen/auto-update-models` branch
+- A link to the branch is provided in the workflow logs
+- You can manually create a PR from the branch
+
+**Solution for Automatic PR Creation**:
 1. Create a Personal Access Token (PAT):
    - Go to GitHub: Settings → Developer settings → Personal access tokens → Tokens (classic)
    - Click "Generate new token (classic)"
@@ -310,11 +317,12 @@ dependencies: [
    - Value: Paste the PAT token
    - Click "Add secret"
 
-3. The workflow will automatically use `PAT_TOKEN` if available, falling back to `GITHUB_TOKEN` if not.
+3. The workflow will automatically create PRs on subsequent runs.
 
 **Verification**:
 - Re-run the nightly codegen workflow manually or wait for the next scheduled run
-- The PR creation step should succeed
+- With PAT_TOKEN configured: PR is created automatically
+- Without PAT_TOKEN: Workflow succeeds with warning, branch is updated
 
 #### Error: "Spec download failed or empty"
 

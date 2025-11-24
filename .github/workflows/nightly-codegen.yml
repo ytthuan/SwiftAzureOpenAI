@@ -266,15 +266,16 @@ jobs:
           fi
 
       # Create Pull Request
-      # Note: Uses PAT_TOKEN if available, falls back to GITHUB_TOKEN
-      # PAT_TOKEN is required when GitHub Actions is not permitted to create PRs
+      # Note: Requires PAT_TOKEN for scheduled workflow runs
+      # PAT_TOKEN is required because GitHub Actions GITHUB_TOKEN cannot create PRs from scheduled events
       # To configure: Settings > Secrets and variables > Actions > New repository secret
       # Name: PAT_TOKEN, Value: Personal Access Token with repo scope
-      - name: Create Pull Request (only if something committed)
-        if: steps.spec-change.outputs.changed == 'true'
+      - name: Create Pull Request (with PAT_TOKEN)
+        if: steps.spec-change.outputs.changed == 'true' && secrets.PAT_TOKEN != ''
+        id: create-pr
         uses: peter-evans/create-pull-request@v5
         with:
-          token: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PAT_TOKEN }}
           commit-message: "codegen: nightly spec sync"
           title: "🤖 Nightly Codegen: Spec sync (${{ steps.classify.outputs.recommended_bump }})"
           body-path: Reports/pr-body.md
@@ -284,6 +285,18 @@ jobs:
             codegen
             automated
             ${{ steps.classify.outputs.semver_label }}
+
+      - name: PR Creation Status
+        if: steps.spec-change.outputs.changed == 'true'
+        run: |
+          if [ "${{ secrets.PAT_TOKEN }}" = "" ]; then
+            echo "⚠️  WARNING: PAT_TOKEN not configured. Changes pushed to branch 'codegen/auto-update-models' but PR not created."
+            echo "📝 To auto-create PRs, configure PAT_TOKEN secret with 'repo' scope."
+            echo "🔗 Branch with changes: https://github.com/${{ github.repository }}/tree/codegen/auto-update-models"
+            echo "::warning::PAT_TOKEN not configured - PR creation skipped"
+          else
+            echo "✅ Pull request created/updated successfully"
+          fi
 
       - name: Final status
         run: |
