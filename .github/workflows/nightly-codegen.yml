@@ -220,6 +220,7 @@ jobs:
       - name: Run test suite
         if: steps.spec-change.outputs.changed == 'true'
         timeout-minutes: 10
+        continue-on-error: true
         run: |
           echo "🧪 Running test suite..."
           if ! swift test --parallel 2>&1 | tee test.log; then
@@ -227,9 +228,9 @@ jobs:
             echo "Test log (last 100 lines):"
             tail -100 test.log
             echo ""
-            echo "⚠️ Note: Continuing workflow despite test failure"
+            echo "⚠️ Note: Test failure is non-blocking"
             echo "Tests may fail due to API credentials or network issues"
-            # Don't exit - allow workflow to continue
+            exit 1
           else
             echo "✅ All tests passed"
           fi
@@ -323,7 +324,7 @@ jobs:
           rm -rf swift-*-RELEASE-*/ || true
           
           # Remove build logs
-          rm -f build-before.log build-after.log codegen.log test.log build.log
+          rm -f build-before.log build-after.log codegen.log test.log
           
           # Remove temporary spec file
           rm -f Specs/current-openapi.json
@@ -337,8 +338,12 @@ jobs:
           
           # Check for any large files (> 500KB) that shouldn't be committed
           echo "Checking for large files..."
-          if find . -type f -size +500k -not -path "./.git/*" -not -path "./.build/*" -not -path "./Specs/*"; then
-            echo "⚠️ Found large files above. Verifying they should be committed..."
+          LARGE_FILES=$(find . -type f -size +500k -not -path "./.git/*" -not -path "./.build/*" -not -path "./Specs/*" -print -quit)
+          if [ -n "$LARGE_FILES" ]; then
+            echo "⚠️ Warning: Found large files that may need review:"
+            find . -type f -size +500k -not -path "./.git/*" -not -path "./.build/*" -not -path "./Specs/*"
+          else
+            echo "✅ No unexpected large files found"
           fi
 
       - name: Commit spec (always when spec changed)
