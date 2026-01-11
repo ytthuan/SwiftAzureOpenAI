@@ -230,7 +230,7 @@ jobs:
             echo ""
             echo "⚠️ Note: Test failure is non-blocking"
             echo "Tests may fail due to API credentials or network issues"
-            exit 1
+            exit 0
           else
             echo "✅ All tests passed"
           fi
@@ -338,12 +338,12 @@ jobs:
           
           # Check for any large files (> 500KB) that shouldn't be committed
           echo "Checking for large files..."
-          LARGE_FILES=$(find . -type f -size +500k -not -path "./.git/*" -not -path "./.build/*" -not -path "./Specs/*" -print -quit)
+          LARGE_FILES=$(find . -type f -size +500k -not -path "./.git/*" -not -path "./.build/*")
           if [ -n "$LARGE_FILES" ]; then
             echo "⚠️ Warning: Found large files that may need review:"
-            find . -type f -size +500k -not -path "./.git/*" -not -path "./.build/*" -not -path "./Specs/*"
+            echo "$LARGE_FILES"
           else
-            echo "✅ No unexpected large files found"
+            echo "✅ No large files found"
           fi
 
       - name: Commit spec (always when spec changed)
