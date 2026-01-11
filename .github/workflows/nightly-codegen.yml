@@ -217,23 +217,9 @@ jobs:
           fi
           echo "✅ Build with new models successful"
 
-      - name: Run test suite
-        if: steps.spec-change.outputs.changed == 'true'
-        timeout-minutes: 10
-        continue-on-error: true
-        run: |
-          echo "🧪 Running test suite..."
-          if ! swift test --parallel 2>&1 | tee test.log; then
-            echo "❌ Test suite failed"
-            echo "Test log (last 100 lines):"
-            tail -100 test.log
-            echo ""
-            echo "⚠️ Note: Test failure is non-blocking"
-            echo "Tests may fail due to API credentials or network issues"
-            exit 0
-          else
-            echo "✅ All tests passed"
-          fi
+      # Note: Test execution is skipped in nightly-codegen workflow
+      # Tests require live API credentials which are not available in this workflow
+      # Full test suite runs in ci.yml workflow with proper credentials
 
       - name: Capture public API (after)
         if: steps.spec-change.outputs.changed == 'true'
@@ -324,7 +310,7 @@ jobs:
           rm -rf swift-*-RELEASE-*/ || true
           
           # Remove build logs
-          rm -f build-before.log build-after.log codegen.log test.log
+          rm -f build-before.log build-after.log codegen.log
           
           # Remove temporary spec file
           rm -f Specs/current-openapi.json
