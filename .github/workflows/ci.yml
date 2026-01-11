@@ -91,10 +91,19 @@ jobs:
         
         echo "Installing Swift ${SWIFT_VERSION} from ${SWIFT_URL}"
         
+        # Download Swift to /tmp to prevent accidental commits
+        cd /tmp
+        
         # Try downloading Swift
         if curl -fsSL "${SWIFT_URL}" -o swift.tar.gz; then
           # Extract Swift
           sudo tar -xzf swift.tar.gz -C /opt/
+          
+          # Clean up tarball immediately
+          rm -f swift.tar.gz
+          
+          # Return to workspace
+          cd "${GITHUB_WORKSPACE}"
           
           # Add to PATH
           echo "/opt/swift-${SWIFT_VERSION}-RELEASE-ubuntu22.04/usr/bin" >> $GITHUB_PATH
@@ -166,11 +175,18 @@ jobs:
         
         echo "Installing Swift ${SWIFT_VERSION} from ${SWIFT_URL}"
         
-        # Download Swift
+        # Download Swift to /tmp to prevent accidental commits
+        cd /tmp
         curl -fsSL "${SWIFT_URL}" -o swift.tar.gz
         
         # Extract Swift
         sudo tar -xzf swift.tar.gz -C /opt/
+        
+        # Clean up tarball immediately
+        rm -f swift.tar.gz
+        
+        # Return to workspace
+        cd "${GITHUB_WORKSPACE}"
         
         # Add to PATH
         echo "/opt/swift-${SWIFT_VERSION}-RELEASE-ubuntu22.04/usr/bin" >> $GITHUB_PATH
@@ -228,11 +244,18 @@ jobs:
         
         echo "Installing Swift ${SWIFT_VERSION} from ${SWIFT_URL}"
         
-        # Download Swift
+        # Download Swift to /tmp to prevent accidental commits
+        cd /tmp
         curl -fsSL "${SWIFT_URL}" -o swift.tar.gz
         
         # Extract Swift
         sudo tar -xzf swift.tar.gz -C /opt/
+        
+        # Clean up tarball immediately
+        rm -f swift.tar.gz
+        
+        # Return to workspace
+        cd "${GITHUB_WORKSPACE}"
         
         # Add to PATH
         echo "/opt/swift-${SWIFT_VERSION}-RELEASE-ubuntu22.04/usr/bin" >> $GITHUB_PATH
