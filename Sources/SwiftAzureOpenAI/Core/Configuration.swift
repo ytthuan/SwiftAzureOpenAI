@@ -32,7 +32,9 @@ public struct SAOAIAzureConfiguration: SAOAIConfiguration, Sendable {
     }
 
     public var baseURL: URL {
+        // Supports both Azure OpenAI and Azure AI Foundry endpoints:
         // https://{resource}.openai.azure.com/openai/v1/responses?api-version=preview
+        // https://{resource}.services.ai.azure.com/openai/v1/responses?api-version=preview
         var components = URLComponents(string: endpoint)!
         components.path = "/openai/v1/responses"
         components.queryItems = [URLQueryItem(name: "api-version", value: apiVersion)]

@@ -27,6 +27,7 @@ import FoundationNetworking
  * Usage:
  * Set environment variables and run:
  * export AZURE_OPENAI_ENDPOINT="https://your-resource.openai.azure.com"
+ * OR for Azure AI Foundry: export AZURE_OPENAI_ENDPOINT="https://your-resource.services.ai.azure.com"
  * export COPILOT_AGENT_AZURE_OPENAI_API_KEY="your-api-key"
  * export AZURE_OPENAI_DEPLOYMENT="your-deployment-name"
  * swift RawApiTesting.swift

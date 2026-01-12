@@ -471,7 +471,11 @@ final class LiveAPITests: XCTestCase {
             // Validate endpoint format
             if let endpoint = azureEndpoint?.trimmingCharacters(in: .whitespacesAndNewlines), !endpoint.isEmpty {
                 XCTAssertTrue(endpoint.hasPrefix("https://"), "Endpoint should use HTTPS")
-                XCTAssertTrue(endpoint.contains("openai.azure.com"), "Should be an Azure OpenAI endpoint")
+                // Support both legacy Azure OpenAI endpoints (.openai.azure.com) and new Azure AI Foundry endpoints (.services.ai.azure.com)
+                let isAzureOpenAI = endpoint.contains("openai.azure.com")
+                let isAzureAIFoundry = endpoint.contains("services.ai.azure.com")
+                XCTAssertTrue(isAzureOpenAI || isAzureAIFoundry, 
+                             "Should be either an Azure OpenAI endpoint (.openai.azure.com) or Azure AI Foundry endpoint (.services.ai.azure.com)")
             }
             
             // Validate API key format (basic checks)
