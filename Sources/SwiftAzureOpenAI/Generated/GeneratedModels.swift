@@ -14,53 +14,16 @@ public enum GeneratedFileExpiryAnchor: String, Codable, CaseIterable {
     case created_at = "created_at"
 }
 
-/// Generated enum for OpenAI.Includable
-public enum GeneratedIncludable: String, Codable, CaseIterable {
-    case code_interpreter_call_outputs = "code_interpreter_call.outputs"
-    case computer_call_output_output_image_url = "computer_call_output.output.image_url"
+/// Generated enum for OpenAI.IncludeEnum
+public enum GeneratedIncludeEnum: String, Codable, CaseIterable {
     case file_search_call_results = "file_search_call.results"
+    case web_search_call_results = "web_search_call.results"
+    case web_search_call_action_sources = "web_search_call.action.sources"
     case message_input_image_image_url = "message.input_image.image_url"
-    case message_output_text_logprobs = "message.output_text.logprobs"
+    case computer_call_output_output_image_url = "computer_call_output.output.image_url"
+    case code_interpreter_call_outputs = "code_interpreter_call.outputs"
     case reasoning_encrypted_content = "reasoning.encrypted_content"
-}
-
-/// Generated enum for OpenAI.ItemContentType
-public enum GeneratedItemContentType: String, Codable, CaseIterable {
-    case input_text = "input_text"
-    case input_audio = "input_audio"
-    case input_image = "input_image"
-    case input_file = "input_file"
-    case output_text = "output_text"
-    case output_audio = "output_audio"
-    case refusal = "refusal"
-}
-
-/// Generated enum for OpenAI.ItemType
-public enum GeneratedItemType: String, Codable, CaseIterable {
-    case message = "message"
-    case file_search_call = "file_search_call"
-    case function_call = "function_call"
-    case function_call_output = "function_call_output"
-    case computer_call = "computer_call"
-    case computer_call_output = "computer_call_output"
-    case web_search_call = "web_search_call"
-    case reasoning = "reasoning"
-    case item_reference = "item_reference"
-    case image_generation_call = "image_generation_call"
-    case code_interpreter_call = "code_interpreter_call"
-    case local_shell_call = "local_shell_call"
-    case local_shell_call_output = "local_shell_call_output"
-    case mcp_list_tools = "mcp_list_tools"
-    case mcp_approval_request = "mcp_approval_request"
-    case mcp_approval_response = "mcp_approval_response"
-    case mcp_call = "mcp_call"
-}
-
-/// Generated enum for OpenAI.ReasoningEffort
-public enum GeneratedReasoningEffort: String, Codable, CaseIterable {
-    case low = "low"
-    case medium = "medium"
-    case high = "high"
+    case message_output_text_logprobs = "message.output_text.logprobs"
 }
 
 /// Generated enum for OpenAI.ResponseErrorCode
@@ -85,14 +48,254 @@ public enum GeneratedResponseErrorCode: String, Codable, CaseIterable {
     case image_file_not_found = "image_file_not_found"
 }
 
-/// Generated enum for OpenAI.ToolChoiceOptions
-public enum GeneratedToolChoiceOptions: String, Codable, CaseIterable {
-    case none = "none"
-    case auto = "auto"
-    case required = "required"
+/// Generated model for AzureContentFilterBlocklistResult
+public struct GeneratedContentFilterBlocklistResult: Codable, Equatable {
+    /// The pairs of individual blocklist IDs and whether they resulted in a filtering action.
+    public let details: [SAOAIJSONValue]?
+
+    /// A value indicating whether any of the detailed blocklists resulted in a filtering action.
+    public let filtered: Bool
+
 }
 
-/// Generated model for AzureCreateEmbeddingRequest
+/// Generated model for AzureContentFilterCompletionTextSpan
+public struct GeneratedContentFilterCompletionTextSpan: Codable, Equatable {
+    /// Offset of the first UTF32 code point which is excluded from the span. This field is always equal to completion_start_offset for empty spans. This field is always larger than completion_start_offset...
+    public let completionEndOffset: Int
+
+    /// Offset of the UTF32 code point which begins the span.
+    public let completionStartOffset: Int
+
+    private enum CodingKeys: String, CodingKey {
+        case completionEndOffset = "completion_end_offset"
+        case completionStartOffset = "completion_start_offset"
+    }
+
+}
+
+/// Generated model for AzureContentFilterCompletionTextSpanDetectionResult
+public struct GeneratedContentFilterCompletionTextSpanDetectionResult: Codable, Equatable {
+    /// Detailed information about the detected completion text spans.
+    public let details: [GeneratedContentFilterCompletionTextSpan]
+
+    /// Whether the labeled content category was detected in the content.
+    public let detected: Bool
+
+    /// Whether the content detection resulted in a content filtering action.
+    public let filtered: Bool
+
+}
+
+/// Generated model for AzureContentFilterCustomTopicResult
+public struct GeneratedContentFilterCustomTopicResult: Codable, Equatable {
+    /// The pairs of individual topic IDs and whether they are detected.
+    public let details: [SAOAIJSONValue]?
+
+    /// A value indicating whether any of the detailed topics resulted in a filtering action.
+    public let filtered: Bool
+
+}
+
+/// Generated model for AzureContentFilterDetectionResult
+public struct GeneratedContentFilterDetectionResult: Codable, Equatable {
+    /// Whether the labeled content category was detected in the content.
+    public let detected: Bool
+
+    /// Whether the content detection resulted in a content filtering action.
+    public let filtered: Bool
+
+}
+
+/// Generated model for AzureContentFilterForResponsesAPI
+public struct GeneratedContentFilterForResponsesAPI: Codable, Equatable {
+    /// Indicate if the response is blocked.
+    public let blocked: Bool
+
+    public let contentFilterOffsets: GeneratedContentFilterResultOffsets
+
+    /// A content filter result for a single response item produced by a generative AI system.
+    public let contentFilterResults: String
+
+    /// The name of the source type of the message.
+    public let sourceType: String
+
+    private enum CodingKeys: String, CodingKey {
+        case blocked
+        case contentFilterOffsets = "content_filter_offsets"
+        case contentFilterResults = "content_filter_results"
+        case sourceType = "source_type"
+    }
+
+}
+
+/// Generated model for AzureContentFilterPersonallyIdentifiableInformationResult
+public struct GeneratedContentFilterPersonallyIdentifiableInformationResult: Codable, Equatable {
+    /// The redacted text with PII information removed or masked.
+    public let redactedText: String?
+
+    /// Detailed results for individual PIIHarmSubCategory(s).
+    public let subCategories: [GeneratedPiiSubCategoryResult]?
+
+    private enum CodingKeys: String, CodingKey {
+        case redactedText = "redacted_text"
+        case subCategories = "sub_categories"
+    }
+
+}
+
+/// Generated model for AzureContentFilterResultOffsets
+public struct GeneratedContentFilterResultOffsets: Codable, Equatable {
+    public let checkOffset: Int
+
+    public let endOffset: Int
+
+    public let startOffset: Int
+
+    private enum CodingKeys: String, CodingKey {
+        case checkOffset = "check_offset"
+        case endOffset = "end_offset"
+        case startOffset = "start_offset"
+    }
+
+}
+
+/// Generated model for AzureContentFilterResultsForResponsesAPI
+public struct GeneratedContentFilterResultsForResponsesAPI: Codable, Equatable {
+    /// A collection of binary filtering outcomes for configured custom blocklists.
+    public let customBlocklists: String?
+
+    /// A collection of binary filtering outcomes for configured custom topics.
+    public let customTopics: String?
+
+    /// If present, details about an error that prevented content filtering from completing its evaluation.
+    public let error: SAOAIJSONValue?
+
+    /// A content filter category that can refer to any content that attacks or uses pejorative or discriminatory language with reference to a person or identity group based on certain differentiating attr...
+    public let hate: String?
+
+    /// A detection result that describes attacks on systems powered by Generative AI models that can happen every time an application processes information that wasn’t directly authored by either the deve...
+    public let indirectAttack: String?
+
+    /// A detection result that describes user prompt injection attacks, where malicious users deliberately exploit system vulnerabilities to elicit unauthorized behavior from the LLM. This could lead to i...
+    public let jailbreak: String
+
+    /// A detection result that describes matches against Personal Identifiable Information with configurable subcategories.
+    public let personallyIdentifiableInformation: String?
+
+    /// A detection result that identifies whether crude, vulgar, or otherwise objection language is present in the content.
+    public let profanity: String?
+
+    /// A detection result that describes a match against licensed code or other protected source material.
+    public let protectedMaterialCode: SAOAIJSONValue?
+
+    /// A detection result that describes a match against text protected under copyright or other status.
+    public let protectedMaterialText: String?
+
+    /// A content filter category that describes language related to physical actions intended to purposely hurt, injure, damage one's body or kill oneself.
+    public let selfHarm: String?
+
+    /// A content filter category for language related to anatomical organs and genitals, romantic relationships, acts portrayed in erotic or affectionate terms, pregnancy, physical sexual acts, including ...
+    public let sexual: String?
+
+    /// A detection result that indicates if the execution flow still sticks the plan.
+    public let taskAdherence: String
+
+    public let ungroundedMaterial: GeneratedContentFilterCompletionTextSpanDetectionResult?
+
+    /// A content filter category for language related to physical actions intended to hurt, injure, damage, or kill someone or something; describes weapons, guns and related entities, such as manufactures...
+    public let violence: String?
+
+    private enum CodingKeys: String, CodingKey {
+        case customBlocklists = "custom_blocklists"
+        case customTopics = "custom_topics"
+        case error
+        case hate
+        case indirectAttack = "indirect_attack"
+        case jailbreak
+        case personallyIdentifiableInformation = "personally_identifiable_information"
+        case profanity
+        case protectedMaterialCode = "protected_material_code"
+        case protectedMaterialText = "protected_material_text"
+        case selfHarm = "self_harm"
+        case sexual
+        case taskAdherence = "task_adherence"
+        case ungroundedMaterial = "ungrounded_material"
+        case violence
+    }
+
+}
+
+/// Generated model for AzureContentFilterSeverityResult
+public struct GeneratedContentFilterSeverityResult: Codable, Equatable {
+    /// Whether the content severity resulted in a content filtering action.
+    public let filtered: Bool
+
+    /// The labeled severity of the content.
+    public let severity: String
+
+}
+
+/// Generated model for AzureErrorResponse
+public struct GeneratedErrorResponse: Codable, Equatable {
+    /// The error details.
+    public let error: SAOAIJSONValue?
+
+}
+
+/// Generated model for AzurePiiSubCategoryResult
+public struct GeneratedPiiSubCategoryResult: Codable, Equatable {
+    /// Whether the labeled content subcategory was detected in the content.
+    public let detected: Bool
+
+    /// Whether the content detection resulted in a content filtering action for this subcategory.
+    public let filtered: Bool
+
+    /// Whether the content was redacted for this subcategory.
+    public let redacted: Bool
+
+    /// The PIIHarmSubCategory that was evaluated.
+    public let subCategory: String
+
+    private enum CodingKeys: String, CodingKey {
+        case detected
+        case filtered
+        case redacted
+        case subCategory = "sub_category"
+    }
+
+}
+
+/// Generated model for OpenAI.Conversation
+public struct GeneratedConversation: Codable, Equatable {
+    /// The time at which the conversation was created, measured in seconds since the Unix epoch.
+    public let createdAt: Int
+
+    /// The unique ID of the conversation.
+    public let id: String
+
+    /// Set of 16 key-value pairs that can be attached to an object. This can be useful for storing additional information about the object in a structured format, and querying for objects via API or the d...
+    public let metadata: String
+
+    /// The object type, which is always `conversation`.
+    public let object: String
+
+    private enum CodingKeys: String, CodingKey {
+        case createdAt = "created_at"
+        case id
+        case metadata
+        case object
+    }
+
+}
+
+/// Generated model for OpenAI.ConversationParam-2
+public struct GeneratedConversationParam-2: Codable, Equatable {
+    /// The unique ID of the conversation.
+    public let id: String
+
+}
+
+/// Generated model for OpenAI.CreateEmbeddingRequest
 public struct GeneratedEmbeddingRequest: Codable, Equatable {
     /// The number of dimensions the resulting output embeddings should have. Only supported in `text-embedding-3` and later models.
     public let dimensions: Int?
@@ -103,7 +306,7 @@ public struct GeneratedEmbeddingRequest: Codable, Equatable {
     /// Input text to embed, encoded as a string or array of tokens. To embed multiple inputs in a single request, pass an array of strings or array of token arrays. The input must not exceed the max input...
     public let input: String
 
-    /// The model to use for the embedding request.
+    /// ID of the model to use. You can use the List models API to see all of your available models, or see our Model overview for descriptions of them.
     public let model: String
 
     /// A unique identifier representing your end-user, which can help OpenAI to monitor and detect abuse. Learn more.
@@ -119,10 +322,40 @@ public struct GeneratedEmbeddingRequest: Codable, Equatable {
 
 }
 
-/// Generated model for AzureCreateFileRequestMultiPart
-public struct GeneratedFileRequestMultiPart: Codable, Equatable {
+/// Generated model for OpenAI.CreateEmbeddingResponse
+public struct GeneratedEmbeddingResponse: Codable, Equatable {
+    /// The list of embeddings generated by the model.
+    public let data: [GeneratedEmbedding]
+
+    /// The name of the model used to generate the embedding.
+    public let model: String
+
+    /// The object type, which is always "list".
+    public let object: String
+
+    /// The usage information for the request.
+    public let usage: String
+
+}
+
+/// Generated model for OpenAI.CreateEmbeddingResponseUsage
+public struct GeneratedEmbeddingResponseUsage: Codable, Equatable {
+    public let promptTokens: Int
+
+    public let totalTokens: Int
+
+    private enum CodingKeys: String, CodingKey {
+        case promptTokens = "prompt_tokens"
+        case totalTokens = "total_tokens"
+    }
+
+}
+
+/// Generated model for OpenAI.CreateFileRequest
+public struct GeneratedFileRequest: Codable, Equatable {
     public let expiresAfter: SAOAIJSONValue
 
+    /// The File object (not file name) to be uploaded.
     public let file: String
 
     /// The intended purpose of the uploaded file. One of: - `assistants`: Used in the Assistants API - `batch`: Used in the Batch API - `fine-tune`: Used for fine-tuning - `evals`: Used for eval data sets
@@ -136,74 +369,70 @@ public struct GeneratedFileRequestMultiPart: Codable, Equatable {
 
 }
 
-/// Generated model for AzureCreateResponse
+/// Generated model for OpenAI.CreateResponse
 public struct GeneratedResponseRequest: Codable, Equatable {
-    /// Whether to run the model response in the background. Learn more.
-    public let background: Bool?
+    public let background: String?
 
-    /// Specify additional output data to include in the model response. Currently supported values are: Includes the outputs of python code execution in code interpreter tool call items. Include image url...
-    public let include: [GeneratedIncludable]?
+    public let conversation: String?
 
-    /// Text, image, or file inputs to the model, used to generate a response. Learn more: - Text inputs and outputs - Image inputs - File inputs - Conversation state - Function calling
+    public let include: String?
+
     public let input: String?
 
-    /// A system (or developer) message inserted into the model's context. When using along with `previous_response_id`, the instructions from a previous response will not be carried over to the next respo...
     public let instructions: String?
 
-    /// An upper bound for the number of tokens that can be generated for a response, including visible output tokens and reasoning tokens.
-    public let maxOutputTokens: Int?
+    public let maxOutputTokens: String?
 
-    /// The maximum number of total calls to built-in tools that can be processed in a response. This maximum number applies across all built-in tool calls, not per individual tool. Any further attempts to...
-    public let maxToolCalls: Int?
+    public let maxToolCalls: String?
 
-    /// Set of 16 key-value pairs that can be attached to an object. This can be useful for storing additional information about the object in a structured format, and querying for objects via API or the d...
-    public let metadata: SAOAIJSONValue?
+    public let metadata: String?
 
-    /// The model deployment to use for the creation of this response.
-    public let model: String
+    /// Model ID used to generate the response, like `gpt-4o` or `o3`. OpenAI offers a wide range of models with different capabilities, performance characteristics, and price points. Refer to the model gu...
+    public let model: String?
 
-    /// Whether to allow the model to run tool calls in parallel.
-    public let parallelToolCalls: Bool?
+    public let parallelToolCalls: String?
 
-    /// The unique ID of the previous response to the model. Use this to create multi-turn conversations. Learn more about conversation state.
     public let previousResponseId: String?
 
-    public let prompt: SAOAIJSONValue?
+    public let prompt: GeneratedPrompt?
 
-    public let reasoning: SAOAIJSONValue?
+    /// Used by OpenAI to cache responses for similar requests to optimize your cache hit rates. Replaces the `user` field. Learn more.
+    public let promptCacheKey: String?
 
-    /// Whether to store the generated model response for later retrieval via API.
-    public let store: Bool?
+    public let promptCacheRetention: String?
 
-    /// If set to true, the model response data will be streamed to the client as it is generated using server-sent events. See the Streaming section below for more information.
-    public let stream: Bool?
+    public let reasoning: String?
 
-    /// What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic. We generally rec...
-    public let temperature: Float?
+    /// A stable identifier used to help detect users of your application that may be violating OpenAI's usage policies. The IDs should be a string that uniquely identifies each user. We recommend hashing ...
+    public let safetyIdentifier: String?
 
-    /// Configuration options for a text response from the model. Can be plain text or structured JSON data. Learn more: - Text inputs and outputs - Structured Outputs
-    public let text: SAOAIJSONValue?
+    public let store: String?
 
-    /// How the model should select which tool (or tools) to use when generating a response. See the `tools` parameter to see how to specify which tools the model can call.
-    public let toolChoice: String?
+    public let stream: String?
+
+    public let streamOptions: String?
+
+    public let temperature: String?
+
+    public let text: GeneratedResponseTextParam?
+
+    public let toolChoice: GeneratedToolChoiceParam?
 
     /// An array of tools the model may call while generating a response. You can specify which tool to use by setting the `tool_choice` parameter. The two categories of tools you can provide the model are...
-    public let tools: [GeneratedTool]?
+    public let tools: GeneratedToolsArray?
 
-    /// An integer between 0 and 20 specifying the number of most likely tokens to return at each token position, each with an associated log probability.
-    public let topLogprobs: Int?
+    public let topLogprobs: String?
 
-    /// An alternative to sampling with temperature, called nucleus sampling, where the model considers the results of the tokens with top_p probability mass. So 0.1 means only the tokens comprising the to...
-    public let topP: Float?
+    public let topP: String?
 
-    /// The truncation strategy to use for the model response. If the context of this response and previous ones exceeds the model's context window size, the model will truncate the response to fit the con...
     public let truncation: String?
 
-    /// A unique identifier representing your end-user, which can help OpenAI to monitor and detect abuse. Learn more.
+    /// This field is being replaced by `safety_identifier` and `prompt_cache_key`. Use `prompt_cache_key` instead to maintain caching optimizations. A stable identifier for your end-users. Used to boost c...
     public let user: String?
 
     private enum CodingKeys: String, CodingKey {
         case background
+        case conversation
         case include
         case input
         case instructions
@@ -214,9 +443,13 @@ public struct GeneratedResponseRequest: Codable, Equatable {
         case parallelToolCalls = "parallel_tool_calls"
         case previousResponseId = "previous_response_id"
         case prompt
+        case promptCacheKey = "prompt_cache_key"
+        case promptCacheRetention = "prompt_cache_retention"
         case reasoning
+        case safetyIdentifier = "safety_identifier"
         case store
         case stream
+        case streamOptions = "stream_options"
         case temperature
         case text
         case toolChoice = "tool_choice"
@@ -229,14 +462,42 @@ public struct GeneratedResponseRequest: Codable, Equatable {
 
 }
 
-/// Generated model for AzureErrorResponse
-public struct GeneratedErrorResponse: Codable, Equatable {
-    /// The error details.
-    public let error: SAOAIJSONValue?
+/// Generated model for OpenAI.DeleteFileResponse
+public struct GeneratedDeleteFileResponse: Codable, Equatable {
+    public let deleted: Bool
+
+    public let id: String
+
+    public let object: String
 
 }
 
-/// Generated model for AzureListFilesResponse
+/// Generated model for OpenAI.Embedding
+public struct GeneratedEmbedding: Codable, Equatable {
+    /// The embedding vector, which is a list of floats. The length of vector depends on the model as listed in the embedding guide.
+    public let embedding: [Float]
+
+    /// The index of the embedding in the list of embeddings.
+    public let index: Int
+
+    /// The object type, which is always "embedding".
+    public let object: String
+
+}
+
+/// Generated model for OpenAI.InputItem
+public struct GeneratedInputItem: Codable, Equatable {
+    public let type: String
+
+}
+
+/// Generated model for OpenAI.ItemResource
+public struct GeneratedItemResource: Codable, Equatable {
+    public let type: String
+
+}
+
+/// Generated model for OpenAI.ListFilesResponse
 public struct GeneratedListFilesResponse: Codable, Equatable {
     public let data: [GeneratedOpenAIFile]
 
@@ -258,10 +519,14 @@ public struct GeneratedListFilesResponse: Codable, Equatable {
 
 }
 
-/// Generated model for AzureOpenAIFile
+/// Generated model for OpenAI.Metadata
+public struct GeneratedMetadata: Codable, Equatable {
+}
+
+/// Generated model for OpenAI.OpenAIFile
 public struct GeneratedOpenAIFile: Codable, Equatable {
     /// The size of the file, in bytes.
-    public let bytes: Int64
+    public let bytes: Int
 
     /// The Unix timestamp (in seconds) for when the file was created.
     public let createdAt: Int
@@ -300,179 +565,9 @@ public struct GeneratedOpenAIFile: Codable, Equatable {
 
 }
 
-/// Generated model for AzureResponse
-public struct GeneratedResponse: Codable, Equatable {
-    /// Whether to run the model response in the background. Learn more.
-    public let background: Bool?
-
-    /// Unix timestamp (in seconds) of when this Response was created.
-    public let createdAt: Int
-
-    public let error: SAOAIJSONValue
-
-    /// Unique identifier for this Response.
-    public let id: String
-
-    /// Details about why the response is incomplete.
-    public let incompleteDetails: SAOAIJSONValue
-
-    /// A system (or developer) message inserted into the model's context. When using along with `previous_response_id`, the instructions from a previous response will not be carried over to the next respo...
-    public let instructions: String
-
-    /// An upper bound for the number of tokens that can be generated for a response, including visible output tokens and reasoning tokens.
-    public let maxOutputTokens: Int?
-
-    /// The maximum number of total calls to built-in tools that can be processed in a response. This maximum number applies across all built-in tool calls, not per individual tool. Any further attempts to...
-    public let maxToolCalls: Int?
-
-    /// Set of 16 key-value pairs that can be attached to an object. This can be useful for storing additional information about the object in a structured format, and querying for objects via API or the d...
-    public let metadata: SAOAIJSONValue
-
-    /// The model used to generate this response.
-    public let model: String
-
-    /// The object type of this resource - always set to `response`.
-    public let object: String
-
-    /// An array of content items generated by the model. - The length and order of items in the `output` array is dependent on the model's response. - Rather than accessing the first item in the `output` ...
-    public let output: [GeneratedItemResource]
-
-    /// SDK-only convenience property that contains the aggregated text output from all `output_text` items in the `output` array, if any are present. Supported in the Python and JavaScript SDKs.
-    public let outputText: String?
-
-    /// Whether to allow the model to run tool calls in parallel.
-    public let parallelToolCalls: Bool
-
-    /// The unique ID of the previous response to the model. Use this to create multi-turn conversations. Learn more about conversation state.
-    public let previousResponseId: String?
-
-    public let prompt: SAOAIJSONValue?
-
-    public let reasoning: SAOAIJSONValue?
-
-    /// The status of the response generation. One of `completed`, `failed`, `in_progress`, `cancelled`, `queued`, or `incomplete`.
-    public let status: String?
-
-    /// What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic. We generally rec...
-    public let temperature: Float
-
-    /// Configuration options for a text response from the model. Can be plain text or structured JSON data. Learn more: - Text inputs and outputs - Structured Outputs
-    public let text: SAOAIJSONValue?
-
-    /// How the model should select which tool (or tools) to use when generating a response. See the `tools` parameter to see how to specify which tools the model can call.
-    public let toolChoice: String?
-
-    /// An array of tools the model may call while generating a response. You can specify which tool to use by setting the `tool_choice` parameter. The two categories of tools you can provide the model are...
-    public let tools: [GeneratedTool]?
-
-    /// An integer between 0 and 20 specifying the number of most likely tokens to return at each token position, each with an associated log probability.
-    public let topLogprobs: Int?
-
-    /// An alternative to sampling with temperature, called nucleus sampling, where the model considers the results of the tokens with top_p probability mass. So 0.1 means only the tokens comprising the to...
-    public let topP: Float
-
-    /// The truncation strategy to use for the model response. If the context of this response and previous ones exceeds the model's context window size, the model will truncate the response to fit the con...
-    public let truncation: String?
-
-    public let usage: GeneratedResponseUsage?
-
-    /// A unique identifier representing your end-user, which can help OpenAI to monitor and detect abuse. Learn more.
-    public let user: String
-
-    private enum CodingKeys: String, CodingKey {
-        case background
-        case createdAt = "created_at"
-        case error
-        case id
-        case incompleteDetails = "incomplete_details"
-        case instructions
-        case maxOutputTokens = "max_output_tokens"
-        case maxToolCalls = "max_tool_calls"
-        case metadata
-        case model
-        case object
-        case output
-        case outputText = "output_text"
-        case parallelToolCalls = "parallel_tool_calls"
-        case previousResponseId = "previous_response_id"
-        case prompt
-        case reasoning
-        case status
-        case temperature
-        case text
-        case toolChoice = "tool_choice"
-        case tools
-        case topLogprobs = "top_logprobs"
-        case topP = "top_p"
-        case truncation
-        case usage
-        case user
-    }
-
-}
-
-/// Generated model for OpenAI.CreateEmbeddingResponse
-public struct GeneratedEmbeddingResponse: Codable, Equatable {
-    /// The list of embeddings generated by the model.
-    public let data: [GeneratedEmbedding]
-
-    /// The name of the model used to generate the embedding.
-    public let model: String
-
-    /// The object type, which is always "list".
-    public let object: String
-
-    /// The usage information for the request.
-    public let usage: SAOAIJSONValue
-
-}
-
-/// Generated model for OpenAI.DeleteFileResponse
-public struct GeneratedDeleteFileResponse: Codable, Equatable {
-    public let deleted: Bool
-
-    public let id: String
-
-    public let object: String
-
-}
-
-/// Generated model for OpenAI.Embedding
-public struct GeneratedEmbedding: Codable, Equatable {
-    /// The embedding vector, which is a list of floats. The length of vector depends on the model as listed in the embedding guide.
-    public let embedding: String
-
-    /// The index of the embedding in the list of embeddings.
-    public let index: Int
-
-    /// The object type, which is always "embedding".
-    public let object: String
-
-}
-
-/// Generated model for OpenAI.ImplicitUserMessage
-public struct GeneratedImplicitUserMessage: Codable, Equatable {
-    public let content: String
-
-}
-
-/// Generated model for OpenAI.ItemContent
-public struct GeneratedItemContent: Codable, Equatable {
-    public let type: GeneratedItemContentType
-
-}
-
-/// Generated model for OpenAI.ItemParam
-public struct GeneratedItemParam: Codable, Equatable {
-    public let type: GeneratedItemType
-
-}
-
-/// Generated model for OpenAI.ItemResource
-public struct GeneratedItemResource: Codable, Equatable {
-    public let id: String
-
-    public let type: GeneratedItemType
+/// Generated model for OpenAI.OutputItem
+public struct GeneratedOutputItem: Codable, Equatable {
+    public let type: String
 
 }
 
@@ -481,9 +576,8 @@ public struct GeneratedPrompt: Codable, Equatable {
     /// The unique identifier of the prompt template to use.
     public let id: String
 
-    public let variables: SAOAIJSONValue?
+    public let variables: String?
 
-    /// Optional version of the prompt template.
     public let version: String?
 
 }
@@ -492,10 +586,8 @@ public struct GeneratedPrompt: Codable, Equatable {
 public struct GeneratedReasoning: Codable, Equatable {
     public let effort: String?
 
-    /// **Deprecated:** use `summary` instead. A summary of the reasoning performed by the model. This can be useful for debugging and understanding the model's reasoning process. One of `auto`, `concise`,...
     public let generateSummary: String?
 
-    /// A summary of the reasoning performed by the model. This can be useful for debugging and understanding the model's reasoning process. One of `auto`, `concise`, or `detailed`.
     public let summary: String?
 
     private enum CodingKeys: String, CodingKey {
@@ -512,6 +604,12 @@ public struct GeneratedResponseError: Codable, Equatable {
 
     /// A human-readable description of the error.
     public let message: String
+
+}
+
+/// Generated model for OpenAI.ResponseIncompleteDetails
+public struct GeneratedResponseIncompleteDetails: Codable, Equatable {
+    public let reason: String?
 
 }
 
@@ -548,21 +646,26 @@ public struct GeneratedResponsePromptVariables: Codable, Equatable {
 
 /// Generated model for OpenAI.ResponseStreamEvent
 public struct GeneratedResponseStreamEvent: Codable, Equatable {
-    /// The sequence number for this event.
-    public let sequenceNumber: Int
-
     public let type: String
 
+}
+
+/// Generated model for OpenAI.ResponseStreamOptions
+public struct GeneratedResponseStreamOptions: Codable, Equatable {
+    /// When true, stream obfuscation will be enabled. Stream obfuscation adds random characters to an `obfuscation` field on streaming delta events to normalize payload sizes as a mitigation to certain si...
+    public let includeObfuscation: Bool?
+
     private enum CodingKeys: String, CodingKey {
-        case sequenceNumber = "sequence_number"
-        case type
+        case includeObfuscation = "include_obfuscation"
     }
 
 }
 
-/// Generated model for OpenAI.ResponseTextFormatConfiguration
-public struct GeneratedResponseTextFormatConfiguration: Codable, Equatable {
-    public let type: String
+/// Generated model for OpenAI.ResponseTextParam
+public struct GeneratedResponseTextParam: Codable, Equatable {
+    public let format: GeneratedTextResponseFormatConfiguration?
+
+    public let verbosity: String?
 
 }
 
@@ -572,13 +675,13 @@ public struct GeneratedResponseUsage: Codable, Equatable {
     public let inputTokens: Int
 
     /// A detailed breakdown of the input tokens.
-    public let inputTokensDetails: SAOAIJSONValue
+    public let inputTokensDetails: String
 
     /// The number of output tokens.
     public let outputTokens: Int
 
     /// A detailed breakdown of the output tokens.
-    public let outputTokensDetails: SAOAIJSONValue
+    public let outputTokensDetails: String
 
     /// The total number of tokens used.
     public let totalTokens: Int
@@ -593,14 +696,40 @@ public struct GeneratedResponseUsage: Codable, Equatable {
 
 }
 
+/// Generated model for OpenAI.ResponseUsageInputTokensDetails
+public struct GeneratedResponseUsageInputTokensDetails: Codable, Equatable {
+    public let cachedTokens: Int
+
+    private enum CodingKeys: String, CodingKey {
+        case cachedTokens = "cached_tokens"
+    }
+
+}
+
+/// Generated model for OpenAI.ResponseUsageOutputTokensDetails
+public struct GeneratedResponseUsageOutputTokensDetails: Codable, Equatable {
+    public let reasoningTokens: Int
+
+    private enum CodingKeys: String, CodingKey {
+        case reasoningTokens = "reasoning_tokens"
+    }
+
+}
+
+/// Generated model for OpenAI.TextResponseFormatConfiguration
+public struct GeneratedTextResponseFormatConfiguration: Codable, Equatable {
+    public let type: String
+
+}
+
 /// Generated model for OpenAI.Tool
 public struct GeneratedTool: Codable, Equatable {
     public let type: String
 
 }
 
-/// Generated model for OpenAI.ToolChoiceObject
-public struct GeneratedToolChoiceObject: Codable, Equatable {
+/// Generated model for OpenAI.ToolChoiceParam
+public struct GeneratedToolChoiceParam: Codable, Equatable {
     public let type: String
 
 }
