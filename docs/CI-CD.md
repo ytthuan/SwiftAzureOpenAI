@@ -89,11 +89,11 @@ This package includes comprehensive CI/CD automation through GitHub Actions to e
 - **Python**: 3.9 for code generation scripts
 
 **Required Secrets:**
-- **PAT_TOKEN** (recommended): Personal Access Token with `repo` scope
-  - Required when GitHub Actions is not permitted to create or approve pull requests
+- **PAT_TOKEN** (required): Personal Access Token with `repo` scope
+  - Required because GitHub Actions default token doesn't have permission to create or approve pull requests
   - Create at: Settings > Developer settings > Personal access tokens > Generate new token
   - Add to repository: Settings > Secrets and variables > Actions > New repository secret
-  - Fallback: Uses `GITHUB_TOKEN` if `PAT_TOKEN` is not available
+  - Note: The workflow will fail if PAT_TOKEN is not configured
 
 **Benefits:**
 - Zero manual intervention for API updates
@@ -310,7 +310,7 @@ dependencies: [
    - Value: Paste the PAT token
    - Click "Add secret"
 
-3. The workflow will automatically use `PAT_TOKEN` if available, falling back to `GITHUB_TOKEN` if not.
+3. The workflow requires `PAT_TOKEN` to be configured in repository secrets.
 
 **Verification**:
 - Re-run the nightly codegen workflow manually or wait for the next scheduled run
