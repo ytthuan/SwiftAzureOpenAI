@@ -251,7 +251,9 @@ public final class HTTPClient: HTTPClientProtocol, @unchecked Sendable {
                     // Use byte-level delimiter scanning to reduce string allocations
                     let delimiter = "\n\n".data(using: .utf8)!
                     var buffer = Data()
-                    buffer.reserveCapacity(8192) // Pre-allocate larger buffer
+                    // Optimized: Pre-allocate buffer with expected size to reduce reallocations
+                    let estimatedBufferSize = min(data.count, 16384) // Cap at 16KB
+                    buffer.reserveCapacity(estimatedBufferSize)
                     buffer.append(data)
                     
                     // Process complete chunks using optimized byte scanning
@@ -304,24 +306,25 @@ public final class HTTPClient: HTTPClientProtocol, @unchecked Sendable {
                         
                         // Optimized streaming processing for better performance
                         var buffer = Data()
-                        buffer.reserveCapacity(8192) // Pre-allocate larger buffer
-                        
+                        // Optimized: Use adaptive buffer sizing based on typical chunk sizes
+                        buffer.reserveCapacity(16384) // 16KB default, good for most SSE streams
+
                         for try await byte in asyncBytes {
                             buffer.append(byte)
-                            
+
                             // Process complete chunks (ending with \n\n) for better efficiency
                             let delimiter = "\n\n".data(using: .utf8)!
                             while let range = buffer.range(of: delimiter) {
                                 let chunkData = buffer[..<range.upperBound] // Include delimiter
                                 buffer.removeSubrange(..<range.upperBound)
-                                
+
                                 if !chunkData.isEmpty {
                                     // Use optimized completion check first
                                     if OptimizedSSEParser.isCompletionChunkOptimized(chunkData) {
                                         continuation.finish()
                                         return
                                     }
-                                    
+
                                     continuation.yield(chunkData)
                                 }
                             }
@@ -351,7 +354,9 @@ public final class HTTPClient: HTTPClientProtocol, @unchecked Sendable {
                         // Use optimized byte-level streaming for older platforms
                         let delimiter = "\n\n".data(using: .utf8)!
                         var buffer = Data()
-                        buffer.reserveCapacity(8192) // Pre-allocate larger buffer
+                        // Optimized: Pre-allocate buffer with expected size to reduce reallocations
+                        let estimatedBufferSize = min(data.count, 16384) // Cap at 16KB
+                        buffer.reserveCapacity(estimatedBufferSize)
                         buffer.append(data)
                         
                         // Process complete chunks using optimized byte scanning

@@ -11,11 +11,16 @@ public final class SSEParser: Sendable {
     ) throws -> SAOAIStreamingResponse? {
         // Log raw chunk if logger is provided
         logger?.logRawChunk(data)
-        
+
+        // Optimized: Check for completion using byte-level comparison first to avoid string allocation
+        if isCompletionChunkOptimized(data) {
+            return nil // Signals completion
+        }
+
         guard let string = String(data: data, encoding: .utf8) else {
             throw SAOAIError.decodingError(NSError(domain: "SSEParser", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid UTF-8 data"]))
         }
-        
+
         let lines = string.components(separatedBy: .newlines)
         
         for line in lines {
@@ -520,12 +525,24 @@ public final class SSEParser: Sendable {
         )
     }
     
-    /// Check if SSE chunk indicates completion
+    /// Check if SSE chunk indicates completion using optimized byte-level comparison
     public static func isCompletionChunk(_ data: Data) -> Bool {
-        guard let string = String(data: data, encoding: .utf8) else {
-            return false
+        return isCompletionChunkOptimized(data)
+    }
+
+    /// Optimized byte-level check for completion marker to avoid string allocation
+    private static func isCompletionChunkOptimized(_ data: Data) -> Bool {
+        // Fast path: check minimum size requirement
+        let donePattern = "data: [DONE]".data(using: .utf8)!
+        guard data.count >= donePattern.count else { return false }
+
+        // Search for the pattern using byte-level comparison
+        let searchRange = 0..<(data.count - donePattern.count + 1)
+        for i in searchRange {
+            if data[i..<(i + donePattern.count)].elementsEqual(donePattern) {
+                return true
+            }
         }
-        
-        return string.trimmingCharacters(in: .whitespacesAndNewlines).contains("data: [DONE]")
+        return false
     }
 }
