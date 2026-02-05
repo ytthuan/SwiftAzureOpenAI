@@ -2,7 +2,12 @@ import Foundation
 
 /// Parser for OpenAI/Azure OpenAI Server-Sent Events (SSE) streaming format
 public final class SSEParser: Sendable {
-    
+
+    // MARK: - Optimized Parsing Constants
+
+    private static let dataPrefix = "data: ".data(using: .utf8)!
+    private static let doneMarker = "[DONE]".data(using: .utf8)!
+
     /// Parse SSE data chunks and extract JSON payload with optional logging and code interpreter tracking
     public static func parseSSEChunk(
         _ data: Data,
@@ -11,11 +16,6 @@ public final class SSEParser: Sendable {
     ) throws -> SAOAIStreamingResponse? {
         // Log raw chunk if logger is provided
         logger?.logRawChunk(data)
-
-        // Optimized: Check for completion using byte-level comparison first to avoid string allocation
-        if isCompletionChunkOptimized(data) {
-            return nil // Signals completion
-        }
 
         guard let string = String(data: data, encoding: .utf8) else {
             throw SAOAIError.decodingError(NSError(domain: "SSEParser", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid UTF-8 data"]))
@@ -531,18 +531,25 @@ public final class SSEParser: Sendable {
     }
 
     /// Optimized byte-level check for completion marker to avoid string allocation
+    /// Uses efficient implementation with pre-computed constants and direct byte comparisons
     private static func isCompletionChunkOptimized(_ data: Data) -> Bool {
         // Fast path: check minimum size requirement
-        let donePattern = "data: [DONE]".data(using: .utf8)!
-        guard data.count >= donePattern.count else { return false }
+        guard data.count >= dataPrefix.count + doneMarker.count else { return false }
 
-        // Search for the pattern using byte-level comparison
-        let searchRange = 0..<(data.count - donePattern.count + 1)
-        for i in searchRange {
-            if data[i..<(i + donePattern.count)].elementsEqual(donePattern) {
-                return true
+        var pos = 0
+        let dataCount = data.count
+
+        // Search for "data: [DONE]" pattern efficiently without creating Data slices
+        while pos < dataCount - (dataPrefix.count + doneMarker.count) {
+            if data[pos..<pos + dataPrefix.count].elementsEqual(dataPrefix) {
+                let jsonStart = pos + dataPrefix.count
+                if data[jsonStart..<jsonStart + doneMarker.count].elementsEqual(doneMarker) {
+                    return true
+                }
             }
+            pos += 1
         }
+
         return false
     }
 }

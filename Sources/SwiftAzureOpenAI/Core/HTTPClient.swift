@@ -251,9 +251,8 @@ public final class HTTPClient: HTTPClientProtocol, @unchecked Sendable {
                     // Use byte-level delimiter scanning to reduce string allocations
                     let delimiter = "\n\n".data(using: .utf8)!
                     var buffer = Data()
-                    // Optimized: Pre-allocate buffer with expected size to reduce reallocations
-                    let estimatedBufferSize = min(data.count, 16384) // Cap at 16KB
-                    buffer.reserveCapacity(estimatedBufferSize)
+                    // Pre-allocate buffer with full data size since all data is available at once
+                    buffer.reserveCapacity(data.count)
                     buffer.append(data)
                     
                     // Process complete chunks using optimized byte scanning
@@ -354,9 +353,8 @@ public final class HTTPClient: HTTPClientProtocol, @unchecked Sendable {
                         // Use optimized byte-level streaming for older platforms
                         let delimiter = "\n\n".data(using: .utf8)!
                         var buffer = Data()
-                        // Optimized: Pre-allocate buffer with expected size to reduce reallocations
-                        let estimatedBufferSize = min(data.count, 16384) // Cap at 16KB
-                        buffer.reserveCapacity(estimatedBufferSize)
+                        // Pre-allocate buffer with full data size since all data is available at once
+                        buffer.reserveCapacity(data.count)
                         buffer.append(data)
                         
                         // Process complete chunks using optimized byte scanning
