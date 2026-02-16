@@ -18,30 +18,24 @@ import SwiftAzureOpenAI
 struct ErgonomicsUtilitiesExample {
     static func main() async {
         // Configuration from environment variables
-        guard let endpoint = ProcessInfo.processInfo.environment["AZURE_OPENAI_ENDPOINT"] else {
-            print("❌ AZURE_OPENAI_ENDPOINT environment variable is required")
+        guard let apiKey = ProcessInfo.processInfo.environment["OPENAI_API_KEY"] else {
+            print("❌ OPENAI_API_KEY environment variable is required")
             exit(1)
         }
-        
-        let apiKey = ProcessInfo.processInfo.environment["AZURE_OPENAI_API_KEY"] ??
-                    ProcessInfo.processInfo.environment["COPILOT_AGENT_AZURE_OPENAI_API_KEY"] ??
-                    "your-api-key"
-        
-        let deploymentName = ProcessInfo.processInfo.environment["AZURE_OPENAI_DEPLOYMENT"] ?? "text-embedding-ada-002"
-        
+
+        let organization = ProcessInfo.processInfo.environment["OPENAI_ORGANIZATION"]
+
         // Create configuration
-        let config = SAOAIAzureConfiguration(
-            endpoint: endpoint,
+        let config = SAOAIOpenAIConfiguration(
             apiKey: apiKey,
-            deploymentName: deploymentName,
-            apiVersion: "preview"
+            organization: organization
         )
-        
+
         print("🚀 SwiftAzureOpenAI Ergonomics Utilities Example")
-        print("   Endpoint: \(endpoint)")
-        print("   Deployment: \(deploymentName)")
+        print("   Using OpenAI API")
+        print("   Model: text-embedding-ada-002")
         print()
-        
+
         await runExample(with: config)
     }
     
