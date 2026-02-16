@@ -7,48 +7,6 @@ public protocol SAOAIConfiguration: Sendable {
     var loggerConfiguration: LoggerConfiguration { get }
 }
 
-public struct SAOAIAzureConfiguration: SAOAIConfiguration, Sendable {
-    public let endpoint: String
-    public let apiKey: String
-    public let deploymentName: String
-    public let apiVersion: String
-    public let sseLoggerConfiguration: SSELoggerConfiguration
-    public let loggerConfiguration: LoggerConfiguration
-
-    public init(
-        endpoint: String, 
-        apiKey: String, 
-        deploymentName: String, 
-        apiVersion: String = "preview", 
-        sseLoggerConfiguration: SSELoggerConfiguration = .disabled,
-        loggerConfiguration: LoggerConfiguration = .disabled
-    ) {
-        self.endpoint = endpoint
-        self.apiKey = apiKey
-        self.deploymentName = deploymentName
-        self.apiVersion = apiVersion
-        self.sseLoggerConfiguration = sseLoggerConfiguration
-        self.loggerConfiguration = loggerConfiguration
-    }
-
-    public var baseURL: URL {
-        // Supports both Azure OpenAI and Azure AI Foundry endpoints:
-        // https://{resource}.openai.azure.com/openai/v1/responses?api-version=preview
-        // https://{resource}.services.ai.azure.com/openai/v1/responses?api-version=preview
-        var components = URLComponents(string: endpoint)!
-        components.path = "/openai/v1/responses"
-        components.queryItems = [URLQueryItem(name: "api-version", value: apiVersion)]
-        return components.url!
-    }
-
-    public var headers: [String: String] {
-        [
-            "api-key": apiKey,
-            "Content-Type": "application/json"
-        ]
-    }
-}
-
 public struct SAOAIOpenAIConfiguration: SAOAIConfiguration, Sendable {
     public let apiKey: String
     public let organization: String?
@@ -56,8 +14,8 @@ public struct SAOAIOpenAIConfiguration: SAOAIConfiguration, Sendable {
     public let loggerConfiguration: LoggerConfiguration
 
     public init(
-        apiKey: String, 
-        organization: String? = nil, 
+        apiKey: String,
+        organization: String? = nil,
         sseLoggerConfiguration: SSELoggerConfiguration = .disabled,
         loggerConfiguration: LoggerConfiguration = .disabled
     ) {

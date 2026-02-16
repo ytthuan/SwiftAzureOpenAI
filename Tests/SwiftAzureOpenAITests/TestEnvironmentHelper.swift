@@ -3,68 +3,46 @@ import Foundation
 
 /// Helper for managing test environment configuration consistently across all tests
 enum TestEnvironmentHelper {
-    
+
     // MARK: - Environment Variable Retrieval
-    
-    /// Retrieves Azure OpenAI endpoint from environment variables
-    static var azureEndpoint: String {
-        ProcessInfo.processInfo.environment["AZURE_OPENAI_ENDPOINT"] ?? "https://test.openai.azure.com"
+
+    /// Retrieves OpenAI API key from environment variables
+    static var openAIAPIKey: String {
+        ProcessInfo.processInfo.environment["OPENAI_API_KEY"] ?? "test-key"
     }
-    
-    /// Retrieves Azure OpenAI API key from environment variables with proper fallback
-    /// Priority: AZURE_OPENAI_API_KEY -> COPILOT_AGENT_AZURE_OPENAI_API_KEY -> default
-    static var azureAPIKey: String {
-        ProcessInfo.processInfo.environment["AZURE_OPENAI_API_KEY"] ?? 
-        ProcessInfo.processInfo.environment["COPILOT_AGENT_AZURE_OPENAI_API_KEY"] ?? 
-        "test-key"
+
+    /// Retrieves OpenAI organization from environment variables (optional)
+    static var openAIOrganization: String? {
+        ProcessInfo.processInfo.environment["OPENAI_ORGANIZATION"]
     }
-    
-    /// Retrieves Azure OpenAI deployment name from environment variables
-    static var azureDeployment: String {
-        ProcessInfo.processInfo.environment["AZURE_OPENAI_DEPLOYMENT"] ?? "gpt-4o"
-    }
-    
-    /// Retrieves Azure OpenAI API version from environment variables
-    static var azureAPIVersion: String {
-        ProcessInfo.processInfo.environment["AZURE_OPENAI_API_VERSION"] ?? "preview"
-    }
-    
+
     // MARK: - Standard Test Configuration
-    
-    /// Creates a standard Azure configuration using environment variables
-    static func createStandardAzureConfiguration() -> SAOAIAzureConfiguration {
-        return SAOAIAzureConfiguration(
-            endpoint: azureEndpoint,
-            apiKey: azureAPIKey,
-            deploymentName: azureDeployment,
-            apiVersion: azureAPIVersion
+
+    /// Creates a standard OpenAI configuration using environment variables
+    static func createStandardOpenAIConfiguration() -> SAOAIOpenAIConfiguration {
+        return SAOAIOpenAIConfiguration(
+            apiKey: openAIAPIKey,
+            organization: openAIOrganization
         )
     }
-    
-    /// Creates a standard Azure configuration with custom parameters, falling back to environment variables
-    static func createAzureConfiguration(
-        endpoint: String? = nil,
-        apiKey: String? = nil, 
-        deploymentName: String? = nil,
-        apiVersion: String? = nil
-    ) -> SAOAIAzureConfiguration {
-        return SAOAIAzureConfiguration(
-            endpoint: endpoint ?? azureEndpoint,
-            apiKey: apiKey ?? azureAPIKey,
-            deploymentName: deploymentName ?? azureDeployment,
-            apiVersion: apiVersion ?? azureAPIVersion
+
+    /// Creates a standard OpenAI configuration with custom parameters, falling back to environment variables
+    static func createOpenAIConfiguration(
+        apiKey: String? = nil,
+        organization: String? = nil
+    ) -> SAOAIOpenAIConfiguration {
+        return SAOAIOpenAIConfiguration(
+            apiKey: apiKey ?? openAIAPIKey,
+            organization: organization ?? openAIOrganization
         )
     }
-    
+
     // MARK: - Debug Information
-    
+
     /// Prints current environment variable configuration for debugging
     static func printEnvironmentConfiguration() {
         print("🔍 Test Environment Configuration:")
-        print("  AZURE_OPENAI_ENDPOINT: '\(ProcessInfo.processInfo.environment["AZURE_OPENAI_ENDPOINT"] ?? "not set")' -> '\(azureEndpoint)'")
-        print("  AZURE_OPENAI_API_KEY: '\(ProcessInfo.processInfo.environment["AZURE_OPENAI_API_KEY"]?.isEmpty == false ? "[REDACTED]" : "not set")' -> '[REDACTED]'")
-        print("  COPILOT_AGENT_AZURE_OPENAI_API_KEY: '\(ProcessInfo.processInfo.environment["COPILOT_AGENT_AZURE_OPENAI_API_KEY"]?.isEmpty == false ? "[REDACTED]" : "not set")' -> '[REDACTED]'")
-        print("  AZURE_OPENAI_DEPLOYMENT: '\(ProcessInfo.processInfo.environment["AZURE_OPENAI_DEPLOYMENT"] ?? "not set")' -> '\(azureDeployment)'")
-        print("  AZURE_OPENAI_API_VERSION: '\(ProcessInfo.processInfo.environment["AZURE_OPENAI_API_VERSION"] ?? "not set")' -> '\(azureAPIVersion)'")
+        print("  OPENAI_API_KEY: '\(ProcessInfo.processInfo.environment["OPENAI_API_KEY"]?.isEmpty == false ? "[REDACTED]" : "not set")' -> '[REDACTED]'")
+        print("  OPENAI_ORGANIZATION: '\(ProcessInfo.processInfo.environment["OPENAI_ORGANIZATION"] ?? "not set")' -> '\(openAIOrganization ?? "not set")'")
     }
 }

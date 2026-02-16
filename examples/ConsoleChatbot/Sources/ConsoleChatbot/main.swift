@@ -12,14 +12,12 @@ import SwiftAzureOpenAI
 /// - Latest SAOAI class names and API patterns
 
 // MARK: - Configuration
-let azureConfig = SAOAIAzureConfiguration(
-    endpoint: ProcessInfo.processInfo.environment["AZURE_OPENAI_ENDPOINT"] ?? "https://your-resource.openai.azure.com",
-    apiKey: ProcessInfo.processInfo.environment["AZURE_OPENAI_API_KEY"] ?? ProcessInfo.processInfo.environment["COPILOT_AGENT_AZURE_OPENAI_API_KEY"] ?? "your-api-key",
-    deploymentName: ProcessInfo.processInfo.environment["AZURE_OPENAI_DEPLOYMENT"] ?? "gpt-4o",
-    apiVersion: "preview"
+let openAIConfig = SAOAIOpenAIConfiguration(
+    apiKey: ProcessInfo.processInfo.environment["OPENAI_API_KEY"] ?? "your-api-key",
+    organization: ProcessInfo.processInfo.environment["OPENAI_ORGANIZATION"]
 )
 
-let client = SAOAIClient(configuration: azureConfig)
+let client = SAOAIClient(configuration: openAIConfig)
 
 // MARK: - Chat History Management
 class ChatHistory {
@@ -358,9 +356,9 @@ class ConsoleChatbot {
         print("• Type 'tools list' to see available tools")
         print("• Type 'quit' to exit")
         print("\nNote: Using environment variables for configuration:")
-        print("• AZURE_OPENAI_ENDPOINT (or default placeholder)")
-        print("• AZURE_OPENAI_API_KEY (or default placeholder)")
-        print("• AZURE_OPENAI_DEPLOYMENT (or default: gpt-4o)")
+        print("• OPENAI_API_KEY (required)")
+        print("• OPENAI_ORGANIZATION (optional)")
+        print("• MODEL: gpt-4o (default)")
         print("\n🔧 Tools Status: \(chatHistory.toolsEnabled ? "✅ Enabled" : "❌ Disabled")")
         print("==============================================\n")
     }
@@ -442,10 +440,11 @@ class ConsoleChatbot {
     }
     
     private func sendMessage(_ message: SAOAIMessage) async throws -> SAOAIResponse {
+        let model = "gpt-4o"
         // Use response chaining if we have a previous response
         if let previousResponseId = chatHistory.lastResponseId {
             return try await client.responses.create(
-                model: azureConfig.deploymentName,
+                model: model,
                 input: [message],
                 maxOutputTokens: 500,
                 tools: chatHistory.toolsEnabled ? FunctionRegistry.tools : nil,
@@ -455,7 +454,7 @@ class ConsoleChatbot {
             // First message in conversation - include system message
             let systemMessage = SAOAIMessage(role: .system, text: "You are a helpful AI assistant with vision capabilities and access to various tools. You can analyze images, perform calculations, execute code, get weather information, and handle file operations. When tools are available, use them to provide accurate and helpful responses.")
             return try await client.responses.create(
-                model: azureConfig.deploymentName,
+                model: model,
                 input: [systemMessage, message],
                 maxOutputTokens: 500,
                 tools: chatHistory.toolsEnabled ? FunctionRegistry.tools : nil
@@ -509,9 +508,9 @@ class ConsoleChatbot {
     private func handleFunctionCalls(response: SAOAIResponse) async -> Bool {
         var functionCalls: [(String, String, String)] = [] // name, callId, arguments
         
-        // Check for function calls in response output - Azure OpenAI Responses API puts function calls at output level
+        // Check for function calls in response output - OpenAI Responses API puts function calls at output level
         for output in response.output {
-            // For Azure OpenAI Responses API, function calls appear at output level with type: "function_call"
+            // For OpenAI Responses API, function calls appear at output level with type: "function_call"
             if output.type == "function_call" {
                 // Access function call fields directly from the updated SDK model
                 if let name = output.name, let callId = output.callId, let arguments = output.arguments {
@@ -560,9 +559,10 @@ class ConsoleChatbot {
         
         // Send function results back to get final response
         do {
+            let model = "gpt-4o"
             print("\n🤖 Processing results...")
             let finalResponse = try await client.responses.create(
-                model: azureConfig.deploymentName,
+                model: model,
                 input: functionResults,
                 maxOutputTokens: 500,
                 previousResponseId: response.id
@@ -616,16 +616,15 @@ struct ConsoleChatbotApp {
         print("🚀 SwiftAzureOpenAI Enhanced Console Chatbot with Tools")
         print("======================================================")
 
-        // Check if we have endpoint (API key might be injected as secret)
-        let hasEndpoint = ProcessInfo.processInfo.environment["AZURE_OPENAI_ENDPOINT"] != nil
-        
-        if hasEndpoint {
-            print("✅ Found Azure OpenAI endpoint - Starting live chatbot...")
-            print("🔑 API key will be used from environment/secrets")
+        // Check if we have API key
+        let hasAPIKey = ProcessInfo.processInfo.environment["OPENAI_API_KEY"] != nil
+
+        if hasAPIKey {
+            print("✅ Found OpenAI API key - Starting live chatbot...")
             await ConsoleChatbot().start()
         } else {
-            print("ℹ️  No endpoint found, but starting chatbot anyway...")
-            print("🔑 API key will be used from environment/secrets or fallback")
+            print("ℹ️  No API key found, but starting chatbot anyway...")
+            print("🔑 Set OPENAI_API_KEY environment variable for live mode")
             await ConsoleChatbot().start()
         }
 

@@ -1,22 +1,18 @@
 import Foundation
 
-/// Central request builder for Azure OpenAI endpoints
+/// Central request builder for OpenAI endpoints
 public struct AzureRequestBuilder: Sendable {
     private let configuration: SAOAIConfiguration
-    
+
     internal init(configuration: SAOAIConfiguration) {
         self.configuration = configuration
     }
-    
-    /// Build a URL for a specific Azure OpenAI endpoint
+
+    /// Build a URL for a specific OpenAI endpoint
     /// - Parameter endpoint: The API endpoint (e.g., "responses", "embeddings", "files")
     /// - Returns: The complete URL for the endpoint
     public func buildURL(for endpoint: String) -> URL {
-        if let azureConfig = configuration as? SAOAIAzureConfiguration {
-            return buildAzureURL(endpoint: endpoint, config: azureConfig)
-        } else {
-            return buildOpenAIURL(endpoint: endpoint)
-        }
+        return buildOpenAIURL(endpoint: endpoint)
     }
     
     /// Build an API request with common headers and configuration
@@ -78,22 +74,7 @@ public struct AzureRequestBuilder: Sendable {
     }
     
     // MARK: - Private Methods
-    
-    private func buildAzureURL(endpoint: String, config: SAOAIAzureConfiguration) -> URL {
-        guard var components = URLComponents(string: config.endpoint) else {
-            fatalError("Invalid Azure endpoint: \(config.endpoint)")
-        }
-        
-        components.path = "/openai/v1/\(endpoint)"
-        components.queryItems = [URLQueryItem(name: "api-version", value: config.apiVersion)]
-        
-        guard let url = components.url else {
-            fatalError("Failed to construct Azure URL for endpoint: \(endpoint)")
-        }
-        
-        return url
-    }
-    
+
     private func buildOpenAIURL(endpoint: String) -> URL {
         let baseURL = configuration.baseURL
         return baseURL.deletingLastPathComponent().appendingPathComponent(endpoint)

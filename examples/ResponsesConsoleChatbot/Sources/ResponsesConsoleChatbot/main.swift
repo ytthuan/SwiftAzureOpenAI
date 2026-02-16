@@ -5,7 +5,7 @@ import SwiftAzureOpenAI
 
 /// Console-only variant of ResponsesChatManager.
 /// Swift conversion of the Python script focusing on:
-/// - Streaming Azure Responses API events to stdout
+/// - Streaming OpenAI Responses API events to stdout
 /// - Supporting a simple in-file calculation tool (sum_calculator)
 /// - Supporting code_interpreter tool (no file/image handling)
 final class ResponsesConsoleManager {
@@ -34,45 +34,38 @@ final class ResponsesConsoleManager {
     }
     
     init(model: String, instructions: String, reasoningEffort: String? = nil, reasoningSummary: String? = nil, textVerbosity: String? = nil) throws {
-        // Get Azure OpenAI configuration from environment
-        guard let azureEndpoint = ProcessInfo.processInfo.environment["AZURE_OPENAI_ENDPOINT"] else {
-            throw RuntimeError("AZURE_OPENAI_ENDPOINT is not set")
+        // Get OpenAI configuration from environment
+        guard let apiKey = ProcessInfo.processInfo.environment["OPENAI_API_KEY"] else {
+            throw RuntimeError("OPENAI_API_KEY is not set")
         }
-        
-        // Use API key authentication as specified in the issue  
-        let apiKey = ProcessInfo.processInfo.environment["AZURE_OPENAI_API_KEY"] ??
-                    ProcessInfo.processInfo.environment["COPILOT_AGENT_AZURE_OPENAI_API_KEY"] ??
-                    "your-api-key"
-        
-        let deploymentName = ProcessInfo.processInfo.environment["AZURE_OPENAI_DEPLOYMENT"] ?? model
+
+        let organization = ProcessInfo.processInfo.environment["OPENAI_ORGANIZATION"]
 
         let mainFileURL = URL(fileURLWithPath: #filePath)
         let logDirectoryURL = mainFileURL.deletingLastPathComponent()
         let logPath = logDirectoryURL.appendingPathComponent("sse_events.log").path
-        
+
         // Enable SSE logger via configuration so core pipeline logs events
         let sseConfig = SSELoggerConfiguration.enabled(
             logFilePath: logPath,
             includeTimestamp: true,
             includeSequenceNumber: true
         )
-        
-        // Create Azure configuration with "preview" API version as required
-        let azureConfig = SAOAIAzureConfiguration(
-            endpoint: azureEndpoint,
+
+        // Create OpenAI configuration
+        let openAIConfig = SAOAIOpenAIConfiguration(
             apiKey: apiKey,
-            deploymentName: deploymentName,
-            apiVersion: "preview",  // Required API version from issue
+            organization: organization,
             sseLoggerConfiguration: sseConfig
         )
-        
-        self.client = SAOAIClient(configuration: azureConfig)
+
+        self.client = SAOAIClient(configuration: openAIConfig)
         self.model = model
         self.instructions = instructions
         self.reasoningEffort = reasoningEffort
         self.reasoningSummary = reasoningSummary
         self.textVerbosity = textVerbosity
-        
+
         // Set up function handlers
         setupFunctionHandlers()
     }
