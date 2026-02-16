@@ -85,6 +85,11 @@ public struct AzureRequestBuilder: Sendable {
         }
         
         components.path = "/openai/v1/\(endpoint)"
+        if !config.apiVersion.isEmpty {
+            var queryItems = components.queryItems ?? []
+            queryItems.append(URLQueryItem(name: "api-version", value: config.apiVersion))
+            components.queryItems = queryItems
+        }
         
         guard let url = components.url else {
             fatalError("Failed to construct Azure URL for endpoint: \(endpoint)")

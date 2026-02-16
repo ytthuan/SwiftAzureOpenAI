@@ -33,8 +33,12 @@ public struct SAOAIAzureConfiguration: SAOAIConfiguration, Sendable {
 
     public var baseURL: URL {
         var components = URLComponents(string: endpoint)!
-        // Azure now mirrors the OpenAI Responses API; only the base host differs
         components.path = "/openai/v1/responses"
+        if !apiVersion.isEmpty {
+            var queryItems = components.queryItems ?? []
+            queryItems.append(URLQueryItem(name: "api-version", value: apiVersion))
+            components.queryItems = queryItems
+        }
         return components.url!
     }
 

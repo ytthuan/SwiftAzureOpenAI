@@ -27,6 +27,10 @@ final class LiveAPITests: XCTestCase {
         ProcessInfo.processInfo.environment["AZURE_OPENAI_DEPLOYMENT"]
     }
     
+    private var azureApiVersion: String {
+        ProcessInfo.processInfo.environment["AZURE_OPENAI_API_VERSION"] ?? "preview"
+    }
+    
     private var hasAzureCredentials: Bool {
         let endpoint = azureEndpoint?.trimmingCharacters(in: .whitespacesAndNewlines)
         let apiKey = azureAPIKey?.trimmingCharacters(in: .whitespacesAndNewlines) 
@@ -54,6 +58,7 @@ final class LiveAPITests: XCTestCase {
         // Construct URL manually like SAOAIAzureConfiguration does
         var components = URLComponents(string: endpoint)!
         components.path = "/openai/v1/responses"
+        components.queryItems = [URLQueryItem(name: "api-version", value: azureApiVersion)]
         let url = components.url!
         
         // Create request payload
@@ -185,6 +190,7 @@ final class LiveAPITests: XCTestCase {
         // Construct URL manually
         var components = URLComponents(string: endpoint)!
         components.path = "/openai/v1/responses"
+        components.queryItems = [URLQueryItem(name: "api-version", value: azureApiVersion)]
         let url = components.url!
         
         // Create streaming request payload
@@ -278,6 +284,7 @@ final class LiveAPITests: XCTestCase {
         // Construct URL manually
         var components = URLComponents(string: endpoint)!
         components.path = "/openai/v1/responses"
+        components.queryItems = [URLQueryItem(name: "api-version", value: azureApiVersion)]
         let url = components.url!
         
         // Create invalid request (invalid model name)
@@ -461,6 +468,7 @@ final class LiveAPITests: XCTestCase {
         print("  COPILOT_AGENT_AZURE_OPENAI_API_KEY: '\(copilotApiKeyRaw?.isEmpty == false ? "[REDACTED]" : (copilotApiKeyRaw ?? "nil"))' (length: \(copilotApiKeyRaw?.count ?? 0))")
         print("  AZURE_OPENAI_MODEL: '\(modelRaw ?? "nil")' (length: \(modelRaw?.count ?? 0))")
         print("  AZURE_OPENAI_DEPLOYMENT (fallback): '\(deploymentRaw ?? "nil")' (length: \(deploymentRaw?.count ?? 0))")
+        print("  AZURE_OPENAI_API_VERSION: '\(azureApiVersion)'")
         
         if hasAzureCredentials {
             XCTAssertNotNil(azureEndpoint, "AZURE_OPENAI_ENDPOINT should be available")

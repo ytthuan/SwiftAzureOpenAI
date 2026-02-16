@@ -17,17 +17,14 @@ public final class FilesClient: @unchecked Sendable {
     
     /// Helper to construct the files endpoint URL.
     private func filesEndpointURL() throws -> URL {
-        var filesURL = configuration.baseURL
-        if filesURL.path.contains("/responses") {
-            let urlString = filesURL.absoluteString.replacingOccurrences(of: "/responses", with: "/files")
-            guard let newURL = URL(string: urlString) else {
-                throw SAOAIError.invalidRequest("Failed to construct files endpoint URL")
-            }
-            filesURL = newURL
-        } else {
-            filesURL = filesURL.appendingPathComponent("files")
+        guard var comps = URLComponents(url: configuration.baseURL, resolvingAgainstBaseURL: false) else {
+            throw SAOAIError.invalidRequest("Failed to construct files endpoint URL")
         }
-        return filesURL
+        comps.path = comps.path.replacingOccurrences(of: "/responses", with: "/files")
+        guard let url = comps.url else {
+            throw SAOAIError.invalidRequest("Failed to construct files endpoint URL")
+        }
+        return url
     }
 
     /// Upload a file to Azure OpenAI.
@@ -62,19 +59,14 @@ public final class FilesClient: @unchecked Sendable {
     /// - Returns: A list of files
     public func list() async throws -> SAOAIFileList {
         // Construct the files endpoint URL
-        var filesURL = configuration.baseURL
-        
-        // Replace the responses path with files path
-        if filesURL.path.contains("/responses") {
-            let urlString = filesURL.absoluteString.replacingOccurrences(of: "/responses", with: "/files")
-            guard let newURL = URL(string: urlString) else {
-                throw SAOAIError.invalidRequest("Failed to construct files endpoint URL")
-            }
-            filesURL = newURL
-        } else {
-            filesURL = filesURL.appendingPathComponent("files")
+        guard var components = URLComponents(url: configuration.baseURL, resolvingAgainstBaseURL: false) else {
+            throw SAOAIError.invalidRequest("Failed to construct files endpoint URL")
         }
-        
+        components.path = components.path.replacingOccurrences(of: "/responses", with: "/files")
+        guard let filesURL = components.url else {
+            throw SAOAIError.invalidRequest("Failed to construct files endpoint URL")
+        }
+
         let request = APIRequest(
             method: "GET",
             url: filesURL,
@@ -91,20 +83,14 @@ public final class FilesClient: @unchecked Sendable {
     /// - Returns: The file object
     public func retrieve(_ fileId: String) async throws -> SAOAIFile {
         // Construct the files endpoint URL
-        var filesURL = configuration.baseURL
-        
-        // Replace the responses path with files path
-        if filesURL.path.contains("/responses") {
-            let urlString = filesURL.absoluteString.replacingOccurrences(of: "/responses", with: "/files")
-            guard let newURL = URL(string: urlString) else {
-                throw SAOAIError.invalidRequest("Failed to construct files endpoint URL")
-            }
-            filesURL = newURL
-        } else {
-            filesURL = filesURL.appendingPathComponent("files")
+        guard var components = URLComponents(url: configuration.baseURL, resolvingAgainstBaseURL: false) else {
+            throw SAOAIError.invalidRequest("Failed to construct files endpoint URL")
         }
-        
-        filesURL = filesURL.appendingPathComponent(fileId)
+        components.path = components.path.replacingOccurrences(of: "/responses", with: "/files")
+        components.path.append("/\(fileId)")
+        guard let filesURL = components.url else {
+            throw SAOAIError.invalidRequest("Failed to construct files endpoint URL")
+        }
         
         let request = APIRequest(
             method: "GET",
@@ -122,20 +108,14 @@ public final class FilesClient: @unchecked Sendable {
     /// - Returns: The delete response
     public func delete(_ fileId: String) async throws -> SAOAIFileDeleteResponse {
         // Construct the files endpoint URL
-        var filesURL = configuration.baseURL
-        
-        // Replace the responses path with files path
-        if filesURL.path.contains("/responses") {
-            let urlString = filesURL.absoluteString.replacingOccurrences(of: "/responses", with: "/files")
-            guard let newURL = URL(string: urlString) else {
-                throw SAOAIError.invalidRequest("Failed to construct files endpoint URL")
-            }
-            filesURL = newURL
-        } else {
-            filesURL = filesURL.appendingPathComponent("files")
+        guard var components = URLComponents(url: configuration.baseURL, resolvingAgainstBaseURL: false) else {
+            throw SAOAIError.invalidRequest("Failed to construct files endpoint URL")
         }
-        
-        filesURL = filesURL.appendingPathComponent(fileId)
+        components.path = components.path.replacingOccurrences(of: "/responses", with: "/files")
+        components.path.append("/\(fileId)")
+        guard let filesURL = components.url else {
+            throw SAOAIError.invalidRequest("Failed to construct files endpoint URL")
+        }
         
         let request = APIRequest(
             method: "DELETE",
@@ -162,18 +142,16 @@ public final class FilesClient: @unchecked Sendable {
             Task {
                 do {
                     // Construct the files content endpoint URL
-                    var filesURL = configuration.baseURL
-                    if filesURL.path.contains("/responses") {
-                        let urlString = filesURL.absoluteString.replacingOccurrences(of: "/responses", with: "/files")
-                        guard let newURL = URL(string: urlString) else {
-                            continuation.finish(throwing: SAOAIError.invalidRequest("Failed to construct files endpoint URL"))
-                            return
-                        }
-                        filesURL = newURL
-                    } else {
-                        filesURL = filesURL.appendingPathComponent("files")
+                    guard var components = URLComponents(url: configuration.baseURL, resolvingAgainstBaseURL: false) else {
+                        continuation.finish(throwing: SAOAIError.invalidRequest("Failed to construct files endpoint URL"))
+                        return
                     }
-                    filesURL = filesURL.appendingPathComponent(fileId).appendingPathComponent("content")
+                    components.path = components.path.replacingOccurrences(of: "/responses", with: "/files")
+                    components.path.append("/\(fileId)/content")
+                    guard let filesURL = components.url else {
+                        continuation.finish(throwing: SAOAIError.invalidRequest("Failed to construct files endpoint URL"))
+                        return
+                    }
                     
                     let request = APIRequest(
                         method: "GET",

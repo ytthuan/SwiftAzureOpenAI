@@ -184,6 +184,7 @@ struct ResponseSaver {
 func buildSessionUrl(config: EnvironmentConfig) -> URL? {
     var components = URLComponents(string: config.endpoint)
     components?.path = "/openai/v1/responses"
+    components?.queryItems = [URLQueryItem(name: "api-version", value: "preview")]
     return components?.url
 }
 
