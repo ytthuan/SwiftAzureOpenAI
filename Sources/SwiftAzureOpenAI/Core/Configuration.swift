@@ -10,23 +10,26 @@ public protocol SAOAIConfiguration: Sendable {
 public struct SAOAIOpenAIConfiguration: SAOAIConfiguration, Sendable {
     public let apiKey: String
     public let organization: String?
+    public let customBaseURL: URL?
     public let sseLoggerConfiguration: SSELoggerConfiguration
     public let loggerConfiguration: LoggerConfiguration
 
     public init(
         apiKey: String,
         organization: String? = nil,
+        baseURL: URL? = nil,
         sseLoggerConfiguration: SSELoggerConfiguration = .disabled,
         loggerConfiguration: LoggerConfiguration = .disabled
     ) {
         self.apiKey = apiKey
         self.organization = organization
+        self.customBaseURL = baseURL
         self.sseLoggerConfiguration = sseLoggerConfiguration
         self.loggerConfiguration = loggerConfiguration
     }
 
     public var baseURL: URL {
-        URL(string: "https://api.openai.com/v1/responses")!
+        customBaseURL ?? URL(string: "https://api.openai.com/v1/responses")!
     }
 
     public var headers: [String: String] {
