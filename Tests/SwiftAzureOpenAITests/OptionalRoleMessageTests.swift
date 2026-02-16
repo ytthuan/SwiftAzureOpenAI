@@ -123,8 +123,7 @@ final class OptionalRoleMessageTests: XCTestCase {
     /// Test the updated format for AdvancedConsoleChatbot (should fix Bad Request)
     func testAdvancedConsoleChatbotFixedScenario() throws {
         // Simulate the fixed scenario for AdvancedConsoleChatbot
-        let mockConfig = TestEnvironmentHelper.createStandardOpenAIConfiguration()
-        
+
         // NEW: AdvancedConsoleChatbot can now send tool outputs without role
         let toolOutput = SAOAIMessage(functionCallOutput: .init(
             callId: "call_weather_123",
