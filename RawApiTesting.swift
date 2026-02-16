@@ -6,54 +6,46 @@ import FoundationNetworking
 #endif
 
 /**
- * RawApiTesting.swift - Comprehensive Azure OpenAI API Testing & Response Capture
- * 
+ * RawApiTesting.swift - Comprehensive OpenAI API Testing & Response Capture
+ *
  * Enhanced testing functionality that captures HTTP response message sample data
- * from real Azure OpenAI endpoints for later reference. Based on latest Microsoft
+ * from real OpenAI endpoints for later reference. Based on latest OpenAI
  * documentation for data structure validation to ensure SDK decodes correctly and safely.
- * 
+ *
  * Edge Cases Covered (one file per case):
  * 1. Normal conversation - non streaming → api_response_normal_conversation_non_streaming.json
  * 2. Tool call (function calls) - non streaming → api_response_tool_call_function_non_streaming.json
  * 3. Normal conversation - streaming → api_response_normal_conversation_streaming.json
  * 4. Tool call (function calls) - streaming → api_response_tool_call_function_streaming.json
- * 
+ *
  * Purpose:
- * - Direct inspection of Azure OpenAI endpoint responses per Microsoft docs
+ * - Direct inspection of OpenAI endpoint responses per OpenAI docs
  * - Capture and save real API response data for SDK validation reference
- * - Validation of tool call data structures per Azure OpenAI API specification
+ * - Validation of tool call data structures per OpenAI API specification
  * - Ensure proper decoding of function call arguments, streaming events, etc.
- * 
+ *
  * Usage:
  * Set environment variables and run:
- * export AZURE_OPENAI_ENDPOINT="https://your-resource.openai.azure.com"
- * OR for Azure AI Foundry: export AZURE_OPENAI_ENDPOINT="https://your-resource.services.ai.azure.com"
- * export COPILOT_AGENT_AZURE_OPENAI_API_KEY="your-api-key"
- * export AZURE_OPENAI_DEPLOYMENT="your-deployment-name"
+ * export OPENAI_API_KEY="your-api-key"
+ * export OPENAI_ORGANIZATION="your-org-id" (optional)
  * swift RawApiTesting.swift
- * 
- * Alternative: You can also use AZURE_OPENAI_API_KEY instead of COPILOT_AGENT_AZURE_OPENAI_API_KEY
  */
 
 // MARK: - Environment Configuration
 
 struct EnvironmentConfig {
-    let endpoint: String
     let apiKey: String
-    let deployment: String
-    
+    let organization: String?
+
     static func fromEnvironment() -> EnvironmentConfig? {
-        guard let endpoint = ProcessInfo.processInfo.environment["AZURE_OPENAI_ENDPOINT"]?.trimmingCharacters(in: .whitespacesAndNewlines),
-              !endpoint.isEmpty,
-              let apiKey = (ProcessInfo.processInfo.environment["COPILOT_AGENT_AZURE_OPENAI_API_KEY"] ?? 
-                           ProcessInfo.processInfo.environment["AZURE_OPENAI_API_KEY"])?.trimmingCharacters(in: .whitespacesAndNewlines),
-              !apiKey.isEmpty,
-              let deployment = ProcessInfo.processInfo.environment["AZURE_OPENAI_DEPLOYMENT"]?.trimmingCharacters(in: .whitespacesAndNewlines),
-              !deployment.isEmpty else {
+        guard let apiKey = ProcessInfo.processInfo.environment["OPENAI_API_KEY"]?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !apiKey.isEmpty else {
             return nil
         }
-        
-        return EnvironmentConfig(endpoint: endpoint, apiKey: apiKey, deployment: deployment)
+
+        let organization = ProcessInfo.processInfo.environment["OPENAI_ORGANIZATION"]?.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        return EnvironmentConfig(apiKey: apiKey, organization: organization)
     }
 }
 
@@ -181,10 +173,7 @@ struct ResponseSaver {
 // MARK: - Enhanced API Testing Functions with Response Capture
 
 func buildSessionUrl(config: EnvironmentConfig) -> URL? {
-    var components = URLComponents(string: config.endpoint)
-    components?.path = "/openai/v1/responses"
-    components?.queryItems = [URLQueryItem(name: "api-version", value: "preview")]
-    return components?.url
+    return URL(string: "https://api.openai.com/v1/responses")
 }
 
 // Test case 1: Normal conversation - non streaming
@@ -193,7 +182,7 @@ func testNormalConversationNonStreaming(sessionUrl: URL, config: EnvironmentConf
     print("=================================================")
     
     let rawRequest = RawRequest(
-        model: config.deployment,
+        model: "gpt-4o",
         input: [
             RawMessage(role: "system", text: "You are a helpful assistant."),
             RawMessage(role: "user", text: "Hello! Tell me a short joke about programming.")
@@ -246,7 +235,7 @@ func testToolCallNonStreaming(sessionUrl: URL, config: EnvironmentConfig) async 
     ]
     
     let rawRequest = RawRequest(
-        model: config.deployment,
+        model: "gpt-4o",
         input: [
             RawMessage(role: "system", text: "You are a helpful assistant with access to weather data and calculation capabilities."),
             RawMessage(role: "user", text: "What's the weather in Tokyo? Also calculate 15 * 23.")
@@ -272,7 +261,7 @@ func testNormalConversationStreaming(sessionUrl: URL, config: EnvironmentConfig)
     print("===============================================")
     
     let rawRequest = RawRequest(
-        model: config.deployment,
+        model: "gpt-4o",
         input: [
             RawMessage(role: "system", text: "You are a helpful assistant."),
             RawMessage(role: "user", text: "Tell me a story about a programmer who discovers AI. Keep it short but engaging.")
@@ -325,7 +314,7 @@ func testToolCallStreaming(sessionUrl: URL, config: EnvironmentConfig) async thr
     ]
     
     let rawRequest = RawRequest(
-        model: config.deployment,
+        model: "gpt-4o",
         input: [
             RawMessage(role: "system", text: "You are a helpful assistant with math and time capabilities."),
             RawMessage(role: "user", text: "Calculate the square root of 144, then tell me the current time in Tokyo timezone.")
@@ -357,8 +346,11 @@ func performAPICallAndSave(
     
     var urlRequest = URLRequest(url: sessionUrl)
     urlRequest.httpMethod = "POST"
-    urlRequest.setValue(config.apiKey, forHTTPHeaderField: "api-key")
+    urlRequest.setValue("Bearer \(config.apiKey)", forHTTPHeaderField: "Authorization")
     urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+    if let organization = config.organization {
+        urlRequest.setValue(organization, forHTTPHeaderField: "OpenAI-Organization")
+    }
     urlRequest.httpBody = requestData
     
     print("📤 Request Details:")
@@ -447,32 +439,33 @@ func performAPICallAndSave(
 func liveAPItest() async {
     print("🧪 SwiftAzureOpenAI - Live API Testing & Response Capture Tool")
     print("==============================================================")
-    print("This tool tests Azure OpenAI endpoints directly and captures response data")
-    print("aligned with Microsoft documentation for SDK validation and safe decoding.")
+    print("This tool tests OpenAI endpoints directly and captures response data")
+    print("aligned with OpenAI documentation for SDK validation and safe decoding.")
     print("Saves one file per edge case for future reference (no duplicates).")
     print("")
-    
+
     // Check environment configuration
     guard let config = EnvironmentConfig.fromEnvironment() else {
         print("❌ Missing required environment variables!")
         print("Please set the following environment variables:")
-        print("   AZURE_OPENAI_ENDPOINT=\"https://your-resource.openai.azure.com\"")
-        print("   COPILOT_AGENT_AZURE_OPENAI_API_KEY=\"your-api-key\"")
-        print("   AZURE_OPENAI_DEPLOYMENT=\"your-deployment-name\"")
+        print("   OPENAI_API_KEY=\"your-api-key\"")
+        print("   OPENAI_ORGANIZATION=\"your-org-id\" (optional)")
         print("")
-        print("Optional: You can also use AZURE_OPENAI_API_KEY instead of COPILOT_AGENT_AZURE_OPENAI_API_KEY")
         return
     }
-    
+
     print("📍 Configuration Loaded:")
-    print("   Endpoint: \(config.endpoint)")
-    print("   Deployment: \(config.deployment)")
+    print("   Using OpenAI API")
+    print("   Model: gpt-4o")
     print("   API Key: \(String(config.apiKey.prefix(10)))...***")
+    if let org = config.organization {
+        print("   Organization: \(org)")
+    }
     print("")
-    
+
     // Build session URL
     guard let sessionUrl = buildSessionUrl(config: config) else {
-        print("❌ Failed to build session URL from endpoint: \(config.endpoint)")
+        print("❌ Failed to build session URL")
         return
     }
     
@@ -520,7 +513,7 @@ func liveAPItest() async {
     } catch {
         print("\n❌ Live API testing failed with error:")
         print("   \(error.localizedDescription)")
-        print("\nThis indicates an issue with the Azure OpenAI endpoint configuration")
+        print("\nThis indicates an issue with the OpenAI endpoint configuration")
         print("or network connectivity that should be resolved before SDK integration.")
         
         if let urlError = error as? URLError {

@@ -3,7 +3,7 @@
 > **⚠️ Internal Development**: This document provides coding agent instructions for the internal development team working on the SwiftAzureOpenAI SDK. It contains development procedures and standards for our internal development process.
 
 ## Project Overview
-SwiftAzureOpenAI is a Swift Package that provides Swift-native models, client utilities, and services for Azure OpenAI and OpenAI Responses API. It targets Apple platforms (iOS, macOS, watchOS, tvOS) and supports both non-streaming and streaming (SSE) responses with strong typing, metadata extraction, and optional response caching.
+SwiftAzureOpenAI is a Swift Package that provides Swift-native models, client utilities, and services for OpenAI Responses API. It targets Apple platforms (iOS, macOS, watchOS, tvOS) and supports both non-streaming and streaming (SSE) responses with strong typing, metadata extraction, and optional response caching.
 
 - Primary focus: Responses API (unified, stateful API combining chat, tools, assistants)
 - Client style: Python-inspired `client.responses.create(...)` and `createStreaming(...)`
@@ -40,14 +40,9 @@ Key entry points for agents:
 ## Environment Variables
 Used by tests and examples; see `Tests/SwiftAzureOpenAITests/TestEnvironmentHelper.swift` and `docs/LIVE_API_TESTING.md`.
 
-Azure OpenAI:
-- `AZURE_OPENAI_ENDPOINT` (e.g., https://your-resource.openai.azure.com)
-- `COPILOT_AGENT_AZURE_OPENAI_API_KEY` (preferred) or `AZURE_OPENAI_API_KEY`
-- `AZURE_OPENAI_DEPLOYMENT` (deployment/model name, e.g., gpt-4o)
-- `AZURE_OPENAI_API_VERSION` (default: `preview`)
-
-OpenAI (optional for examples):
-- `OPENAI_API_KEY`
+OpenAI:
+- `OPENAI_API_KEY` (required)
+- `OPENAI_ORGANIZATION` (optional)
 
 ## Code Style and Practices
 - Swift 5.9+/6, async/await and structured concurrency
