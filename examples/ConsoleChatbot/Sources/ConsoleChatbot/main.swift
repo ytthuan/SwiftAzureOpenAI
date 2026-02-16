@@ -15,7 +15,7 @@ import SwiftAzureOpenAI
 let azureConfig = SAOAIAzureConfiguration(
     endpoint: ProcessInfo.processInfo.environment["AZURE_OPENAI_ENDPOINT"] ?? "https://your-resource.openai.azure.com",
     apiKey: ProcessInfo.processInfo.environment["AZURE_OPENAI_API_KEY"] ?? ProcessInfo.processInfo.environment["COPILOT_AGENT_AZURE_OPENAI_API_KEY"] ?? "your-api-key",
-    deploymentName: ProcessInfo.processInfo.environment["AZURE_OPENAI_DEPLOYMENT"] ?? "gpt-4o",
+    deploymentName: ProcessInfo.processInfo.environment["AZURE_OPENAI_MODEL"] ?? ProcessInfo.processInfo.environment["AZURE_OPENAI_DEPLOYMENT"] ?? "gpt-4o",
     apiVersion: "preview"
 )
 
@@ -360,7 +360,7 @@ class ConsoleChatbot {
         print("\nNote: Using environment variables for configuration:")
         print("• AZURE_OPENAI_ENDPOINT (or default placeholder)")
         print("• AZURE_OPENAI_API_KEY (or default placeholder)")
-        print("• AZURE_OPENAI_DEPLOYMENT (or default: gpt-4o)")
+        print("• AZURE_OPENAI_MODEL (or AZURE_OPENAI_DEPLOYMENT fallback) (default: gpt-4o)")
         print("\n🔧 Tools Status: \(chatHistory.toolsEnabled ? "✅ Enabled" : "❌ Disabled")")
         print("==============================================\n")
     }

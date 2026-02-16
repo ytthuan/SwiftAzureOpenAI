@@ -229,7 +229,7 @@ swift test --parallel
 # With live API tests (requires environment variables)
 export AZURE_OPENAI_ENDPOINT="https://your-resource.openai.azure.com"
 export AZURE_OPENAI_API_KEY="your-api-key"
-export AZURE_OPENAI_DEPLOYMENT="your-deployment"
+export AZURE_OPENAI_MODEL="your-model-name" # or AZURE_OPENAI_DEPLOYMENT for legacy setups
 swift test --parallel
 ```
 

@@ -18,7 +18,7 @@ A Swift console chatbot implementation using Azure OpenAI Responses API, convert
    ```bash
    export AZURE_OPENAI_ENDPOINT="https://your-resource.openai.azure.com"
    export AZURE_OPENAI_API_KEY="your-api-key"
-   export AZURE_OPENAI_DEPLOYMENT="your-deployment-name"
+   export AZURE_OPENAI_MODEL="your-model-name" # or AZURE_OPENAI_DEPLOYMENT for legacy setups
    ```
 
 2. **Build and Run**:
@@ -46,7 +46,7 @@ A Swift console chatbot implementation using Azure OpenAI Responses API, convert
 |----------|-------------|----------|---------|
 | `AZURE_OPENAI_ENDPOINT` | Azure OpenAI resource endpoint | ✅ | - |
 | `AZURE_OPENAI_API_KEY` | API key for authentication | ✅ | - |
-| `AZURE_OPENAI_DEPLOYMENT` | Deployment/model name | | `gpt-4o` |
+| `AZURE_OPENAI_MODEL` (or `AZURE_OPENAI_DEPLOYMENT`) | Model/deployment name | | `gpt-4o` |
 | `DEFAULT_MODEL` | Default model to use | | `gpt-4o` |
 | `DEFAULT_INSTRUCTIONS` | System instructions | | "" |
 | `DEFAULT_REASONING_EFFORT` | Reasoning effort level | | `nil` |

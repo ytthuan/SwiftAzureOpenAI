@@ -43,7 +43,7 @@ Used by tests and examples; see `Tests/SwiftAzureOpenAITests/TestEnvironmentHelp
 Azure OpenAI:
 - `AZURE_OPENAI_ENDPOINT` (e.g., https://your-resource.openai.azure.com)
 - `COPILOT_AGENT_AZURE_OPENAI_API_KEY` (preferred) or `AZURE_OPENAI_API_KEY`
-- `AZURE_OPENAI_DEPLOYMENT` (deployment/model name, e.g., gpt-4o)
+- `AZURE_OPENAI_MODEL` (or `AZURE_OPENAI_DEPLOYMENT`) deployment/model name, e.g., gpt-4o
 - `AZURE_OPENAI_API_VERSION` (default: `preview`)
 
 OpenAI (optional for examples):

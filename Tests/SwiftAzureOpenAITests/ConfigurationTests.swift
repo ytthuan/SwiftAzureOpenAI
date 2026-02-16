@@ -11,7 +11,7 @@ final class ConfigurationTests: XCTestCase {
         // Use expected values from environment variables or defaults
         let expectedHost = URL(string: TestEnvironmentHelper.azureEndpoint)?.host ?? "test.openai.azure.com"
         XCTAssertEqual(baseURL.host, expectedHost)
-        XCTAssertEqual(baseURL.path, "/v1/responses")
+        XCTAssertEqual(baseURL.path, "/openai/v1/responses")
 
         XCTAssertEqual(config.headers["api-key"], TestEnvironmentHelper.azureAPIKey)
         XCTAssertEqual(config.headers["Content-Type"], "application/json")
@@ -23,7 +23,7 @@ final class ConfigurationTests: XCTestCase {
         )
 
         // Base URL should follow OpenAI-style path without query parameters
-        XCTAssertEqual(config.baseURL.path, "/v1/responses")
+        XCTAssertEqual(config.baseURL.path, "/openai/v1/responses")
     }
 
     func testSAOAIOpenAIConfigurationHeaders() {

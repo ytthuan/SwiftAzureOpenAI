@@ -29,7 +29,7 @@ import FoundationNetworking
  * export AZURE_OPENAI_ENDPOINT="https://your-resource.openai.azure.com"
  * OR for Azure AI Foundry: export AZURE_OPENAI_ENDPOINT="https://your-resource.services.ai.azure.com"
  * export COPILOT_AGENT_AZURE_OPENAI_API_KEY="your-api-key"
- * export AZURE_OPENAI_DEPLOYMENT="your-deployment-name"
+ * export AZURE_OPENAI_MODEL="your-model-name" # or AZURE_OPENAI_DEPLOYMENT for fallback
  * swift RawApiTesting.swift
  * 
  * Alternative: You can also use AZURE_OPENAI_API_KEY instead of COPILOT_AGENT_AZURE_OPENAI_API_KEY
@@ -48,7 +48,8 @@ struct EnvironmentConfig {
               let apiKey = (ProcessInfo.processInfo.environment["COPILOT_AGENT_AZURE_OPENAI_API_KEY"] ?? 
                            ProcessInfo.processInfo.environment["AZURE_OPENAI_API_KEY"])?.trimmingCharacters(in: .whitespacesAndNewlines),
               !apiKey.isEmpty,
-              let deployment = ProcessInfo.processInfo.environment["AZURE_OPENAI_DEPLOYMENT"]?.trimmingCharacters(in: .whitespacesAndNewlines),
+              let deployment = (ProcessInfo.processInfo.environment["AZURE_OPENAI_MODEL"] ??
+                                ProcessInfo.processInfo.environment["AZURE_OPENAI_DEPLOYMENT"])?.trimmingCharacters(in: .whitespacesAndNewlines),
               !deployment.isEmpty else {
             return nil
         }
@@ -182,7 +183,7 @@ struct ResponseSaver {
 
 func buildSessionUrl(config: EnvironmentConfig) -> URL? {
     var components = URLComponents(string: config.endpoint)
-    components?.path = "/v1/responses"
+    components?.path = "/openai/v1/responses"
     return components?.url
 }
 
@@ -457,7 +458,7 @@ func liveAPItest() async {
         print("Please set the following environment variables:")
         print("   AZURE_OPENAI_ENDPOINT=\"https://your-resource.openai.azure.com\"")
         print("   COPILOT_AGENT_AZURE_OPENAI_API_KEY=\"your-api-key\"")
-        print("   AZURE_OPENAI_DEPLOYMENT=\"your-deployment-name\"")
+        print("   AZURE_OPENAI_MODEL=\"your-model-name\" (or AZURE_OPENAI_DEPLOYMENT for legacy setups)")
         print("")
         print("Optional: You can also use AZURE_OPENAI_API_KEY instead of COPILOT_AGENT_AZURE_OPENAI_API_KEY")
         return

@@ -26,8 +26,8 @@ if [ -z "$AZURE_OPENAI_API_KEY" ] && [ -z "$COPILOT_AGENT_AZURE_OPENAI_API_KEY" 
     echo ""
 fi
 
-if [ -z "$AZURE_OPENAI_DEPLOYMENT" ]; then
-    echo "ℹ️  AZURE_OPENAI_DEPLOYMENT not set, will use default model name"
+if [ -z "$AZURE_OPENAI_MODEL" ] && [ -z "$AZURE_OPENAI_DEPLOYMENT" ]; then
+    echo "ℹ️  AZURE_OPENAI_MODEL (or AZURE_OPENAI_DEPLOYMENT) not set, will use default model name"
     echo ""
 fi
 

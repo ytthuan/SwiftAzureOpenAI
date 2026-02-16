@@ -15,15 +15,15 @@ final class RequestBuilderTests: XCTestCase {
         
         // Test responses endpoint
         let responsesURL = builder.buildURL(for: AzureRequestBuilder.Endpoint.responses)
-        XCTAssertEqual(responsesURL.absoluteString, "https://test-resource.openai.azure.com/v1/responses")
+        XCTAssertEqual(responsesURL.absoluteString, "https://test-resource.openai.azure.com/openai/v1/responses")
         
         // Test embeddings endpoint
         let embeddingsURL = builder.buildURL(for: AzureRequestBuilder.Endpoint.embeddings)
-        XCTAssertEqual(embeddingsURL.absoluteString, "https://test-resource.openai.azure.com/v1/embeddings")
+        XCTAssertEqual(embeddingsURL.absoluteString, "https://test-resource.openai.azure.com/openai/v1/embeddings")
         
         // Test files endpoint
         let filesURL = builder.buildURL(for: AzureRequestBuilder.Endpoint.files)
-        XCTAssertEqual(filesURL.absoluteString, "https://test-resource.openai.azure.com/v1/files")
+        XCTAssertEqual(filesURL.absoluteString, "https://test-resource.openai.azure.com/openai/v1/files")
     }
     
     func testOpenAIRequestBuilderURL() {

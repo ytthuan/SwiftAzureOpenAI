@@ -84,7 +84,7 @@ public struct AzureRequestBuilder: Sendable {
             fatalError("Invalid Azure endpoint: \(config.endpoint)")
         }
         
-        components.path = "/v1/\(endpoint)"
+        components.path = "/openai/v1/\(endpoint)"
         
         guard let url = components.url else {
             fatalError("Failed to construct Azure URL for endpoint: \(endpoint)")

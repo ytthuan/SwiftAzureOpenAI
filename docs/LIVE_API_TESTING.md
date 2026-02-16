@@ -18,8 +18,10 @@ export AZURE_OPENAI_ENDPOINT="https://your-resource.openai.azure.com"
 export COPILOT_AGENT_AZURE_OPENAI_API_KEY="your-azure-api-key"
 # Alternative: export AZURE_OPENAI_API_KEY="your-azure-api-key"
 
-# Required: Azure OpenAI deployment name
-export AZURE_OPENAI_DEPLOYMENT="your-deployment-name"
+# Required: Azure OpenAI model name (or deployment for legacy setups)
+export AZURE_OPENAI_MODEL="your-model-name"
+# Legacy fallback:
+# export AZURE_OPENAI_DEPLOYMENT="your-deployment-name"
 ```
 
 ### Deployment Requirements
@@ -37,7 +39,7 @@ Your Azure OpenAI deployment should:
 # Set environment variables first
 export AZURE_OPENAI_ENDPOINT="https://your-resource.openai.azure.com"
 export COPILOT_AGENT_AZURE_OPENAI_API_KEY="your-azure-api-key"
-export AZURE_OPENAI_DEPLOYMENT="gpt-4o"
+export AZURE_OPENAI_MODEL="gpt-4o"
 
 # Run all live API tests
 swift test --filter LiveAPITests

@@ -19,9 +19,12 @@ enum TestEnvironmentHelper {
         "test-key"
     }
     
-    /// Retrieves Azure OpenAI deployment name from environment variables
+    /// Retrieves Azure OpenAI model/deployment name from environment variables
     static var azureDeployment: String {
-        ProcessInfo.processInfo.environment["AZURE_OPENAI_DEPLOYMENT"] ?? "gpt-4o"
+        let env = ProcessInfo.processInfo.environment
+        return env["AZURE_OPENAI_MODEL"] ??
+               env["AZURE_OPENAI_DEPLOYMENT"] ??
+               "gpt-4o"
     }
     
     /// Retrieves Azure OpenAI API version from environment variables
@@ -64,7 +67,8 @@ enum TestEnvironmentHelper {
         print("  AZURE_OPENAI_ENDPOINT: '\(ProcessInfo.processInfo.environment["AZURE_OPENAI_ENDPOINT"] ?? "not set")' -> '\(azureEndpoint)'")
         print("  AZURE_OPENAI_API_KEY: '\(ProcessInfo.processInfo.environment["AZURE_OPENAI_API_KEY"]?.isEmpty == false ? "[REDACTED]" : "not set")' -> '[REDACTED]'")
         print("  COPILOT_AGENT_AZURE_OPENAI_API_KEY: '\(ProcessInfo.processInfo.environment["COPILOT_AGENT_AZURE_OPENAI_API_KEY"]?.isEmpty == false ? "[REDACTED]" : "not set")' -> '[REDACTED]'")
-        print("  AZURE_OPENAI_DEPLOYMENT: '\(ProcessInfo.processInfo.environment["AZURE_OPENAI_DEPLOYMENT"] ?? "not set")' -> '\(azureDeployment)'")
+        print("  AZURE_OPENAI_MODEL: '\(ProcessInfo.processInfo.environment["AZURE_OPENAI_MODEL"] ?? "not set")' -> '\(azureDeployment)'")
+        print("  AZURE_OPENAI_DEPLOYMENT (fallback): '\(ProcessInfo.processInfo.environment["AZURE_OPENAI_DEPLOYMENT"] ?? "not set")' -> '\(azureDeployment)'")
         print("  AZURE_OPENAI_API_VERSION: '\(ProcessInfo.processInfo.environment["AZURE_OPENAI_API_VERSION"] ?? "not set")' -> '\(azureAPIVersion)'")
     }
 }

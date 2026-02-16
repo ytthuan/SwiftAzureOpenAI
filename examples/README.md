@@ -141,7 +141,7 @@ Each example is a complete Swift Package that:
    ```bash
    export AZURE_OPENAI_ENDPOINT="https://your-resource.openai.azure.com"
    export AZURE_OPENAI_API_KEY="your-api-key"
-   export AZURE_OPENAI_DEPLOYMENT="gpt-4o"
+   export AZURE_OPENAI_MODEL="gpt-4o" # or AZURE_OPENAI_DEPLOYMENT for legacy setups
    swift run
    ```
 
@@ -174,7 +174,7 @@ For internal development and live API testing, set these environment variables:
 export AZURE_OPENAI_ENDPOINT="https://your-resource.openai.azure.com"
 export AZURE_OPENAI_API_KEY="your-api-key"  
 # Alternative: COPILOT_AGENT_AZURE_OPENAI_API_KEY
-export AZURE_OPENAI_DEPLOYMENT="your-deployment-name"
+export AZURE_OPENAI_MODEL="your-model-name" # or AZURE_OPENAI_DEPLOYMENT for legacy setups
 ```
 
 ## Current Status

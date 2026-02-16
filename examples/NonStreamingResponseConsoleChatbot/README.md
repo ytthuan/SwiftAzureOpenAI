@@ -27,7 +27,7 @@ Required:
 - `AZURE_OPENAI_API_KEY` or `COPILOT_AGENT_AZURE_OPENAI_API_KEY`: Your Azure OpenAI API key
 
 Optional:
-- `AZURE_OPENAI_DEPLOYMENT`: Deployment name (defaults to model name)
+- `AZURE_OPENAI_MODEL`: Model/deployment name (or `AZURE_OPENAI_DEPLOYMENT` fallback; defaults to model name)
 - `DEFAULT_MODEL`: Default model to use (defaults to "gpt-5-mini")
 - `DEFAULT_INSTRUCTIONS`: Default system instructions
 - `DEFAULT_REASONING_EFFORT`: Default reasoning effort ("low", "medium", "high")

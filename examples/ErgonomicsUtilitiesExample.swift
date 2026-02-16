@@ -27,7 +27,9 @@ struct ErgonomicsUtilitiesExample {
                     ProcessInfo.processInfo.environment["COPILOT_AGENT_AZURE_OPENAI_API_KEY"] ??
                     "your-api-key"
         
-        let deploymentName = ProcessInfo.processInfo.environment["AZURE_OPENAI_DEPLOYMENT"] ?? "text-embedding-ada-002"
+        let deploymentName = ProcessInfo.processInfo.environment["AZURE_OPENAI_MODEL"] ??
+                             ProcessInfo.processInfo.environment["AZURE_OPENAI_DEPLOYMENT"] ??
+                             "text-embedding-ada-002"
         
         // Create configuration
         let config = SAOAIAzureConfiguration(

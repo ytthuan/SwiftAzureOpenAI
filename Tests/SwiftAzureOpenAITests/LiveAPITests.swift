@@ -9,7 +9,7 @@ import FoundationNetworking
 /// These tests require environment variables to be set:
 /// - AZURE_OPENAI_ENDPOINT: Azure OpenAI endpoint URL
 /// - COPILOT_AGENT_AZURE_OPENAI_API_KEY or AZURE_OPENAI_API_KEY: Azure OpenAI API key (should be set as secret)
-/// - AZURE_OPENAI_DEPLOYMENT: Azure OpenAI deployment name
+/// - AZURE_OPENAI_MODEL (or AZURE_OPENAI_DEPLOYMENT): Azure OpenAI model/deployment name
 final class LiveAPITests: XCTestCase {
     
     // MARK: - Environment Configuration
@@ -23,6 +23,7 @@ final class LiveAPITests: XCTestCase {
     }
     
     private var azureDeployment: String? {
+        ProcessInfo.processInfo.environment["AZURE_OPENAI_MODEL"] ??
         ProcessInfo.processInfo.environment["AZURE_OPENAI_DEPLOYMENT"]
     }
     
@@ -40,7 +41,7 @@ final class LiveAPITests: XCTestCase {
     
     func testCallAPIWithURLSessionNonStreaming() async throws {
         guard hasAzureCredentials else {
-            throw XCTSkip("Azure OpenAI credentials not available. Set AZURE_OPENAI_ENDPOINT, COPILOT_AGENT_AZURE_OPENAI_API_KEY (or AZURE_OPENAI_API_KEY), and AZURE_OPENAI_DEPLOYMENT environment variables.")
+            throw XCTSkip("Azure OpenAI credentials not available. Set AZURE_OPENAI_ENDPOINT, COPILOT_AGENT_AZURE_OPENAI_API_KEY (or AZURE_OPENAI_API_KEY), and AZURE_OPENAI_MODEL (or AZURE_OPENAI_DEPLOYMENT) environment variables.")
         }
         
         guard let endpoint = azureEndpoint,
@@ -52,7 +53,7 @@ final class LiveAPITests: XCTestCase {
         
         // Construct URL manually like SAOAIAzureConfiguration does
         var components = URLComponents(string: endpoint)!
-        components.path = "/v1/responses"
+        components.path = "/openai/v1/responses"
         let url = components.url!
         
         // Create request payload
@@ -171,7 +172,7 @@ final class LiveAPITests: XCTestCase {
     
     func testCallAPIWithURLSessionStreaming() async throws {
         guard hasAzureCredentials else {
-            throw XCTSkip("Azure OpenAI credentials not available. Set AZURE_OPENAI_ENDPOINT, COPILOT_AGENT_AZURE_OPENAI_API_KEY (or AZURE_OPENAI_API_KEY), and AZURE_OPENAI_DEPLOYMENT environment variables.")
+            throw XCTSkip("Azure OpenAI credentials not available. Set AZURE_OPENAI_ENDPOINT, COPILOT_AGENT_AZURE_OPENAI_API_KEY (or AZURE_OPENAI_API_KEY), and AZURE_OPENAI_MODEL (or AZURE_OPENAI_DEPLOYMENT) environment variables.")
         }
         
         guard let endpoint = azureEndpoint,
@@ -183,7 +184,7 @@ final class LiveAPITests: XCTestCase {
         
         // Construct URL manually
         var components = URLComponents(string: endpoint)!
-        components.path = "/v1/responses"
+        components.path = "/openai/v1/responses"
         let url = components.url!
         
         // Create streaming request payload
@@ -265,7 +266,7 @@ final class LiveAPITests: XCTestCase {
     
     func testAPIErrorHandling() async throws {
         guard hasAzureCredentials else {
-            throw XCTSkip("Azure OpenAI credentials not available. Set AZURE_OPENAI_ENDPOINT, COPILOT_AGENT_AZURE_OPENAI_API_KEY (or AZURE_OPENAI_API_KEY), and AZURE_OPENAI_DEPLOYMENT environment variables.")
+            throw XCTSkip("Azure OpenAI credentials not available. Set AZURE_OPENAI_ENDPOINT, COPILOT_AGENT_AZURE_OPENAI_API_KEY (or AZURE_OPENAI_API_KEY), and AZURE_OPENAI_MODEL (or AZURE_OPENAI_DEPLOYMENT) environment variables.")
         }
         
         guard let endpoint = azureEndpoint,
@@ -276,7 +277,7 @@ final class LiveAPITests: XCTestCase {
         
         // Construct URL manually
         var components = URLComponents(string: endpoint)!
-        components.path = "/v1/responses"
+        components.path = "/openai/v1/responses"
         let url = components.url!
         
         // Create invalid request (invalid model name)
@@ -333,7 +334,7 @@ final class LiveAPITests: XCTestCase {
     
     func testDebugRequestStructure() async throws {
         guard hasAzureCredentials else {
-            throw XCTSkip("Azure OpenAI credentials not available. Set AZURE_OPENAI_ENDPOINT, COPILOT_AGENT_AZURE_OPENAI_API_KEY (or AZURE_OPENAI_API_KEY), and AZURE_OPENAI_DEPLOYMENT environment variables.")
+            throw XCTSkip("Azure OpenAI credentials not available. Set AZURE_OPENAI_ENDPOINT, COPILOT_AGENT_AZURE_OPENAI_API_KEY (or AZURE_OPENAI_API_KEY), and AZURE_OPENAI_MODEL (or AZURE_OPENAI_DEPLOYMENT) environment variables.")
         }
         
         guard let endpoint = azureEndpoint,
@@ -388,7 +389,7 @@ final class LiveAPITests: XCTestCase {
         
         // Construct URL
         var components = URLComponents(string: endpoint)!
-        components.path = "/v1/responses"
+        components.path = "/openai/v1/responses"
         let url = components.url!
         
         print("🔍 Debug: Request URL: \(url)")
@@ -451,18 +452,20 @@ final class LiveAPITests: XCTestCase {
         let endpointRaw = ProcessInfo.processInfo.environment["AZURE_OPENAI_ENDPOINT"]
         let apiKeyRaw = ProcessInfo.processInfo.environment["AZURE_OPENAI_API_KEY"] 
         let copilotApiKeyRaw = ProcessInfo.processInfo.environment["COPILOT_AGENT_AZURE_OPENAI_API_KEY"]
+        let modelRaw = ProcessInfo.processInfo.environment["AZURE_OPENAI_MODEL"]
         let deploymentRaw = ProcessInfo.processInfo.environment["AZURE_OPENAI_DEPLOYMENT"]
         
         print("🔍 Debug environment variables:")
         print("  AZURE_OPENAI_ENDPOINT: '\(endpointRaw ?? "nil")' (length: \(endpointRaw?.count ?? 0))")
         print("  AZURE_OPENAI_API_KEY: '\(apiKeyRaw?.isEmpty == false ? "[REDACTED]" : (apiKeyRaw ?? "nil"))' (length: \(apiKeyRaw?.count ?? 0))")
         print("  COPILOT_AGENT_AZURE_OPENAI_API_KEY: '\(copilotApiKeyRaw?.isEmpty == false ? "[REDACTED]" : (copilotApiKeyRaw ?? "nil"))' (length: \(copilotApiKeyRaw?.count ?? 0))")
-        print("  AZURE_OPENAI_DEPLOYMENT: '\(deploymentRaw ?? "nil")' (length: \(deploymentRaw?.count ?? 0))")
+        print("  AZURE_OPENAI_MODEL: '\(modelRaw ?? "nil")' (length: \(modelRaw?.count ?? 0))")
+        print("  AZURE_OPENAI_DEPLOYMENT (fallback): '\(deploymentRaw ?? "nil")' (length: \(deploymentRaw?.count ?? 0))")
         
         if hasAzureCredentials {
             XCTAssertNotNil(azureEndpoint, "AZURE_OPENAI_ENDPOINT should be available")
             XCTAssertNotNil(azureAPIKey, "AZURE_OPENAI_API_KEY should be available")
-            XCTAssertNotNil(azureDeployment, "AZURE_OPENAI_DEPLOYMENT should be available")
+            XCTAssertNotNil(azureDeployment, "AZURE_OPENAI_MODEL (or AZURE_OPENAI_DEPLOYMENT) should be available")
             
             // Validate endpoint format
             if let endpoint = azureEndpoint?.trimmingCharacters(in: .whitespacesAndNewlines), !endpoint.isEmpty {
@@ -479,14 +482,14 @@ final class LiveAPITests: XCTestCase {
                 XCTAssertGreaterThan(apiKey.count, 10, "API key should be reasonably long")
             }
             
-            // Validate deployment name
+            // Validate model/deployment name
             if let deployment = azureDeployment?.trimmingCharacters(in: .whitespacesAndNewlines), !deployment.isEmpty {
                 XCTAssertTrue(true, "Deployment name is valid")
             }
             
             print("✅ Environment variable configuration test successful!")
             print("Endpoint: \(azureEndpoint ?? "N/A")")
-            print("Deployment: \(azureDeployment ?? "N/A")")
+            print("Deployment/Model: \(azureDeployment ?? "N/A")")
             print("API Key: [REDACTED]")
         } else {
             print("ℹ️ Environment variables not properly set - this is expected for CI/CD without secrets")

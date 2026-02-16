@@ -16,7 +16,7 @@ import FoundationNetworking
 /// Azure OpenAI endpoints using environment variables:
 /// - AZURE_OPENAI_ENDPOINT
 /// - AZURE_OPENAI_API_KEY or COPILOT_AGENT_AZURE_OPENAI_API_KEY  
-/// - AZURE_OPENAI_DEPLOYMENT
+/// - AZURE_OPENAI_MODEL (or AZURE_OPENAI_DEPLOYMENT)
 final class NonStreamingPerformanceTests: XCTestCase {
     
     // MARK: - Test Configuration
@@ -70,7 +70,7 @@ final class NonStreamingPerformanceTests: XCTestCase {
     
     private func createMockHTTPResponse(statusCode: Int = 200) -> HTTPURLResponse {
         return HTTPURLResponse(
-            url: URL(string: "https://test.openai.azure.com/v1/responses")!,
+            url: URL(string: "https://test.openai.azure.com/openai/v1/responses")!,
             statusCode: statusCode,
             httpVersion: "HTTP/1.1",
             headerFields: [

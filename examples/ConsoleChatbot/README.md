@@ -44,7 +44,7 @@ This is a complete, compilable Swift Package demonstrating an interactive consol
    ```bash
    export AZURE_OPENAI_ENDPOINT="https://your-resource.openai.azure.com"
    export AZURE_OPENAI_API_KEY="your-api-key"
-   export AZURE_OPENAI_DEPLOYMENT="gpt-4o"
+   export AZURE_OPENAI_MODEL="gpt-4o" # or AZURE_OPENAI_DEPLOYMENT for legacy setups
    ```
 
 3. **Build and run**:

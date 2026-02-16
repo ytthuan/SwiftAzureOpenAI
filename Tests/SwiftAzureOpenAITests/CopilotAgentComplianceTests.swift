@@ -16,7 +16,7 @@ final class CopilotAgentComplianceTests: XCTestCase {
         // Use expected values from environment variables or defaults
         let expectedHost = URL(string: TestEnvironmentHelper.azureEndpoint)?.host
         XCTAssertEqual(config.baseURL.host, expectedHost)
-        XCTAssertEqual(config.baseURL.path, "/v1/responses")
+        XCTAssertEqual(config.baseURL.path, "/openai/v1/responses")
         
         // Validate headers
         XCTAssertEqual(config.headers["api-key"], TestEnvironmentHelper.azureAPIKey)
@@ -71,7 +71,7 @@ final class CopilotAgentComplianceTests: XCTestCase {
             let expectedHost = URL(string: TestEnvironmentHelper.azureEndpoint)?.host
             XCTAssertEqual(config.baseURL.host, expectedHost)
             XCTAssertEqual(config.headers["api-key"], TestEnvironmentHelper.azureAPIKey)
-            XCTAssertEqual(config.baseURL.path, "/v1/responses")
+            XCTAssertEqual(config.baseURL.path, "/openai/v1/responses")
         }
     }
     
@@ -96,7 +96,7 @@ final class CopilotAgentComplianceTests: XCTestCase {
         let expectedHost = URL(string: TestEnvironmentHelper.azureEndpoint)?.host
         XCTAssertEqual(documentedConfig.baseURL.host, expectedHost)
         XCTAssertEqual(documentedConfig.headers["api-key"], TestEnvironmentHelper.azureAPIKey)
-        XCTAssertEqual(documentedConfig.baseURL.path, "/v1/responses")
+        XCTAssertEqual(documentedConfig.baseURL.path, "/openai/v1/responses")
         
         print("✅ Copilot agent environment variable configuration compliance validated")
         print("   Endpoint: \(documentedConfig.baseURL.absoluteString)")

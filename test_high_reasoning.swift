@@ -33,12 +33,13 @@ struct TextConfig: Codable {
 func testHighReasoning() async {
     guard let endpoint = ProcessInfo.processInfo.environment["AZURE_OPENAI_ENDPOINT"],
           let apiKey = ProcessInfo.processInfo.environment["COPILOT_AGENT_AZURE_OPENAI_API_KEY"],
-          let deployment = ProcessInfo.processInfo.environment["AZURE_OPENAI_DEPLOYMENT"] else {
+          let deployment = ProcessInfo.processInfo.environment["AZURE_OPENAI_MODEL"] ??
+                           ProcessInfo.processInfo.environment["AZURE_OPENAI_DEPLOYMENT"] else {
         print("Missing required environment variables")
         return
     }
     
-    let url = URL(string: "\(endpoint)/v1/responses")!
+    let url = URL(string: "\(endpoint)/openai/v1/responses")!
     var request = URLRequest(url: url)
     request.httpMethod = "POST"
     request.setValue("application/json", forHTTPHeaderField: "Content-Type")

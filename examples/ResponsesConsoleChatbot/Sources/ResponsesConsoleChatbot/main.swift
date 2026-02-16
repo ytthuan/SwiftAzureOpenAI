@@ -44,7 +44,9 @@ final class ResponsesConsoleManager {
                     ProcessInfo.processInfo.environment["COPILOT_AGENT_AZURE_OPENAI_API_KEY"] ??
                     "your-api-key"
         
-        let deploymentName = ProcessInfo.processInfo.environment["AZURE_OPENAI_DEPLOYMENT"] ?? model
+        let deploymentName = ProcessInfo.processInfo.environment["AZURE_OPENAI_MODEL"] ??
+                             ProcessInfo.processInfo.environment["AZURE_OPENAI_DEPLOYMENT"] ??
+                             model
 
         let mainFileURL = URL(fileURLWithPath: #filePath)
         let logDirectoryURL = mainFileURL.deletingLastPathComponent()
@@ -893,7 +895,7 @@ struct ResponsesConsoleChatbotApp {
         print("  AZURE_OPENAI_ENDPOINT       Azure OpenAI endpoint (required)")
         print("  AZURE_OPENAI_API_KEY        Azure OpenAI API key")
         print("  COPILOT_AGENT_AZURE_OPENAI_API_KEY  Alternative API key")
-        print("  AZURE_OPENAI_DEPLOYMENT     Azure OpenAI deployment name")
+        print("  AZURE_OPENAI_MODEL          Azure OpenAI model name (or AZURE_OPENAI_DEPLOYMENT)")
         print("  DEFAULT_MODEL               Default model name")
         print("  DEFAULT_INSTRUCTIONS        Default system instructions")
         print("  DEFAULT_REASONING_EFFORT    Default reasoning effort")
