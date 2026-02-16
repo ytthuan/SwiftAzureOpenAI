@@ -384,8 +384,13 @@ jobs:
       # 2. Generate new token with 'repo' scope
       # 3. Add to repository: Settings > Secrets and variables > Actions > New repository secret
       # 4. Name: PAT_TOKEN, Value: Your personal access token
+      - name: Skip PR creation (token missing)
+        if: ${{ steps.spec-change.outputs.changed == 'true' && (secrets.PAT_TOKEN == '' || secrets.PAT_TOKEN == null) }}
+        run: |
+          echo "⚠️ PAT_TOKEN is not configured; skipping PR creation step."
+
       - name: Create Pull Request (only if something committed)
-        if: steps.spec-change.outputs.changed == 'true'
+        if: ${{ steps.spec-change.outputs.changed == 'true' && secrets.PAT_TOKEN != '' }}
         uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.PAT_TOKEN }}
