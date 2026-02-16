@@ -123,7 +123,7 @@ final class OptionalRoleMessageTests: XCTestCase {
     /// Test the updated format for AdvancedConsoleChatbot (should fix Bad Request)
     func testAdvancedConsoleChatbotFixedScenario() throws {
         // Simulate the fixed scenario for AdvancedConsoleChatbot
-        let mockConfig = TestEnvironmentHelper.createStandardAzureConfiguration()
+        let mockConfig = TestEnvironmentHelper.createStandardOpenAIConfiguration()
         
         // NEW: AdvancedConsoleChatbot can now send tool outputs without role
         let toolOutput = SAOAIMessage(functionCallOutput: .init(
@@ -140,7 +140,7 @@ final class OptionalRoleMessageTests: XCTestCase {
         // This should work with the fix
         XCTAssertNoThrow {
             let request = SAOAIRequest(
-                model: mockConfig.deploymentName,
+                model: "gpt-4o",
                 input: messages.map { SAOAIInput.message($0) },
                 maxOutputTokens: 100
             )
