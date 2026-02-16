@@ -18,8 +18,8 @@ public final class FilesClient: @unchecked Sendable {
     /// Helper to construct the files endpoint URL.
     private func filesEndpointURL() throws -> URL {
         var filesURL = configuration.baseURL
-        if filesURL.absoluteString.contains("/openai/v1/responses") {
-            let urlString = filesURL.absoluteString.replacingOccurrences(of: "/openai/v1/responses", with: "/openai/v1/files")
+        if filesURL.absoluteString.contains("/v1/responses") {
+            let urlString = filesURL.absoluteString.replacingOccurrences(of: "/v1/responses", with: "/v1/files")
             guard let newURL = URL(string: urlString) else {
                 throw SAOAIError.invalidRequest("Failed to construct files endpoint URL")
             }
@@ -65,8 +65,8 @@ public final class FilesClient: @unchecked Sendable {
         var filesURL = configuration.baseURL
         
         // Replace the responses path with files path
-        if filesURL.absoluteString.contains("/openai/v1/responses") {
-            let urlString = filesURL.absoluteString.replacingOccurrences(of: "/openai/v1/responses", with: "/openai/v1/files")
+        if filesURL.absoluteString.contains("/v1/responses") {
+            let urlString = filesURL.absoluteString.replacingOccurrences(of: "/v1/responses", with: "/v1/files")
             guard let newURL = URL(string: urlString) else {
                 throw SAOAIError.invalidRequest("Failed to construct files endpoint URL")
             }
@@ -94,8 +94,8 @@ public final class FilesClient: @unchecked Sendable {
         var filesURL = configuration.baseURL
         
         // Replace the responses path with files path
-        if filesURL.absoluteString.contains("/openai/v1/responses") {
-            let urlString = filesURL.absoluteString.replacingOccurrences(of: "/openai/v1/responses", with: "/openai/v1/files")
+        if filesURL.absoluteString.contains("/v1/responses") {
+            let urlString = filesURL.absoluteString.replacingOccurrences(of: "/v1/responses", with: "/v1/files")
             guard let newURL = URL(string: urlString) else {
                 throw SAOAIError.invalidRequest("Failed to construct files endpoint URL")
             }
@@ -125,8 +125,8 @@ public final class FilesClient: @unchecked Sendable {
         var filesURL = configuration.baseURL
         
         // Replace the responses path with files path
-        if filesURL.absoluteString.contains("/openai/v1/responses") {
-            let urlString = filesURL.absoluteString.replacingOccurrences(of: "/openai/v1/responses", with: "/openai/v1/files")
+        if filesURL.absoluteString.contains("/v1/responses") {
+            let urlString = filesURL.absoluteString.replacingOccurrences(of: "/v1/responses", with: "/v1/files")
             guard let newURL = URL(string: urlString) else {
                 throw SAOAIError.invalidRequest("Failed to construct files endpoint URL")
             }
@@ -163,8 +163,8 @@ public final class FilesClient: @unchecked Sendable {
                 do {
                     // Construct the files content endpoint URL
                     var filesURL = configuration.baseURL
-                    if filesURL.absoluteString.contains("/openai/v1/responses") {
-                        let urlString = filesURL.absoluteString.replacingOccurrences(of: "/openai/v1/responses", with: "/openai/v1/files")
+                    if filesURL.absoluteString.contains("/v1/responses") {
+                        let urlString = filesURL.absoluteString.replacingOccurrences(of: "/v1/responses", with: "/v1/files")
                         guard let newURL = URL(string: urlString) else {
                             continuation.finish(throwing: SAOAIError.invalidRequest("Failed to construct files endpoint URL"))
                             return

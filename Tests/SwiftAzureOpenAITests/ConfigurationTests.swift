@@ -11,12 +11,7 @@ final class ConfigurationTests: XCTestCase {
         // Use expected values from environment variables or defaults
         let expectedHost = URL(string: TestEnvironmentHelper.azureEndpoint)?.host ?? "test.openai.azure.com"
         XCTAssertEqual(baseURL.host, expectedHost)
-        XCTAssertEqual(baseURL.path, "/openai/v1/responses")
-
-        // Test that URL is constructed correctly (v1 API needs api-version query parameter)
-        let components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)
-        let apiVersion = components?.queryItems?.first(where: { $0.name == "api-version" })?.value
-        XCTAssertEqual(apiVersion, TestEnvironmentHelper.azureAPIVersion, "v1 Response API should include api-version query parameter")
+        XCTAssertEqual(baseURL.path, "/v1/responses")
 
         XCTAssertEqual(config.headers["api-key"], TestEnvironmentHelper.azureAPIKey)
         XCTAssertEqual(config.headers["Content-Type"], "application/json")
@@ -27,10 +22,8 @@ final class ConfigurationTests: XCTestCase {
             apiVersion: nil  // Test default API version
         )
 
-        // Test that default configuration includes api-version query parameter in v1 API
-        let components = URLComponents(url: config.baseURL, resolvingAgainstBaseURL: false)
-        let apiVersion = components?.queryItems?.first(where: { $0.name == "api-version" })?.value
-        XCTAssertEqual(apiVersion, TestEnvironmentHelper.azureAPIVersion, "v1 Response API should include api-version query parameter")
+        // Base URL should follow OpenAI-style path without query parameters
+        XCTAssertEqual(config.baseURL.path, "/v1/responses")
     }
 
     func testSAOAIOpenAIConfigurationHeaders() {

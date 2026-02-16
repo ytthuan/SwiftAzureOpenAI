@@ -52,8 +52,7 @@ final class LiveAPITests: XCTestCase {
         
         // Construct URL manually like SAOAIAzureConfiguration does
         var components = URLComponents(string: endpoint)!
-        components.path = "/openai/v1/responses"
-        components.queryItems = [URLQueryItem(name: "api-version", value: "preview")]
+        components.path = "/v1/responses"
         let url = components.url!
         
         // Create request payload
@@ -184,8 +183,7 @@ final class LiveAPITests: XCTestCase {
         
         // Construct URL manually
         var components = URLComponents(string: endpoint)!
-        components.path = "/openai/v1/responses"
-        components.queryItems = [URLQueryItem(name: "api-version", value: "preview")]
+        components.path = "/v1/responses"
         let url = components.url!
         
         // Create streaming request payload
@@ -278,8 +276,7 @@ final class LiveAPITests: XCTestCase {
         
         // Construct URL manually
         var components = URLComponents(string: endpoint)!
-        components.path = "/openai/v1/responses"
-        components.queryItems = [URLQueryItem(name: "api-version", value: "preview")]
+        components.path = "/v1/responses"
         let url = components.url!
         
         // Create invalid request (invalid model name)
@@ -391,8 +388,7 @@ final class LiveAPITests: XCTestCase {
         
         // Construct URL
         var components = URLComponents(string: endpoint)!
-        components.path = "/openai/v1/responses"
-        components.queryItems = [URLQueryItem(name: "api-version", value: "preview")]
+        components.path = "/v1/responses"
         let url = components.url!
         
         print("🔍 Debug: Request URL: \(url)")

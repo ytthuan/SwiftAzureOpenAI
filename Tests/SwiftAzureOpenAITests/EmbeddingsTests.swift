@@ -229,7 +229,7 @@ final class EmbeddingsTests: XCTestCase {
 // MARK: - Test Configuration
 
 private struct TestableConfiguration: SAOAIConfiguration {
-    var baseURL: URL { URL(string: "https://test.example.com/openai/v1/responses")! }
+    var baseURL: URL { URL(string: "https://test.example.com/v1/responses")! }
     var headers: [String: String] { ["Authorization": "Bearer test"] }
     var sseLoggerConfiguration: SSELoggerConfiguration { .disabled }
     var loggerConfiguration: LoggerConfiguration { .disabled }

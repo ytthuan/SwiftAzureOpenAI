@@ -673,7 +673,7 @@ let request = SAOAIRequest(
 ```
 
 **Azure OpenAI Responses API Endpoint:**
-- URL: `https://{resource}.openai.azure.com/openai/v1/responses?api-version=preview`
+- URL: `https://{resource}.openai.azure.com/v1/responses`
 - Headers: `api-key: <AZURE_API_KEY>`, `Content-Type: application/json`
 - Body: `SAOAIRequest` encoded as JSON
 

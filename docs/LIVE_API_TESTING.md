@@ -25,7 +25,7 @@ export AZURE_OPENAI_DEPLOYMENT="your-deployment-name"
 ### Deployment Requirements
 
 Your Azure OpenAI deployment should:
-- Be compatible with the Responses API (`api-version=preview`)
+- Be compatible with the Responses API (no api-version query parameter needed)
 - Support function calling (for the debug test)
 - Have sufficient quota for test requests
 
@@ -118,7 +118,7 @@ The debug test prints detailed information:
   "tools" : [...]
 }
 
-🔍 Debug: Request URL: https://your-resource.openai.azure.com/openai/v1/responses?api-version=preview
+🔍 Debug: Request URL: https://your-resource.openai.azure.com/v1/responses
 
 🔍 Debug: Request headers:
   Content-Type: application/json
@@ -154,11 +154,10 @@ If you get a "Bad Request" error like in the console chatbot example:
 2. Check that your deployment name is correct
 3. Verify your endpoint URL format
 4. Ensure your API key is valid and has access to the deployment
-5. Check that the deployment supports the Responses API with `api-version=preview`
+5. Check that the deployment supports the Responses API and that the base URL is correct
 
 ### Common Issues
 
-- **Wrong API version**: Make sure you're using `api-version=preview` for the Responses API
 - **Incorrect endpoint**: Ensure the endpoint follows the format `https://your-resource.openai.azure.com`
 - **Model/deployment mismatch**: The model name in the request should match your actual deployment name
 - **Insufficient permissions**: Ensure your API key has access to the specific deployment

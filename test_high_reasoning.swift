@@ -38,7 +38,7 @@ func testHighReasoning() async {
         return
     }
     
-    let url = URL(string: "\(endpoint)/openai/v1/responses?api-version=preview")!
+    let url = URL(string: "\(endpoint)/v1/responses")!
     var request = URLRequest(url: url)
     request.httpMethod = "POST"
     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
